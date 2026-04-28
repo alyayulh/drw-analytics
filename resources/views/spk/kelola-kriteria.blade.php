@@ -143,11 +143,13 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
         Dashboard
       </a>
+            @if(auth()->user()->role === 'Admin')
       <a href="/data-produk" class="nav-item">
         <svg viewBox="0 0 16 16"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>
         Data Produk
       </a>
-      <a href="#" class="nav-item">
+          @endif
+      <a href="/input-permintaan" class="nav-item">
         <svg viewBox="0 0 16 16"><path d="M2 8h8M8 5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v10" stroke-linecap="round"/></svg>
         Input Permintaan
       </a>
@@ -263,7 +265,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
               <td style="color:var(--text-3);font-size:12px">{{ $i + 1 }}</td>
               <td style="font-weight:600">{{ $k->nama_kriteria }}</td>
               <td>
-                @if($k->tipe_atribut === 'benefit')
+                @if(trim(strtolower($k->tipe_atribut)) == 'benefit')
                   <span class="badge badge-green">↑ Benefit</span>
                 @else
                   <span class="badge badge-amber">↓ Cost</span>
@@ -273,7 +275,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
               <td><span class="badge badge-pink">{{ $k->sumber_data }}</span></td>
               <td>
                 <div style="display:flex;gap:6px">
-                  <button class="btn btn-sm" onclick="openEdit({{ $k->id_kriteria }}, '{{ addslashes($k->nama_kriteria) }}', '{{ $k->tipe_atribut }}', {{ $k->bobot }}, '{{ $k->sumber_data }}')">Edit</button>
+                  <button class="btn btn-sm" onclick="openEdit({{ $k->id_kriteria }}, '{{ addslashes($k->nama_kriteria) }}', '{{ strtolower(trim($k->tipe_atribut)) }}', {{ $k->bobot }}, '{{ $k->sumber_data }}', '{{ $k->nama_kolom_excel ?? '' }}')">Edit</button>
                   <button class="btn btn-red btn-sm" onclick="openHapus({{ $k->id_kriteria }}, '{{ addslashes($k->nama_kriteria) }}')">Hapus</button>
                 </div>
               </td>
@@ -312,12 +314,20 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
         </div>
         <div class="form-group">
           <label class="form-label">Sumber Data</label>
-          <select class="form-select" name="sumber_data" required>
+          <select class="form-select" name="sumber_data" onchange="toggleKolomExcel('tambah', this.value)" required>
             <option value="Excel">Import Excel (otomatis)</option>
             <option value="Manual">Input Manual (di web)</option>
           </select>
         </div>
       </div>
+      
+      <!-- Field Nama Kolom Excel - DI LUAR form-row -->
+      <div class="form-group" id="kolom-excel-group-tambah" style="display:none">
+        <label class="form-label">Nama Kolom Excel</label>
+        <input class="form-input" name="nama_kolom_excel" id="kolom-excel-tambah" placeholder="Contoh: HARGA JUAL">
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Isi dengan nama kolom persis seperti di file Excel (case-sensitive)</div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Bobot (%)</label>
         <div class="slider-row">
@@ -354,12 +364,20 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
         </div>
         <div class="form-group">
           <label class="form-label">Sumber Data</label>
-          <select class="form-select" name="sumber_data" id="edit-sumber" required>
+          <select class="form-select" name="sumber_data" id="edit-sumber" onchange="toggleKolomExcel('edit', this.value)" required>
             <option value="Excel">Import Excel (otomatis)</option>
             <option value="Manual">Input Manual (di web)</option>
           </select>
         </div>
       </div>
+      
+      <!-- Field Nama Kolom Excel - DI LUAR form-row -->
+      <div class="form-group" id="kolom-excel-group-edit" style="display:none">
+        <label class="form-label">Nama Kolom Excel</label>
+        <input class="form-input" name="nama_kolom_excel" id="kolom-excel-edit" placeholder="Contoh: HARGA JUAL">
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Isi dengan nama kolom persis seperti di file Excel (case-sensitive)</div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Bobot (%)</label>
         <div class="slider-row">
@@ -392,16 +410,26 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
 </div>
 
 <script>
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) { 
+  document.getElementById(id).classList.add('open');
+}
 
-function openEdit(id, nama, tipe, bobot, sumber) {
+function closeModal(id) { 
+  document.getElementById(id).classList.remove('open');
+}
+
+function openEdit(id, nama, tipe, bobot, sumber, kolomExcel) {
   document.getElementById('edit-nama').value = nama;
   document.getElementById('edit-tipe').value = tipe;
   document.getElementById('edit-bobot').value = bobot;
   document.getElementById('edit-sumber').value = sumber;
+  document.getElementById('kolom-excel-edit').value = kolomExcel || '';
   document.getElementById('val-edit').textContent = bobot + '%';
   document.getElementById('form-edit').action = '/kelola-kriteria/' + id;
+  
+  // Trigger toggle kolom excel
+  toggleKolomExcel('edit', sumber);
+  
   openModal('modal-edit');
 }
 
@@ -409,6 +437,20 @@ function openHapus(id, nama) {
   document.getElementById('hapus-text').textContent = 'Yakin ingin menghapus kriteria "' + nama + '"? Data nilai produk terkait juga akan terhapus.';
   document.getElementById('form-hapus').action = '/kelola-kriteria/' + id;
   openModal('modal-hapus');
+}
+
+function toggleKolomExcel(mode, value) {
+  const group = document.getElementById('kolom-excel-group-' + mode);
+  const input = document.getElementById('kolom-excel-' + mode);
+  
+  if (value === 'Excel') {
+    group.style.display = 'block';
+    input.required = true;
+  } else {
+    group.style.display = 'none';
+    input.required = false;
+    input.value = '';
+  }
 }
 
 // Tutup modal kalau klik di luar

@@ -24,8 +24,11 @@ return new class extends Migration
             // Excel  = nilai diambil otomatis dari file Excel yang diupload
             // Manual = nilai diisi manual oleh user lewat form Input Permintaan
             $table->enum('sumber_data', ['Excel', 'Manual'])->default('Excel');
+            $table->string('nama_kolom_excel', 100)->nullable(); 
+
 
             $table->timestamps();
+        
         });
     }
 

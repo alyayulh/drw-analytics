@@ -18,7 +18,6 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; font-size: 14px; }
 
-/* SIDEBAR */
 .sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; box-shadow: 2px 0 12px rgba(232,0,90,.06); }
 .sb-brand { padding: 22px 18px 16px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
 .sb-logo { display: flex; align-items: center; gap: 10px; }
@@ -39,7 +38,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 .sb-user-name { font-size: 12px; font-weight: 700; color: var(--text); }
 .sb-user-role { font-size: 10px; color: var(--text-3); }
 
-/* MAIN */
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .topbar { height: 56px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 28px; gap: 12px; position: sticky; top: 0; z-index: 10; }
 .topbar-title { font-size: 15px; font-weight: 800; color: var(--text); flex: 1; }
@@ -48,13 +46,11 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 .page-header h1 { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -.5px; }
 .page-header p { font-size: 13px; color: var(--text-3); margin-top: 4px; }
 
-/* CARDS */
 .card { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 20px 22px; box-shadow: var(--shadow); margin-bottom: 16px; }
 .card-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
 .card-title { font-size: 13px; font-weight: 700; color: var(--text); }
 .card-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
 
-/* BUTTONS */
 .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface); font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer; font-family: inherit; transition: all .15s; text-decoration: none; }
 .btn:hover { background: var(--bg); }
 .btn-pink { background: linear-gradient(135deg, var(--pink), var(--pink-mid)); color: #fff; border: none; box-shadow: 0 2px 8px rgba(232,0,90,.25); }
@@ -62,21 +58,17 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 .btn-sm { padding: 6px 12px; font-size: 11px; }
 .btn-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-/* INFO BOX */
 .info-box { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 9px; font-size: 12px; margin-bottom: 14px; }
 .info-box svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; margin-top: 1px; }
 .info-pink { background: var(--pink-light); color: var(--pink-dark); border: 1px solid var(--pink-soft); }
 
-/* BADGE */
 .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
 .badge-green { background: var(--green-light); color: #065f46; }
 .badge-amber { background: var(--amber-light); color: #92400e; }
 
-/* FORM */
 .form-input, .form-select { width: 100%; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--surface); outline: none; transition: border .15s; }
 .form-input:focus, .form-select:focus { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(232,0,90,.08); }
 
-/* TABLE */
 .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
 table { width: 100%; border-collapse: collapse; }
 thead { background: var(--pink-light); }
@@ -85,18 +77,15 @@ td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border)
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--pink-light); }
 
-/* RATING CELL */
 .rating-cell { display: flex; gap: 4px; justify-content: center; }
 .rating-btn-sm { width: 30px; height: 30px; border: 2px solid var(--border); border-radius: 6px; background: var(--surface); font-size: 11px; font-weight: 700; color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
 .rating-btn-sm:hover { border-color: var(--pink-soft); background: var(--pink-light); }
 .rating-btn-sm.selected { border-color: var(--pink); background: var(--pink); color: #fff; }
 
-/* EMPTY STATE */
 .empty-state { text-align: center; padding: 48px 20px; color: var(--text-3); }
 .empty-state svg { width: 44px; height: 44px; stroke: var(--border-strong); fill: none; stroke-width: 1.5; margin: 0 auto 12px; display: block; }
 .empty-state p { font-size: 13px; line-height: 1.6; }
 
-/* ALERT */
 .alert { padding: 10px 14px; border-radius: 9px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
 .alert-success { background: var(--green-light); color: #065f46; border: 1px solid #6ee7b7; }
 
@@ -106,7 +95,6 @@ tr:hover td { background: var(--pink-light); }
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
   <div class="sb-brand">
     <div class="sb-logo">
@@ -126,10 +114,12 @@ tr:hover td { background: var(--pink-light); }
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
         Dashboard
       </a>
+              @if(auth()->user()->role === 'Admin')
       <a href="/data-produk" class="nav-item">
         <svg viewBox="0 0 16 16"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>
         Data Produk
       </a>
+          @endif
       <a href="/input-permintaan" class="nav-item active">
         <svg viewBox="0 0 16 16"><path d="M2 8h8M8 5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v10" stroke-linecap="round"/></svg>
         Input Permintaan
@@ -172,7 +162,6 @@ tr:hover td { background: var(--pink-light); }
   </div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
   <div class="topbar">
     <div class="topbar-title">Input Permintaan</div>
@@ -288,7 +277,6 @@ tr:hover td { background: var(--pink-light); }
 <script>
 const selectedValues = {};
 
-// Initialize from existing data
 document.querySelectorAll('.rating-btn-sm.selected').forEach(btn => {
   const produk = btn.dataset.produk;
   const kriteria = btn.dataset.kriteria;
@@ -302,18 +290,14 @@ function selectValue(btn) {
   const kriteria = btn.dataset.kriteria;
   const value = btn.dataset.value;
   
-  // Remove selected from siblings
   const row = btn.closest('td');
   row.querySelectorAll('.rating-btn-sm').forEach(b => b.classList.remove('selected'));
   
-  // Add selected to clicked
   btn.classList.add('selected');
   
-  // Store value
   if (!selectedValues[produk]) selectedValues[produk] = {};
   selectedValues[produk][kriteria] = value;
   
-  // Update status badge
   updateStatusBadge(btn.closest('tr'));
 }
 
@@ -340,12 +324,10 @@ function saveAllInputs() {
     return;
   }
   
-  // Create form data
   const formData = new FormData();
   formData.append('_token', '{{ csrf_token() }}');
   formData.append('data', JSON.stringify(selectedValues));
   
-  // Send to server
   fetch('{{ route("input.store") }}', {
     method: 'POST',
     body: formData
@@ -364,8 +346,7 @@ function saveAllInputs() {
   });
 }
 
-// Filter by status
-document.getElementById('filter-status')?.addEventListener('change', function() {
+document.getElementById('filter-status').addEventListener('change', function() {
   const value = this.value;
   const rows = document.querySelectorAll('#tbody-input tr');
   rows.forEach(row => {
@@ -378,4 +359,4 @@ document.getElementById('filter-status')?.addEventListener('change', function() 
 });
 </script>
 </body>
-</html>
+</html> 

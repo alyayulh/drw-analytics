@@ -9,17 +9,18 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-    $credentials = [
-        'username' => $request->username,
-        'password' => $request->password,
-    ];
+        $credentials = [
+            'username' => $request->username,
+            'password' => $request->password,
+        ];
 
-    if (Auth::attempt($credentials)) {
-        $request->session()->regenerate();
-        return redirect()->intended('/dashboard');
-    }
+        if (Auth::attempt($credentials)) {
+    $request->session()->regenerate();
+    $request->session()->put('auth.user_id', Auth::user()->id_user);
+    return redirect('/dashboard');
+}
 
-    return back()->with('error', 'Username atau password salah.');
+        return back()->with('error', 'Username atau password salah.');
     }
 
     public function logout(Request $request)

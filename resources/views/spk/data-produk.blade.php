@@ -6,6 +6,25 @@
 <title>Data Produk — DRW Skincare SPK</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+/* Rating button untuk modal tambah */
+.rating-btn-tambah {
+  display: block;
+  padding: 7px 4px;
+  border: 2px solid var(--border-strong);
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all .15s;
+  text-align: center;
+}
+.radio-kriteria:checked + .rating-btn-tambah {
+  border-color: var(--pink);
+  background: var(--pink);
+  color: #fff;
+}
 :root {
   --pink: #e8005a; --pink-light: #fff0f5; --pink-mid: #ff4d8d;
   --pink-dark: #b3004a; --pink-soft: #ffd6e8;
@@ -122,6 +141,7 @@ tr:hover td { background: var(--pink-light); }
 .alert-success { background: var(--green-light); color: #065f46; border: 1px solid #6ee7b7; }
 .alert-error { background: var(--red-light); color: var(--red); border: 1px solid #fca5a5; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
@@ -147,10 +167,13 @@ tr:hover td { background: var(--pink-light); }
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
         Dashboard
       </a>
+      @if(auth()->user()->role === 'Admin')
       <a href="/data-produk" class="nav-item active">
         <svg viewBox="0 0 16 16"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>
         Data Produk
       </a>
+          @endif
+
       <a href="#" class="nav-item">
         <svg viewBox="0 0 16 16"><path d="M2 8h8M8 5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v10" stroke-linecap="round"/></svg>
         Input Permintaan
@@ -259,12 +282,20 @@ tr:hover td { background: var(--pink-light); }
           <div class="card-sub">{{ $produks->count() }} produk terdaftar</div>
         </div>
         <div class="btn-group">
-          <input class="form-input" style="width:180px;padding:6px 10px;font-size:12px" placeholder="Cari produk..." oninput="filterProduk(this.value)" id="search-produk">
-          <button class="btn btn-pink btn-sm" onclick="openModal('modal-tambah')">
-            <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
-            Tambah Manual
-          </button>
-        </div>
+  <input class="form-input" style="width:180px;padding:6px 10px;font-size:12px" placeholder="Cari produk..." oninput="filterProduk(this.value)" id="search-produk">
+  
+  {{-- Dropdown sort --}}
+  <select class="form-input" style="width:160px;padding:6px 10px;font-size:12px" onchange="sortProduk(this.value)">
+    <option value="abjad" {{ request('sort','abjad') === 'abjad' ? 'selected' : '' }}>↑ A–Z</option>
+    <option value="terbaru" {{ request('sort') === 'terbaru' ? 'selected' : '' }}>↓ Terbaru</option>
+    <option value="terlama" {{ request('sort') === 'terlama' ? 'selected' : '' }}>↑ Terlama</option>
+  </select>
+
+  <button class="btn btn-pink btn-sm" onclick="openModal('modal-tambah')">
+    <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
+    Tambah Manual
+  </button>
+</div>
       </div>
 
       @if($produks->count() > 0)
@@ -313,7 +344,7 @@ tr:hover td { background: var(--pink-light); }
 
 <!-- MODAL TAMBAH -->
 <div class="modal-overlay" id="modal-tambah">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:480px">
     <div class="modal-title">Tambah Produk</div>
     <form method="POST" action="{{ route('produk.store') }}">
       @csrf
@@ -321,6 +352,35 @@ tr:hover td { background: var(--pink-light); }
         <label class="form-label">Nama Produk</label>
         <input class="form-input" name="nama_produk" placeholder="Nama produk" required>
       </div>
+
+      {{-- Field nilai kriteria Manual -- tampil dinamis sesuai kriteria yang ada --}}
+      @if($kriteriaManual->count() > 0)
+        <div style="margin-bottom:10px;padding-top:4px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 10px">
+            Nilai Kriteria Manual
+          </div>
+          @foreach($kriteriaManual as $k)
+            <div class="form-group">
+              <label class="form-label">
+                {{ $k->nama_kriteria }}
+                <span style="font-weight:400;color:var(--text-3)">(skala 1–5)</span>
+              </label>
+              <div style="display:flex;gap:6px">
+                @for($v = 1; $v <= 5; $v++)
+                  <label style="flex:1;text-align:center;cursor:pointer">
+                    <input type="radio" name="nilai_kriteria[{{ $k->id_kriteria }}]"
+                           value="{{ $v }}" style="display:none"
+                           class="radio-kriteria"
+                           onchange="highlightRadio(this)">
+                    <span class="rating-btn-tambah" data-val="{{ $v }}">{{ $v }}</span>
+                  </label>
+                @endfor
+              </div>
+            </div>
+          @endforeach
+        </div>
+      @endif
+
       <div class="modal-actions">
         <button type="button" class="btn" onclick="closeModal('modal-tambah')">Batal</button>
         <button type="submit" class="btn btn-pink">Simpan</button>
@@ -365,6 +425,22 @@ tr:hover td { background: var(--pink-light); }
 </div>
 
 <script>
+
+function sortProduk(val) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('sort', val);
+  window.location.href = url.toString();
+}
+
+function highlightRadio(input) {
+  // Hapus highlight semua tombol dalam grup yang sama
+  const name = input.name;
+  document.querySelectorAll(`input[name="${name}"] + .rating-btn-tambah`).forEach(span => {
+    span.style.borderColor = '';
+    span.style.background = '';
+    span.style.color = '';
+  });
+}
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
@@ -411,6 +487,27 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (e.target === this) this.classList.remove('open');
   });
 });
+</script>
+<script>
+
+@if(session('success'))
+  Swal.fire({
+    icon: 'success',
+    title: 'Berhasil!',
+    text: '{{ session('success') }}',
+    confirmButtonColor: '#e8005a'
+  });
+@endif
+
+@if(session('error'))
+  Swal.fire({
+    icon: 'error',
+    title: 'Gagal!',
+    html: '{{ session('error') }}',
+    confirmButtonColor: '#e8005a',
+    width: '500px'
+  });
+@endif
 </script>
 </body>
 </html>
