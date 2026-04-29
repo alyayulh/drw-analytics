@@ -32,6 +32,13 @@ $warnaDot = match($warnaPeran) {
     'green'  => 'bg-green-400',
     default  => 'bg-pink-400',
 };
+.step-desc-small {
+    font-size: 12px;
+    color: #888;
+    margin-top: 6px;
+    margin-left: 22px; /* biar sejajar sama text list */
+    line-height: 1.4;
+};
 @endphp
 
 <div class="flex gap-4 items-start">

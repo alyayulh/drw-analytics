@@ -7,6 +7,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+.yi-info {
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.5;
+  margin: 6px 0 10px 15px; 
+  padding-right: 15px;    
+  text-align: justify;
+
+}
 :root {
   --pink: #e8005a;
   --pink-light: #fff0f5;
@@ -515,7 +524,29 @@ code, .mono { font-family: 'DM Mono', monospace; }
 
       <div id="step-0" class="step-content active">
         <div class="step-wrap">
-          <div class="step-num blue">1</div>
+          <div class="step-num green">1</div>
+          <div class="step-info">
+            <div class="step-title">Tentukan kriteria & bobot</div>
+            <div class="step-meta">
+              <span class="step-role green">Admin/Manajer</span>
+              <span class="step-menu">Menu: <span>Kelola Kriteria</span></span>
+            </div>
+            <ul class="step-actions">
+              <li><span class="step-dot green"></span>Buka menu Kelola Kriteria, lalu klik Tambah Kriteria.</li>
+              <li><span class="step-dot green"></span>Isi nama kriteria, pilih jenis: Benefit (makin besar makin baik) atau Cost (makin kecil makin baik).</li>
+              <li><span class="step-dot green"></span>Pilih Sumber Data: Import Excel (otomatis) jika data dari file Excel, atau Manual jika diisi langsung.</li>
+              <li><span class="step-dot green"></span>Jika Import Excel, isi Nama Kolom Excel persis seperti header di file Excel</li>
+              <li><span class="step-dot green"></span>Tentukan bobot masing-masing kriteria sesuai prioritas bisnis.</li>
+              <li><span class="step-dot green"></span>Pastikan total bobot semua kriteria = 100% sebelum lanjut.</li>
+            </ul>
+            <div class="step-tip"><strong>Catatan:</strong> Diskusikan bobot dengan manajer — ini mencerminkan prioritas bisnis.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="step-1" class="step-content">
+        <div class="step-wrap">
+          <div class="step-num blue">2</div>
           <div class="step-info">
             <div class="step-title">Tambah data produk</div>
             <div class="step-meta">
@@ -523,50 +554,29 @@ code, .mono { font-family: 'DM Mono', monospace; }
               <span class="step-menu">Menu: <span>Data Produk</span></span>
             </div>
             <ul class="step-actions">
-              <li><span class="step-dot blue"></span>Buka menu Data Produk di sidebar kiri.</li>
-              <li><span class="step-dot blue"></span>Klik tombol Tambah Produk, isi nama produk dan data yang diperlukan.</li>
-              <li><span class="step-dot blue"></span>Pastikan semua produk yang akan dibandingkan sudah terdaftar.</li>
-              <li><span class="step-dot blue"></span>Data produk ini menjadi alternatif dalam perhitungan MOORA.</li>
+              <li><span class="step-dot blue"></span>Buka menu Data Produk.</li>
+              <li><span class="step-dot blue"></span>Upload data produk dengan nama kolom yang sesuai dengan kriteria yang telah ditentukan.</li>
+              <li><span class="step-dot blue"></span>Data produk yang diinput akan menjadi alternatif dalam perhitungan untuk menentukan produk promosi.</li>
             </ul>
             <div class="step-tip"><strong>Catatan:</strong> Minimal 2 produk dibutuhkan agar perhitungan SPK dapat dijalankan.</div>
           </div>
         </div>
       </div>
 
-      <div id="step-1" class="step-content">
-        <div class="step-wrap">
-          <div class="step-num purple">2</div>
-          <div class="step-info">
-            <div class="step-title">Tentukan kriteria & bobot</div>
-            <div class="step-meta">
-              <span class="step-role purple">Manajer</span>
-              <span class="step-menu">Menu: <span>Kelola Kriteria</span></span>
-            </div>
-            <ul class="step-actions">
-              <li><span class="step-dot purple"></span>Buka menu Kelola Kriteria, lalu klik Tambah Kriteria.</li>
-              <li><span class="step-dot purple"></span>Isi nama kriteria, pilih jenis: Benefit (makin besar makin baik) atau Cost (makin kecil makin baik).</li>
-              <li><span class="step-dot purple"></span>Tentukan bobot masing-masing kriteria sesuai prioritas bisnis.</li>
-              <li><span class="step-dot purple"></span>Pastikan total bobot semua kriteria = 100% sebelum lanjut.</li>
-            </ul>
-            <div class="step-tip"><strong>Catatan:</strong> Diskusikan bobot dengan manajer — ini mencerminkan prioritas bisnis.</div>
-          </div>
-        </div>
-      </div>
-
       <div id="step-2" class="step-content">
         <div class="step-wrap">
-          <div class="step-num blue">3</div>
+          <div class="step-num green">3</div>
           <div class="step-info">
             <div class="step-title">Isi nilai setiap produk</div>
             <div class="step-meta">
-              <span class="step-role blue">Admin</span>
+              <span class="step-role green">Admin/Manajer</span>
               <span class="step-menu">Menu: <span>Input Permintaan</span></span>
             </div>
             <ul class="step-actions">
-              <li><span class="step-dot blue"></span>Buka menu Input Permintaan di sidebar.</li>
-              <li><span class="step-dot blue"></span>Isi nilai tiap produk pada setiap kriteria yang sudah dibuat.</li>
-              <li><span class="step-dot blue"></span>Gunakan data aktual dari laporan penjualan atau inventaris.</li>
-              <li><span class="step-dot blue"></span>Periksa kembali semua nilai sebelum menyimpan.</li>
+              <li><span class="step-dot green"></span>Buka menu Input Permintaan di sidebar.</li>
+              <li><span class="step-dot green"></span>Isi nilai tiap produk pada setiap kriteria manual yang sudah ditentukan.</li>
+              <li><span class="step-dot green"></span>Gunakan data aktual dari lapangan.</li>
+              <li><span class="step-dot green"></span>Periksa kembali semua nilai sebelum menyimpan.</li>
             </ul>
             <div class="step-tip"><strong>Catatan:</strong> Nilai yang salah atau kosong akan langsung mempengaruhi hasil perangkingan.</div>
           </div>
@@ -588,6 +598,10 @@ code, .mono { font-family: 'DM Mono', monospace; }
               <li><span class="step-dot green"></span>Tunggu hingga hasil Yi score tiap produk muncul.</li>
               <li><span class="step-dot green"></span>Hasil berupa peringkat produk dari Yi score tertinggi ke terendah.</li>
             </ul>
+             <div class="yi-info">
+                Yi score adalah nilai akhir dari perhitungan yang menunjukkan seberapa layak suatu produk diprioritaskan.
+                Semakin tinggi nilainya, semakin direkomendasikan produk tersebut untuk dipromosikan.
+            </div>
             <div class="step-tip"><strong>Catatan:</strong> Ulangi perhitungan setiap kali ada perubahan data produk, kriteria, atau bobot.</div>
           </div>
         </div>
@@ -608,7 +622,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
               <li><span class="step-dot purple"></span>Produk dengan Yi score tertinggi adalah prioritas utama promosi.</li>
               <li><span class="step-dot purple"></span>Cek menu Riwayat untuk melihat histori perhitungan sebelumnya.</li>
             </ul>
-            <div class="step-tip"><strong>Catatan:</strong> Hasil SPK adalah rekomendasi berbasis data — tetap pertimbangkan konteks lapangan.</div>
+            <div class="step-tip"><strong>Catatan:</strong> Hasil perhitungan ini adalah salah satu alat rekomendasi berbasis data.</div>
           </div>
         </div>
       </div>
@@ -676,4 +690,4 @@ code, .mono { font-family: 'DM Mono', monospace; }
 </script>
 
 </body>
-</html> 
+</html>
