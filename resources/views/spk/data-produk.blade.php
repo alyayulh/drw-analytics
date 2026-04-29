@@ -200,20 +200,20 @@ tr:hover td { background: var(--pink-light); }
     </div>
   </div>
   <div class="sb-footer">
-    <div class="avatar">AD</div>
-    <div>
-      <div class="sb-user-name">Administrator</div>
-      <div class="sb-user-role">Admin</div>
-    </div>
-    <div style="margin-left:auto">
-      <form method="POST" action="/logout">
-        @csrf
-        <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--text-3)" title="Logout">
-          <svg viewBox="0 0 16 16" width="15" height="15" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M10 3h3a1 1 0 011 1v8a1 1 0 01-1 1h-3M7 11l3-3-3-3M10 8H3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </form>
-    </div>
+  <div class="avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap, 0, 2)) }}</div>
+  <div>
+    <div class="sb-user-name">{{ auth()->user()->nama_lengkap }}</div>
+    <div class="sb-user-role">{{ auth()->user()->role }}</div>
   </div>
+  <div class="sb-logout">
+    <form method="POST" action="/logout">
+      @csrf
+      <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--text-3);display:flex;align-items:center" title="Logout">
+        <svg viewBox="0 0 16 16" width="15" height="15"><path d="M10 3h3a1 1 0 011 1v8a1 1 0 01-1 1h-3M7 11l3-3-3-3M10 8H3" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="none" stroke-width="1.8"/></svg>
+      </button>
+    </form>
+  </div>
+</div>
 </div>
 
 <!-- MAIN -->

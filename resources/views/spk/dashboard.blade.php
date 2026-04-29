@@ -149,9 +149,161 @@ code, .mono { font-family: 'DM Mono', monospace; }
 .empty-state { text-align: center; padding: 40px 20px; color: var(--text-3); }
 .empty-state svg { width: 40px; height: 40px; stroke: var(--border-strong); fill: none; stroke-width: 1.5; margin: 0 auto 12px; display: block; }
 .empty-state p { font-size: 13px; line-height: 1.6; }
-.page-header { margin-bottom: 24px; }
+/* ── PAGE HEADER ROW ── */
+.page-header-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; margin-bottom: 24px;
+}
+.page-header { flex: 1; }
 .page-header h1 { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -.5px; }
 .page-header p { font-size: 13px; color: var(--text-3); margin-top: 4px; }
+
+/* ── TUTORIAL BANNER ── */
+.tutorial-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-left: 4px solid var(--pink);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  margin-bottom: 0;
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+  width: auto;
+}
+.tutorial-banner-left { display: flex; align-items: center; gap: 10px; }
+.tutorial-banner-icon {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: var(--pink-light);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tutorial-banner-icon svg { width: 16px; height: 16px; stroke: var(--pink); fill: none; stroke-width: 2; }
+.tutorial-banner-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 0; }
+.tutorial-banner-sub { display: none; }
+.tutorial-banner-btn {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  padding: 6px 12px; border-radius: 8px;
+  background: var(--pink); color: #fff;
+  font-size: 11px; font-weight: 700; font-family: inherit;
+  border: none; cursor: pointer; transition: background .15s;
+}
+.tutorial-banner-btn:hover { background: var(--pink-dark); }
+.tutorial-banner-btn svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 2; }
+
+/* ── MODAL TUTORIAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(26,10,15,.45);
+  align-items: center; justify-content: center; padding: 24px 16px;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  width: 100%; max-width: 540px;
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(232,0,90,.18), 0 4px 16px rgba(0,0,0,.12);
+  display: flex; flex-direction: column;
+  max-height: 90vh; overflow: hidden;
+  animation: modalIn .2s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header-title { font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+.modal-header-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.modal-close {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-3); transition: all .15s; flex-shrink: 0;
+}
+.modal-close:hover { background: var(--pink-light); color: var(--pink); border-color: var(--border-strong); }
+.modal-close svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+/* Progress bar */
+.modal-progress { display: flex; gap: 5px; padding: 14px 22px 0; }
+.prog-bar {
+  flex: 1; height: 4px; border-radius: 4px;
+  background: var(--border); transition: background .25s;
+}
+.prog-bar.active { background: var(--pink); }
+
+/* Step body */
+.modal-body { flex: 1; overflow-y: auto; padding: 18px 22px; min-height: 260px; }
+.step-wrap { display: flex; gap: 14px; align-items: flex-start; }
+.step-num {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800;
+  border: 2px solid;
+}
+.step-num.pink  { background: var(--pink-light);   color: var(--pink);   border-color: var(--border-strong); }
+.step-num.blue  { background: var(--blue-light);   color: var(--blue);   border-color: #bfdbfe; }
+.step-num.purple{ background: var(--purple-light); color: var(--purple); border-color: #ddd6fe; }
+.step-num.green { background: var(--green-light);  color: var(--green);  border-color: #a7f3d0; }
+.step-info { flex: 1; }
+.step-title { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+.step-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.step-role {
+  font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 20px;
+}
+.step-role.blue   { background: var(--blue-light);   color: var(--blue); }
+.step-role.purple { background: var(--purple-light); color: var(--purple); }
+.step-role.green  { background: var(--green-light);  color: var(--green); }
+.step-role.pink   { background: var(--pink-light);   color: var(--pink); }
+.step-menu { font-size: 11px; color: var(--text-3); }
+.step-menu span { font-weight: 600; color: var(--text-2); }
+.step-actions { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+.step-actions li { display: flex; align-items: flex-start; gap: 9px; font-size: 12px; color: var(--text-2); line-height: 1.5; }
+.step-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
+}
+.step-dot.pink   { background: var(--pink); }
+.step-dot.blue   { background: var(--blue); }
+.step-dot.purple { background: var(--purple); }
+.step-dot.green  { background: var(--green); }
+.step-tip {
+  background: var(--pink-light);
+  border-left: 3px solid var(--border-strong);
+  border-radius: 0 8px 8px 0;
+  padding: 8px 12px;
+  font-size: 11px; color: var(--pink-dark); line-height: 1.5;
+}
+.step-tip strong { font-weight: 700; }
+
+/* Modal footer */
+.modal-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  gap: 12px;
+}
+.modal-counter { font-size: 11px; color: var(--text-3); font-weight: 600; }
+.btn-nav {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 16px; border-radius: 9px; font-size: 12px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: all .15s; border: 1px solid;
+}
+.btn-nav.secondary {
+  background: var(--surface); color: var(--text-2);
+  border-color: var(--border-strong);
+}
+.btn-nav.secondary:hover { background: var(--pink-light); }
+.btn-nav.secondary:disabled { opacity: .35; cursor: not-allowed; }
+.btn-nav.primary {
+  background: var(--pink); color: #fff; border-color: var(--pink);
+}
+.btn-nav.primary:hover { background: var(--pink-dark); border-color: var(--pink-dark); }
+.btn-nav svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+.step-content { display: none; }
+.step-content.active { display: block; }
 </style>
 </head>
 <body>
@@ -160,13 +312,13 @@ code, .mono { font-family: 'DM Mono', monospace; }
   <div class="sb-brand">
     <div class="sb-logo">
       <div class="sb-logo-icon" style="background:none; box-shadow:none;">
-      <img src="https://pos.drwskincare.com/logo_drw.svg" 
-       alt="DRW Skincare" 
-       style="width:36px; height:36px; object-fit:contain;">
+        <img src="https://pos.drwskincare.com/logo_drw.svg"
+             alt="DRW Skincare"
+             style="width:36px; height:36px; object-fit:contain;">
       </div>
       <div>
         <div class="sb-logo-name">DRW BANJARMASIN</div>
-        <div class="sb-logo-sub">Analisis penjualan & produk </div>
+        <div class="sb-logo-sub">Analisis penjualan & produk</div>
       </div>
     </div>
   </div>
@@ -182,8 +334,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
         <svg viewBox="0 0 16 16"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>
         Data Produk
       </a>
-          @endif
-
+      @endif
       <a href="input-permintaan" class="nav-item">
         <svg viewBox="0 0 16 16"><path d="M2 8h8M8 5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v10" stroke-linecap="round"/></svg>
         Input Permintaan
@@ -210,10 +361,10 @@ code, .mono { font-family: 'DM Mono', monospace; }
     </div>
   </div>
   <div class="sb-footer">
-    <div class="avatar">AD</div>
+    <div class="avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap, 0, 2)) }}</div>
     <div>
-      <div class="sb-user-name">Administrator</div>
-      <div class="sb-user-role">Admin</div>
+      <div class="sb-user-name">{{ auth()->user()->nama_lengkap }}</div>
+      <div class="sb-user-role">{{ auth()->user()->role }}</div>
     </div>
     <div class="sb-logout">
       <form method="POST" action="/logout">
@@ -228,10 +379,35 @@ code, .mono { font-family: 'DM Mono', monospace; }
 
 <div class="main">
   <div class="content">
-    <div class="page-header">
-      <h1>Selamat datang 👋</h1>
-      <p>Ringkasan sistem pendukung keputusan promosi produk DRW Skincare Banjarmasin.</p>
+
+    <div class="page-header-row">
+      <div class="page-header">
+        <h1>Selamat datang 👋</h1>
+        <p>Ringkasan sistem pendukung keputusan promosi produk DRW Skincare Banjarmasin.</p>
+      </div>
+
+    {{-- ── TUTORIAL BANNER ────────────────────────────────────── --}}
+    <div class="tutorial-banner">
+      <div class="tutorial-banner-left">
+        <div class="tutorial-banner-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+            <path d="M9 18h6"/><path d="M10 22h4"/>
+          </svg>
+        </div>
+        <div>
+          <div class="tutorial-banner-title">Panduan penggunaan</div>
+        </div>
+      </div>
+      <button class="tutorial-banner-btn" onclick="openTutorial()">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        Lihat panduan
+      </button>
     </div>
+    {{-- ── END TUTORIAL BANNER ─────────────────────────────────── --}}
+
+    </div>
+
     <div class="grid3">
       <div class="metric-card" style="border-left:3px solid var(--pink)">
         <div style="display:flex;align-items:flex-start;justify-content:space-between">
@@ -270,6 +446,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
         </div>
       </div>
     </div>
+
     <div class="grid2">
       <div class="card">
         <div class="card-hd">
@@ -304,8 +481,199 @@ code, .mono { font-family: 'DM Mono', monospace; }
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
+
+{{-- ── MODAL TUTORIAL ──────────────────────────────────────────── --}}
+<div class="modal-overlay" id="modalTutorial" onclick="if(event.target===this) closeTutorial()">
+  <div class="modal-box">
+
+    {{-- Header --}}
+    <div class="modal-header">
+      <div>
+        <div class="modal-header-title">Panduan Penggunaan Sistem</div>
+        <div class="modal-header-sub">SPK MOORA — DRW Skincare Banjarmasin</div>
+      </div>
+      <button class="modal-close" onclick="closeTutorial()">
+        <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    {{-- Progress --}}
+    <div class="modal-progress">
+      <div class="prog-bar active" id="bar0"></div>
+      <div class="prog-bar" id="bar1"></div>
+      <div class="prog-bar" id="bar2"></div>
+      <div class="prog-bar" id="bar3"></div>
+      <div class="prog-bar" id="bar4"></div>
+    </div>
+
+    {{-- Steps --}}
+    <div class="modal-body">
+
+      <div id="step-0" class="step-content active">
+        <div class="step-wrap">
+          <div class="step-num blue">1</div>
+          <div class="step-info">
+            <div class="step-title">Tambah data produk</div>
+            <div class="step-meta">
+              <span class="step-role blue">Admin</span>
+              <span class="step-menu">Menu: <span>Data Produk</span></span>
+            </div>
+            <ul class="step-actions">
+              <li><span class="step-dot blue"></span>Buka menu Data Produk di sidebar kiri.</li>
+              <li><span class="step-dot blue"></span>Klik tombol Tambah Produk, isi nama produk dan data yang diperlukan.</li>
+              <li><span class="step-dot blue"></span>Pastikan semua produk yang akan dibandingkan sudah terdaftar.</li>
+              <li><span class="step-dot blue"></span>Data produk ini menjadi alternatif dalam perhitungan MOORA.</li>
+            </ul>
+            <div class="step-tip"><strong>Catatan:</strong> Minimal 2 produk dibutuhkan agar perhitungan SPK dapat dijalankan.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="step-1" class="step-content">
+        <div class="step-wrap">
+          <div class="step-num purple">2</div>
+          <div class="step-info">
+            <div class="step-title">Tentukan kriteria & bobot</div>
+            <div class="step-meta">
+              <span class="step-role purple">Manajer</span>
+              <span class="step-menu">Menu: <span>Kelola Kriteria</span></span>
+            </div>
+            <ul class="step-actions">
+              <li><span class="step-dot purple"></span>Buka menu Kelola Kriteria, lalu klik Tambah Kriteria.</li>
+              <li><span class="step-dot purple"></span>Isi nama kriteria, pilih jenis: Benefit (makin besar makin baik) atau Cost (makin kecil makin baik).</li>
+              <li><span class="step-dot purple"></span>Tentukan bobot masing-masing kriteria sesuai prioritas bisnis.</li>
+              <li><span class="step-dot purple"></span>Pastikan total bobot semua kriteria = 100% sebelum lanjut.</li>
+            </ul>
+            <div class="step-tip"><strong>Catatan:</strong> Diskusikan bobot dengan manajer — ini mencerminkan prioritas bisnis.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="step-2" class="step-content">
+        <div class="step-wrap">
+          <div class="step-num blue">3</div>
+          <div class="step-info">
+            <div class="step-title">Isi nilai setiap produk</div>
+            <div class="step-meta">
+              <span class="step-role blue">Admin</span>
+              <span class="step-menu">Menu: <span>Input Permintaan</span></span>
+            </div>
+            <ul class="step-actions">
+              <li><span class="step-dot blue"></span>Buka menu Input Permintaan di sidebar.</li>
+              <li><span class="step-dot blue"></span>Isi nilai tiap produk pada setiap kriteria yang sudah dibuat.</li>
+              <li><span class="step-dot blue"></span>Gunakan data aktual dari laporan penjualan atau inventaris.</li>
+              <li><span class="step-dot blue"></span>Periksa kembali semua nilai sebelum menyimpan.</li>
+            </ul>
+            <div class="step-tip"><strong>Catatan:</strong> Nilai yang salah atau kosong akan langsung mempengaruhi hasil perangkingan.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="step-3" class="step-content">
+        <div class="step-wrap">
+          <div class="step-num green">4</div>
+          <div class="step-info">
+            <div class="step-title">Jalankan perhitungan SPK</div>
+            <div class="step-meta">
+              <span class="step-role green">Admin / Manajer</span>
+              <span class="step-menu">Menu: <span>Hitung SPK</span></span>
+            </div>
+            <ul class="step-actions">
+              <li><span class="step-dot green"></span>Buka menu Hitung SPK di sidebar.</li>
+              <li><span class="step-dot green"></span>Klik tombol Hitung — sistem akan normalisasi matriks secara otomatis.</li>
+              <li><span class="step-dot green"></span>Tunggu hingga hasil Yi score tiap produk muncul.</li>
+              <li><span class="step-dot green"></span>Hasil berupa peringkat produk dari Yi score tertinggi ke terendah.</li>
+            </ul>
+            <div class="step-tip"><strong>Catatan:</strong> Ulangi perhitungan setiap kali ada perubahan data produk, kriteria, atau bobot.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="step-4" class="step-content">
+        <div class="step-wrap">
+          <div class="step-num purple">5</div>
+          <div class="step-info">
+            <div class="step-title">Baca & gunakan hasil</div>
+            <div class="step-meta">
+              <span class="step-role purple">Manajer</span>
+              <span class="step-menu">Menu: <span>Hasil & Laporan / Dashboard</span></span>
+            </div>
+            <ul class="step-actions">
+              <li><span class="step-dot purple"></span>Buka menu Hasil & Laporan untuk melihat detail Yi score tiap produk.</li>
+              <li><span class="step-dot purple"></span>Kembali ke Dashboard — Top 5 Rekomendasi akan terisi otomatis.</li>
+              <li><span class="step-dot purple"></span>Produk dengan Yi score tertinggi adalah prioritas utama promosi.</li>
+              <li><span class="step-dot purple"></span>Cek menu Riwayat untuk melihat histori perhitungan sebelumnya.</li>
+            </ul>
+            <div class="step-tip"><strong>Catatan:</strong> Hasil SPK adalah rekomendasi berbasis data — tetap pertimbangkan konteks lapangan.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    {{-- Footer --}}
+    <div class="modal-footer">
+      <button id="btnPrev" class="btn-nav secondary" onclick="prevStep()" disabled>
+        <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        Sebelumnya
+      </button>
+      <span class="modal-counter" id="stepCounter">1 / 5</span>
+      <button id="btnNext" class="btn-nav primary" onclick="nextStep()">
+        Berikutnya
+        <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+{{-- ── END MODAL TUTORIAL ───────────────────────────────────────── --}}
+
+
+<script>
+  let currentStep = 0;
+  const totalSteps = 5;
+
+  function openTutorial() {
+    document.getElementById('modalTutorial').classList.add('show');
+  }
+
+  function closeTutorial() {
+    document.getElementById('modalTutorial').classList.remove('show');
+    currentStep = 0;
+    showStep(0);
+  }
+
+  function showStep(index) {
+    document.querySelectorAll('.step-content').forEach((el, i) => {
+      el.classList.toggle('active', i === index);
+    });
+    for (let i = 0; i < totalSteps; i++) {
+      document.getElementById('bar' + i).classList.toggle('active', i <= index);
+    }
+    document.getElementById('stepCounter').textContent = (index + 1) + ' / ' + totalSteps;
+    document.getElementById('btnPrev').disabled = index === 0;
+
+    const btnNext = document.getElementById('btnNext');
+    if (index === totalSteps - 1) {
+      btnNext.innerHTML = `Selesai <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5"><path d="M20 6 9 17l-5-5"/></svg>`;
+      btnNext.onclick = closeTutorial;
+    } else {
+      btnNext.innerHTML = `Berikutnya <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5"><path d="m9 18 6-6-6-6"/></svg>`;
+      btnNext.onclick = nextStep;
+    }
+  }
+
+  function nextStep() {
+    if (currentStep < totalSteps - 1) { currentStep++; showStep(currentStep); }
+  }
+  function prevStep() {
+    if (currentStep > 0) { currentStep--; showStep(currentStep); }
+  }
+</script>
+
 </body>
-</html>
+</html> 
