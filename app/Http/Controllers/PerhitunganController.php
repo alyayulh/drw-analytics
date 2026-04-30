@@ -17,14 +17,20 @@ class PerhitunganController extends Controller
     // Halaman form hitung SPK
     public function index()
     {
-        $kriterias      = Kriteria::all();
-        $totalBobot     = $kriterias->sum('bobot');
-        $produkLengkap  = Produk::where('status_data', 'Lengkap')->count();
-        $totalProduk    = Produk::count();
-        $riwayat        = Perhitungan::orderBy('created_at', 'desc')->take(5)->get();
+        $kriterias     = Kriteria::all();
+        $totalBobot    = $kriterias->sum('bobot');
+        $totalProduk   = Produk::count();
+        $riwayat       = Perhitungan::orderBy('created_at', 'desc')->take(5)->get();
+
+        // Produk lengkap beserta nilai tiap kriterianya (untuk preview matriks di view)
+        $produks       = Produk::with('nilaiProduk')
+            ->where('status_data', 'Lengkap')
+            ->orderBy('nama_produk')
+            ->get();
+        $produkLengkap = $produks->count();
 
         return view('spk.hitung-spk', compact(
-            'kriterias', 'totalBobot', 'produkLengkap', 'totalProduk', 'riwayat'
+            'kriterias', 'totalBobot', 'produkLengkap', 'totalProduk', 'riwayat', 'produks'
         ));
     }
 
@@ -42,9 +48,19 @@ class PerhitunganController extends Controller
             return back()->with('error', 'Belum ada kriteria. Tambahkan kriteria terlebih dahulu.');
         }
 
+        // Terapkan bobot override dari slider jika ada (dikirim JS dari halaman hitung-spk)
+        $bobotOverride = $request->input('bobot_override', []);
+        if (!empty($bobotOverride)) {
+            foreach ($kriterias as $kriteria) {
+                if (isset($bobotOverride[$kriteria->id_kriteria])) {
+                    $kriteria->bobot = (float) $bobotOverride[$kriteria->id_kriteria];
+                }
+            }
+        }
+
         // Cek total bobot harus 100
         $totalBobot = $kriterias->sum('bobot');
-        if ($totalBobot != 100) {
+        if (abs($totalBobot - 100) > 0.01) {
             return back()->with('error', "Total bobot kriteria harus 100%. Saat ini: {$totalBobot}%.");
         }
 
@@ -152,7 +168,7 @@ class PerhitunganController extends Controller
 
             // Simpan header perhitungan
             $perhitungan = Perhitungan::create([
-                'id_user' => session('user_id') ?? 1,
+                'id_user' => Auth::id(),
                 'periode_data'      => $request->periode_data,
                 'jumlah_produk'     => count($hasilYi),
                 'total_produk'      => Produk::count(),

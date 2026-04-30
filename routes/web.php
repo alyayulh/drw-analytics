@@ -7,25 +7,27 @@ use App\Http\Controllers\KriteriaController;
 use App\Http\Controllers\InputPermintaanController;
 use App\Http\Controllers\PerhitunganController;
 
-// Login — tanpa auth
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
+Route::get('/login', fn() => view('auth.login'))->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/', fn() => redirect('/dashboard'));
 
-// Semua route butuh login
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', fn() => view('spk.dashboard'))->name('dashboard');
 
-    // Khusus Admin saja
+    // Khusus Admin
     Route::middleware('role:Admin')->group(function () {
         Route::get('/data-produk', [ProdukController::class, 'index'])->name('produk.index');
         Route::post('/data-produk', [ProdukController::class, 'store'])->name('produk.store');
-        Route::post('/data-produk/import', [ProdukController::class, 'import'])->name('produk.import');
+
+        // Import: upload → preview → konfirmasi
+        Route::post('/data-produk/preview', [ProdukController::class, 'preview'])->name('produk.preview');
+        Route::get('/data-produk/preview', [ProdukController::class, 'showPreview'])->name('produk.preview.show');
+        Route::post('/data-produk/import-confirm', [ProdukController::class, 'importConfirm'])->name('produk.import.confirm');
+        Route::post('/data-produk/cancel-preview', [ProdukController::class, 'cancelPreview'])->name('produk.preview.cancel');
+
         Route::put('/data-produk/{id}', [ProdukController::class, 'update'])->name('produk.update');
         Route::delete('/data-produk/{id}', [ProdukController::class, 'destroy'])->name('produk.destroy');
     });

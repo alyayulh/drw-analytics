@@ -333,10 +333,14 @@ code, .mono { font-family: 'DM Mono', monospace; }
   </div>
   <div class="sb-nav">
     <div class="nav-section">
-      <div class="nav-label">Menu Utama</div>
+      <div class="nav-label">Menentukan Produk Promosi</div>
       <a href="#" class="nav-item active">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
-        Dashboard
+        Dashboard 
+      </a>
+      <a href="kelola-kriteria" class="nav-item">
+        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.5 3.5l1.4 1.4M11 11l1.4 1.4M3.5 12.5l1.4-1.4M11 5l1.4-1.4" stroke-linecap="round"/></svg>
+        Kelola Kriteria
       </a>
       @if(auth()->user()->role === 'Admin')
       <a href="data-produk" class="nav-item">
@@ -359,13 +363,6 @@ code, .mono { font-family: 'DM Mono', monospace; }
       <a href="riwayat" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
         Riwayat
-      </a>
-    </div>
-    <div class="nav-section">
-      <div class="nav-label">Pengaturan</div>
-      <a href="kelola-kriteria" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.5 3.5l1.4 1.4M11 11l1.4 1.4M3.5 12.5l1.4-1.4M11 5l1.4-1.4" stroke-linecap="round"/></svg>
-        Kelola Kriteria
       </a>
     </div>
   </div>

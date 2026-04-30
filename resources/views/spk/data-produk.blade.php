@@ -239,24 +239,44 @@ tr:hover td { background: var(--pink-light); }
     <div class="card">
       <div class="card-hd">
         <div>
-          <div class="card-title">① Upload File Laporan Stok</div>
-          <div class="card-sub">Sumber data: Stok akhir, total penjualan, dan harga jual produk</div>
+          <div class="card-title">① Upload File Excel</div>
+          <div class="card-sub">
+            Nilai kriteria produk diambil otomatis dari kolom file Excel
+          </div>
         </div>
-        <span class="badge badge-gray" id="stok-badge">Belum diupload</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-gray" id="stok-badge">Belum diupload</span>
+        </div>
       </div>
+
+      {{-- Info kolom dinamis dari DB --}}
       <div class="info-box info-pink">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7v5M8 5.5v.01" stroke-linecap="round"/></svg>
-        Kolom yang harus ada di file Excel: <b>NAMA BARANG</b>, <b>STOCK AKHIR</b>, <b>TOTAL PENJUALAN</b>, <b>HARGA JUAL</b>. Produk yang tidak terjual cukup diisi penjualan = 0.
+        <div>
+          Kolom yang dibutuhkan sistem saat ini:
+          <b>NAMA BARANG</b>
+          @foreach($kriteriaExcel as $k)
+            , <b>{{ strtoupper($k->nama_kolom_excel) }}</b>
+          @endforeach
+          @if($kriteriaExcel->isEmpty())
+            <span style="color:var(--pink-dark)"> — belum ada kriteria Excel. Tambahkan dulu di Kelola Kriteria.</span>
+          @endif
+          <br>
+          <span style="font-weight:400;margin-top:2px;display:block">
+            Kolom lain di file akan diabaikan. Nama kolom harus persis sama (tidak case-sensitive).
+          </span>
+        </div>
       </div>
-      <form method="POST" action="{{ route('produk.import') }}" enctype="multipart/form-data" id="import-form">
+
+      <form method="POST" action="{{ route('produk.preview') }}" enctype="multipart/form-data" id="import-form">
         @csrf
         <label class="upload-zone" id="upload-zone">
           <input type="file" name="file_excel" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileChange(this)">
           <div class="upload-icon">
             <svg viewBox="0 0 20 20"><path d="M10 13V4M7 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 15h14" stroke-linecap="round"/></svg>
           </div>
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Klik untuk pilih file Stok (.xlsx / .xls)</div>
-          <div style="font-size:11px;color:var(--text-3)">Pastikan sudah ada kolom NAMA BARANG, STOCK AKHIR, TOTAL PENJUALAN, HARGA JUAL</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Klik untuk pilih file Excel (.xlsx / .xls)</div>
+          <div style="font-size:11px;color:var(--text-3)">File apapun yang memiliki kolom NAMA BARANG dan kolom kriteria yang sudah dikonfigurasi</div>
         </label>
         <div id="file-preview" style="display:none;margin-top:12px">
           <div class="info-box info-green">
@@ -266,8 +286,8 @@ tr:hover td { background: var(--pink-light); }
           <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
             <button type="button" class="btn btn-sm" onclick="batalUpload()">Batal</button>
             <button type="submit" class="btn btn-pink btn-sm">
-              <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><path d="M3 8l4 4 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Simpan ke sistem
+              <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><path d="M10 13V4M7 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 15h14" stroke-linecap="round"/></svg>
+              Baca & Preview File
             </button>
           </div>
         </div>

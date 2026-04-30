@@ -114,35 +114,34 @@ tr:hover td { background: var(--pink-light); }
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
         Dashboard
       </a>
-              @if(auth()->user()->role === 'Admin')
-      <a href="/data-produk" class="nav-item">
-        <svg viewBox="0 0 16 16"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>
-        Data Produk
-      </a>
-          @endif
-      <a href="/input-permintaan" class="nav-item active">
-        <svg viewBox="0 0 16 16"><path d="M2 8h8M8 5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v10" stroke-linecap="round"/></svg>
-        Input Permintaan
-      </a>
-      <a href="#" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
-        Hitung SPK
-      </a>
-      <a href="#" class="nav-item">
-        <svg viewBox="0 0 16 16"><path d="M2 12l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Hasil & Laporan
-      </a>
-      <a href="#" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
-        Riwayat
-      </a>
-    </div>
-    <div class="nav-section">
-      <div class="nav-label">Pengaturan</div>
       <a href="/kelola-kriteria" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.5 3.5l1.4 1.4M11 11l1.4 1.4M3.5 12.5l1.4-1.4M11 5l1.4-1.4" stroke-linecap="round"/></svg>
         Kelola Kriteria
       </a>
+      @if(auth()->user()->role === 'Admin')
+      <a href="/data-produk" class="nav-item">
+        <svg viewBox="0 0 16 16"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>
+        Data Produk
+      </a>
+      @endif
+      <a href="/input-permintaan" class="nav-item active">
+        <svg viewBox="0 0 16 16"><path d="M2 8h8M8 5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v10" stroke-linecap="round"/></svg>
+        Input Permintaan
+      </a>
+      <a href="/hitung-spk" class="nav-item">
+        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
+        Hitung SPK
+      </a>
+      <a href="/hasil-perhitungan" class="nav-item">
+        <svg viewBox="0 0 16 16"><path d="M2 12l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Hasil & Laporan
+      </a>
+      <a href="/riwayat" class="nav-item">
+        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
+        Riwayat
+      </a>
+    </div>
+  </div>
     </div>
   </div>
   <div class="sb-footer">

@@ -308,24 +308,24 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
         <div class="form-group">
           <label class="form-label">Tipe Atribut</label>
           <select class="form-select" name="tipe_atribut" required>
-            <option value="benefit">Benefit (lebih besar = lebih baik)</option>
-            <option value="cost">Cost (lebih kecil = lebih baik)</option>
+            <option value="Benefit">Benefit (lebih besar = lebih baik)</option>
+            <option value="Cost">Cost (lebih kecil = lebih baik)</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Sumber Data</label>
-          <select class="form-select" name="sumber_data" onchange="toggleKolomExcel('tambah', this.value)" required>
+          <select class="form-select" name="sumber_data" id="sumber-tambah" onchange="toggleKolomExcel('tambah', this.value)" required>
             <option value="Excel">Import Excel (otomatis)</option>
             <option value="Manual">Input Manual (di web)</option>
           </select>
         </div>
       </div>
-      
-      <!-- Field Nama Kolom Excel - DI LUAR form-row -->
-      <div class="form-group" id="kolom-excel-group-tambah" style="display:none">
-        <label class="form-label">Nama Kolom Excel</label>
-        <input class="form-input" name="nama_kolom_excel" id="kolom-excel-tambah" placeholder="Contoh: HARGA JUAL">
-        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Isi dengan nama kolom persis seperti di file Excel (case-sensitive)</div>
+
+      <!-- Field Nama Kolom Excel — tampil by default karena default sumber = Excel -->
+      <div class="form-group" id="kolom-excel-group-tambah">
+        <label class="form-label">Nama Kolom Excel <span style="color:var(--pink)">*</span></label>
+        <input class="form-input" name="nama_kolom_excel" id="kolom-excel-tambah" placeholder="cth: HARGA JUAL" required>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nama kolom di file Excel, tidak case-sensitive. Contoh: STOCK AKHIR, TOTAL PENJUALAN</div>
       </div>
 
       <div class="form-group">
@@ -358,8 +358,8 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
         <div class="form-group">
           <label class="form-label">Tipe Atribut</label>
           <select class="form-select" name="tipe_atribut" id="edit-tipe" required>
-            <option value="benefit">Benefit (lebih besar = lebih baik)</option>
-            <option value="cost">Cost (lebih kecil = lebih baik)</option>
+            <option value="Benefit">Benefit (lebih besar = lebih baik)</option>
+            <option value="Cost">Cost (lebih kecil = lebih baik)</option>
           </select>
         </div>
         <div class="form-group">
@@ -416,20 +416,25 @@ function openModal(id) {
 
 function closeModal(id) { 
   document.getElementById(id).classList.remove('open');
+  // Reset modal tambah ke kondisi awal saat ditutup
+  if (id === 'modal-tambah') {
+    document.querySelector('#modal-tambah form').reset();
+    document.getElementById('val-tambah').textContent = '10%';
+    toggleKolomExcel('tambah', 'Excel'); // default kembali ke Excel
+  }
 }
 
 function openEdit(id, nama, tipe, bobot, sumber, kolomExcel) {
   document.getElementById('edit-nama').value = nama;
-  document.getElementById('edit-tipe').value = tipe;
+  // Pastikan value match kapital: 'Benefit' atau 'Cost'
+  const tipeKapital = tipe.charAt(0).toUpperCase() + tipe.slice(1).toLowerCase();
+  document.getElementById('edit-tipe').value = tipeKapital;
   document.getElementById('edit-bobot').value = bobot;
   document.getElementById('edit-sumber').value = sumber;
   document.getElementById('kolom-excel-edit').value = kolomExcel || '';
   document.getElementById('val-edit').textContent = bobot + '%';
   document.getElementById('form-edit').action = '/kelola-kriteria/' + id;
-  
-  // Trigger toggle kolom excel
   toggleKolomExcel('edit', sumber);
-  
   openModal('modal-edit');
 }
 
@@ -442,7 +447,6 @@ function openHapus(id, nama) {
 function toggleKolomExcel(mode, value) {
   const group = document.getElementById('kolom-excel-group-' + mode);
   const input = document.getElementById('kolom-excel-' + mode);
-  
   if (value === 'Excel') {
     group.style.display = 'block';
     input.required = true;
@@ -456,7 +460,7 @@ function toggleKolomExcel(mode, value) {
 // Tutup modal kalau klik di luar
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('open');
+    if (e.target === this) closeModal(this.id);
   });
 });
 </script>
