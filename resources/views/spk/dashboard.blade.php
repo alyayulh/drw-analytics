@@ -90,6 +90,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
   content:''; position:absolute; left:0; top:6px; bottom:6px;
   width:3px; background: var(--pink); border-radius:0 3px 3px 0;
 }
+.nav-divider { height: 1px; background: var(--border); margin: 8px 10px; }
 .nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
 .sb-footer {
   padding: 14px; border-top: 1px solid var(--border);
@@ -342,49 +343,65 @@ code, .mono { font-family: 'DM Mono', monospace; }
       </div>
     </div>
   </div>
-  <div class="sb-nav">
+    <div class="sb-nav">
     <div class="nav-section">
       <div class="nav-label">Menentukan Produk Promosi</div>
-      <a href="#" class="nav-item active">
+      <a href="{{ route('dashboard') }}" class="nav-item active">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
-        Dashboard 
+        Dashboard
       </a>
-      <a href="kelola-kriteria" class="nav-item">
+      <a href="{{ route('kriteria.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.5 3.5l1.4 1.4M11 11l1.4 1.4M3.5 12.5l1.4-1.4M11 5l1.4-1.4" stroke-linecap="round"/></svg>
         Kelola Kriteria
       </a>
-      @if(auth()->user()->role === 'Admin')
-      <a href="data-produk" class="nav-item">
+      @if(auth()->check() && auth()->user()->role === 'Admin')
+      <a href="{{ route('produk.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>
         Data Produk
       </a>
       @endif
-      <a href="input-permintaan" class="nav-item">
+      <a href="{{ route('input.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><path d="M2 8h8M8 5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v10" stroke-linecap="round"/></svg>
         Input Permintaan
       </a>
-      <a href="hitung-spk" class="nav-item">
+      <a href="{{ route('perhitungan.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
         Hitung SPK
       </a>
-      <a href="hasil-perhitungan" class="nav-item">
-        <svg viewBox="0 0 16 16"><path d="M2 12l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Hasil & Laporan
-      </a>
-      <a href="riwayat" class="nav-item">
+      <a href="{{ route('perhitungan.riwayat') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
         Riwayat
       </a>
     </div>
+
+    <div class="nav-divider"></div>
+
+    <div class="nav-section">
+      <div class="nav-label">Analisis Asosiasi</div>
+      <a href="{{ route('asosiasi.dashboard') }}" class="nav-item">
+        <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      @if(auth()->check() && auth()->user()->role === 'Admin')
+      <a href="{{ route('asosiasi.analisis') }}" class="nav-item">
+        <svg viewBox="0 0 16 16"><circle cx="6" cy="6" r="4"/><path d="M10 10l4 4" stroke-linecap="round"/></svg>
+        Analisis Pola
+      </a>
+      @endif
+      <a href="{{ route('asosiasi.riwayat') }}" class="nav-item">
+        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
+        Riwayat Analisis
+      </a>
+    </div>
   </div>
   <div class="sb-footer">
-    <div class="avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap, 0, 2)) }}</div>
+    <div class="avatar">{{ strtoupper(substr(auth()->user()?->nama_lengkap ?? 'U', 0, 2)) }}</div>
     <div>
-      <div class="sb-user-name">{{ auth()->user()->nama_lengkap }}</div>
-      <div class="sb-user-role">{{ auth()->user()->role }}</div>
+      <div class="sb-user-name">{{ auth()->user()?->nama_lengkap ?? '-' }}</div>
+      <div class="sb-user-role">{{ auth()->user()?->role ?? '-' }}</div>
     </div>
     <div class="sb-logout">
-      <form method="POST" action="/logout">
+      <form method="POST" action="{{ route('logout') }}">
         @csrf
         <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--text-3);display:flex;align-items:center" title="Logout">
           <svg viewBox="0 0 16 16" width="15" height="15"><path d="M10 3h3a1 1 0 011 1v8a1 1 0 01-1 1h-3M7 11l3-3-3-3M10 8H3" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="none" stroke-width="1.8"/></svg>
@@ -392,6 +409,8 @@ code, .mono { font-family: 'DM Mono', monospace; }
       </form>
     </div>
   </div>
+</div>
+
 </div>
 
 <div class="main">
@@ -483,7 +502,6 @@ code, .mono { font-family: 'DM Mono', monospace; }
             <div class="card-title">Top 5 Produk Rekomendasi</div>
             <div class="card-sub">Berdasarkan nilai Yi score tertinggi</div>
           </div>
-          <a href="/hasil-perhitungan" class="btn-sm">Lihat detail →</a>
         </div>
         @if($top5Rekomendasi->count() > 0)
           <div style="padding:0 18px 18px;flex:1;display:flex;flex-direction:column;justify-content:center">

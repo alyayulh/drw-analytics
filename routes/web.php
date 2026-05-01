@@ -48,3 +48,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/riwayat', [PerhitunganController::class, 'riwayat'])->name('perhitungan.riwayat');
     Route::delete('/perhitungan/{id}', [PerhitunganController::class, 'destroy'])->name('perhitungan.destroy');
 });
+
+// === ROUTES ANALISIS ASOSIASI ===
+Route::get('/asosiasi/dashboard', [AsosiasiController::class, 'dashboard'])->name('asosiasi.dashboard');
+Route::get('/asosiasi/riwayat', [AsosiasiController::class, 'riwayat'])->name('asosiasi.riwayat');
+
+// Khusus Admin
+Route::middleware('admin')->group(function () {
+    Route::get('/asosiasi/analisis', [AsosiasiController::class, 'analisis'])->name('asosiasi.analisis');
+});
+
+// === ROUTES ANALISIS ASOSIASI ===
+use App\Http\Controllers\AsosiasiController;
+
+Route::get('/asosiasi/dashboard', [AsosiasiController::class, 'dashboard'])->name('asosiasi.dashboard');
+Route::get('/asosiasi/riwayat', [AsosiasiController::class, 'riwayat'])->name('asosiasi.riwayat');
+Route::get('/asosiasi/analisis', [AsosiasiController::class, 'analisis'])->name('asosiasi.analisis');

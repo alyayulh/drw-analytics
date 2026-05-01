@@ -88,6 +88,29 @@ tr:hover td { background: var(--pink-light); }
 .detail-table th { padding: 6px 10px; background: var(--pink-light); color: var(--pink-dark); font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .detail-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); font-family: 'DM Mono', monospace; }
 .detail-table tr:last-child td { border-bottom: none; }
+
+/* ── SIDEBAR ── */
+.sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; box-shadow: 2px 0 12px rgba(232,0,90,.06); }
+.sb-brand { height: 56px; padding: 0 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
+.sb-logo { display: flex; align-items: center; gap: 10px; }
+.sb-logo-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.2; letter-spacing: -.3px; }
+.sb-logo-sub { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+.sb-nav { flex: 1; padding: 14px 10px; overflow-y: auto; }
+.nav-section { margin-bottom: 6px; }
+.nav-label { font-size: 10px; font-weight: 700; color: var(--text-3); letter-spacing: .08em; text-transform: uppercase; padding: 6px 8px 4px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; font-size: 13px; font-weight: 500; color: var(--text-2); transition: all .15s; margin-bottom: 2px; position: relative; text-decoration: none; }
+.nav-item:hover { background: var(--pink-light); color: var(--pink-dark); }
+.nav-item.active { background: linear-gradient(135deg, var(--pink-light), #ffe4ef); color: var(--pink); font-weight: 700; }
+.nav-item.active::before { content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; background: var(--pink); border-radius:0 3px 3px 0; }
+.nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+.nav-divider { height: 1px; background: var(--border); margin: 8px 10px; }
+.sb-footer { padding: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; background: linear-gradient(135deg, #fff5f8, #fff); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--pink-mid)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.sb-user-name { font-size: 12px; font-weight: 700; color: var(--text); }
+.sb-user-role { font-size: 10px; color: var(--text-3); }
+.sb-logout { margin-left: auto; cursor: pointer; color: var(--text-3); }
+.sb-logout:hover { color: var(--pink); }
+
 </style>
 </head>
 <body>
@@ -95,67 +118,83 @@ tr:hover td { background: var(--pink-light); }
 <div class="sidebar">
   <div class="sb-brand">
     <div class="sb-logo">
-      <div style="width:36px;height:36px;border-radius:10px;overflow:hidden">
+      <div class="sb-logo-icon" style="background:none;box-shadow:none;">
         <img src="https://pos.drwskincare.com/logo_drw.svg" alt="DRW" style="width:36px;height:36px;object-fit:contain;">
       </div>
       <div>
         <div class="sb-logo-name">DRW BANJARMASIN</div>
-        <div class="sb-logo-sub">DRW Skincare Banjarmasin</div>
+        <div class="sb-logo-sub">Analisis penjualan &amp; produk</div>
       </div>
     </div>
   </div>
   <div class="sb-nav">
     <div class="nav-section">
-      <div class="nav-label">Menu Utama</div>
-      <a href="/dashboard" class="nav-item">
+      <div class="nav-label">Menentukan Produk Promosi</div>
+      <a href="{{ route('dashboard') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
         Dashboard
       </a>
-      <a href="/kelola-kriteria" class="nav-item">
+      <a href="{{ route('kriteria.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.5 3.5l1.4 1.4M11 11l1.4 1.4M3.5 12.5l1.4-1.4M11 5l1.4-1.4" stroke-linecap="round"/></svg>
         Kelola Kriteria
       </a>
-      @if(auth()->user()->role === 'Admin')
-      <a href="/data-produk" class="nav-item">
+      @if(auth()->check() && auth()->user()->role === 'Admin')
+      <a href="{{ route('produk.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>
         Data Produk
       </a>
       @endif
-      <a href="/input-permintaan" class="nav-item">
+      <a href="{{ route('input.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><path d="M2 8h8M8 5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v10" stroke-linecap="round"/></svg>
         Input Permintaan
       </a>
-      <a href="/hitung-spk" class="nav-item">
+      <a href="{{ route('perhitungan.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
         Hitung SPK
       </a>
-      <a href="/hasil-perhitungan" class="nav-item active">
-        <svg viewBox="0 0 16 16"><path d="M2 12l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Hasil & Laporan
-      </a>
-      <a href="/riwayat" class="nav-item">
+      <a href="{{ route('perhitungan.riwayat') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
         Riwayat
       </a>
     </div>
+
+    <div class="nav-divider"></div>
+
+    <div class="nav-section">
+      <div class="nav-label">Analisis Asosiasi</div>
+      <a href="{{ route('asosiasi.dashboard') }}" class="nav-item">
+        <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      @if(auth()->check() && auth()->user()->role === 'Admin')
+      <a href="{{ route('asosiasi.analisis') }}" class="nav-item">
+        <svg viewBox="0 0 16 16"><circle cx="6" cy="6" r="4"/><path d="M10 10l4 4" stroke-linecap="round"/></svg>
+        Analisis Pola
+      </a>
+      @endif
+      <a href="{{ route('asosiasi.riwayat') }}" class="nav-item">
+        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
+        Riwayat Analisis
+      </a>
+    </div>
   </div>
   <div class="sb-footer">
-  <div class="avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap, 0, 2)) }}</div>
-  <div>
-    <div class="sb-user-name">{{ auth()->user()->nama_lengkap }}</div>
-    <div class="sb-user-role">{{ auth()->user()->role }}</div>
-  </div>
-  <div class="sb-logout">
-    <form method="POST" action="/logout">
-      @csrf
-      <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--text-3);display:flex;align-items:center" title="Logout">
-        <svg viewBox="0 0 16 16" width="15" height="15"><path d="M10 3h3a1 1 0 011 1v8a1 1 0 01-1 1h-3M7 11l3-3-3-3M10 8H3" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="none" stroke-width="1.8"/></svg>
-      </button>
-    </form>
+    <div class="avatar">{{ strtoupper(substr(auth()->user()?->nama_lengkap ?? 'U', 0, 2)) }}</div>
+    <div>
+      <div class="sb-user-name">{{ auth()->user()?->nama_lengkap ?? '-' }}</div>
+      <div class="sb-user-role">{{ auth()->user()?->role ?? '-' }}</div>
+    </div>
+    <div class="sb-logout">
+      <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--text-3);display:flex;align-items:center" title="Logout">
+          <svg viewBox="0 0 16 16" width="15" height="15"><path d="M10 3h3a1 1 0 011 1v8a1 1 0 01-1 1h-3M7 11l3-3-3-3M10 8H3" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="none" stroke-width="1.8"/></svg>
+        </button>
+      </form>
+    </div>
   </div>
 </div>
-  </div>
-</div>
+
 
 <div class="main">
   <div class="topbar">
