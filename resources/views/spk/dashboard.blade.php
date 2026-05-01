@@ -146,6 +146,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
 .card-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
 .card-title { font-size: 13px; font-weight: 700; color: var(--text); }
 .card-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.card-body { padding: 0; }
 .btn-sm {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-strong);
@@ -311,6 +312,16 @@ code, .mono { font-family: 'DM Mono', monospace; }
 .btn-nav.primary:hover { background: var(--pink-dark); border-color: var(--pink-dark); }
 .btn-nav svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.5; }
 
+/* ── DASHBOARD KRITERIA & BADGE ── */
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; }
+.badge-benefit { background: var(--green-light); color: #065f46; }
+.badge-cost { background: var(--amber-light); color: #92400e; }
+.kriteria-item { margin-bottom: 12px; }
+.kriteria-item:last-child { margin-bottom: 0; }
+.kriteria-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.kriteria-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.bobot-display { font-size: 13px; font-weight: 800; color: var(--pink); font-family: 'DM Mono', monospace; min-width: 38px; text-align: right; }
+
 .step-content { display: none; }
 .step-content.active { display: block; }
 </style>
@@ -419,7 +430,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
         <div style="display:flex;align-items:flex-start;justify-content:space-between">
           <div>
             <div class="metric-label">Total Produk</div>
-            <div class="metric-value">0</div>
+            <div class="metric-value" style="color:var(--pink)">{{ $totalProduk }}</div>
             <div class="metric-sub">produk terdaftar</div>
           </div>
           <div class="metric-icon" style="background:var(--pink-light);color:var(--pink)">
@@ -431,7 +442,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
         <div style="display:flex;align-items:flex-start;justify-content:space-between">
           <div>
             <div class="metric-label">Kriteria Aktif</div>
-            <div class="metric-value" style="color:var(--blue)">0</div>
+            <div class="metric-value" style="color:var(--blue)">{{ $totalKriteria }}</div>
             <div class="metric-sub">kriteria terdaftar</div>
           </div>
           <div class="metric-icon" style="background:var(--blue-light);color:var(--blue)">
@@ -443,8 +454,20 @@ code, .mono { font-family: 'DM Mono', monospace; }
         <div style="display:flex;align-items:flex-start;justify-content:space-between">
           <div>
             <div class="metric-label">Prioritas #1</div>
-            <div class="metric-value" style="font-size:14px;color:var(--purple);padding-top:4px">Belum dihitung</div>
-            <div class="metric-sub">jalankan perhitungan dulu</div>
+            <div class="metric-value" style="font-size:16px;color:var(--purple);padding-top:4px;line-height:1.2">
+              @if($produkPrioritasUtama)
+                {{ Illuminate\Support\Str::limit($produkPrioritasUtama->nama_produk, 18) }}
+              @else
+                Belum dihitung
+              @endif
+            </div>
+            <div class="metric-sub">
+              @if($produkPrioritasUtama)
+                Yi score: {{ number_format($produkPrioritasUtama->nilai_yi, 2, ',', '.') }}
+              @else
+                jalankan perhitungan dulu
+              @endif
+            </div>
           </div>
           <div class="metric-icon" style="background:var(--purple-light);color:var(--purple)">
             <svg viewBox="0 0 16 16"><path d="M8 2l1.5 3.5L13 6l-2.5 2.5.5 3.5L8 10.5 5 12l.5-3.5L3 6l3.5-.5L8 2z"/></svg>
@@ -460,31 +483,65 @@ code, .mono { font-family: 'DM Mono', monospace; }
             <div class="card-title">Top 5 Produk Rekomendasi</div>
             <div class="card-sub">Berdasarkan nilai Yi score tertinggi</div>
           </div>
-          <a href="#" class="btn-sm">Lihat detail →</a>
+          <a href="/hasil-perhitungan" class="btn-sm">Lihat detail →</a>
         </div>
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:200px">
-          <div class="empty-state">
-            <svg viewBox="0 0 40 40"><rect x="4" y="20" width="6" height="16" rx="1"/><rect x="13" y="14" width="6" height="22" rx="1"/><rect x="22" y="8" width="6" height="28" rx="1"/><rect x="31" y="16" width="6" height="20" rx="1"/></svg>
-            <p>Belum ada data ranking.<br>Hitung SPK terlebih dahulu.</p>
+        @if($top5Rekomendasi->count() > 0)
+          <div style="padding:0 18px 18px;flex:1;display:flex;flex-direction:column;justify-content:center">
+            <canvas id="chartTop5" style="max-height:280px;margin:0 0 12px"></canvas>
+            <div style="font-size:11px;color:var(--text-3);padding:10px 12px;background:var(--pink-light);border-radius:8px;border-left:3px solid var(--pink);margin-top:4px">
+              📊 <strong>Insight:</strong> {{ $produkPrioritasUtama->nama_produk }} adalah produk dengan rekomendasi tertinggi untuk dipromosikan dengan Yi score {{ number_format($produkPrioritasUtama->nilai_yi, 2, ',', '.') }}.
+            </div>
           </div>
-        </div>
+        @else
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:200px">
+            <div class="empty-state">
+              <svg viewBox="0 0 40 40"><rect x="4" y="20" width="6" height="16" rx="1"/><rect x="13" y="14" width="6" height="22" rx="1"/><rect x="22" y="8" width="6" height="28" rx="1"/><rect x="31" y="16" width="6" height="20" rx="1"/></svg>
+              <p>Belum ada data ranking.<br>Hitung SPK terlebih dahulu.</p>
+            </div>
+          </div>
+        @endif
       </div>
       <div class="card">
         <div class="card-hd">
-          <div><div class="card-title">Bobot Kriteria</div></div>
-          <a href="#" class="btn-sm">Kelola →</a>
-        </div>
-        <div style="flex:1">
-          <div class="empty-state">
-            <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="2"/><path d="M20 4v4M20 32v4M4 20h4M32 20h4" stroke-linecap="round"/></svg>
-            <p>Belum ada kriteria.<br>Tambahkan di menu Kelola Kriteria.</p>
+          <div>
+            <div class="card-title">Bobot Kriteria</div>
+            <div class="card-sub">Proporsi nilai setiap kriteria</div>
           </div>
+          <a href="/kelola-kriteria" class="btn-sm">Kelola →</a>
         </div>
-        <div class="divider"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:12px;color:var(--text-2)">Total bobot</span>
-          <span style="font-size:13px;font-weight:700;color:var(--pink)">0%</span>
-        </div>
+        @if($kriterias->count() > 0)
+          <div class="card-body" style="padding-bottom:12px">
+            @foreach($kriterias as $k)
+            <div class="kriteria-item">
+              <div class="kriteria-header">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span class="kriteria-name">{{ $k->nama_kriteria }}</span>
+                  @if(strtolower($k->tipe_atribut) === 'benefit')
+                    <span class="badge badge-benefit">↑ Benefit</span>
+                  @else
+                    <span class="badge badge-cost">↓ Cost</span>
+                  @endif
+                </div>
+                <span class="bobot-display" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--pink);min-width:38px;text-align:right">{{ $k->bobot }}%</span>
+              </div>
+              <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+                <div style="height:100%;width:{{ $k->bobot }}%;background:linear-gradient(90deg, var(--pink), var(--pink-mid));transition:width 0.3s ease;border-radius:3px"></div>
+              </div>
+            </div>
+            @endforeach
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:12px;color:var(--text-2);font-weight:600">Total bobot</span>
+              <span style="font-size:14px;font-weight:800;font-family:'DM Mono',monospace;color:{{ $totalBobot == 100 ? 'var(--green)' : 'var(--red)' }}">{{ $totalBobot }}%</span>
+            </div>
+          </div>
+        @else
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:200px;padding:0">
+            <div class="empty-state">
+              <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="2"/><path d="M20 4v4M20 32v4M4 20h4M32 20h4" stroke-linecap="round"/></svg>
+              <p>Belum ada kriteria.<br>Tambahkan di menu Kelola Kriteria.</p>
+            </div>
+          </div>
+        @endif
       </div>
     </div>
 
@@ -645,6 +702,82 @@ code, .mono { font-family: 'DM Mono', monospace; }
 
 
 <script>
+  // Render Chart Bar untuk Top 5 Rekomendasi
+  const top5Data = @json($top5Rekomendasi);
+  
+  if (top5Data && top5Data.length > 0 && document.getElementById('chartTop5')) {
+    const labels = top5Data.map((item, idx) => `#${idx + 1} ${item.nama_produk.substring(0, 15)}...`);
+    const values = top5Data.map(item => parseFloat(item.nilai_yi));
+    const maxValue = Math.max(...values);
+
+    // Warna gradient sesuai primary color (pink)
+    const colors = [
+      '#e8005a', // Pink utama
+      '#ff4d8d', // Pink mid
+      '#f5799f', // Pink lighter
+      '#fcacc5', // Pink soft
+      '#fdd6e2'  // Pink very light
+    ];
+
+    const ctx = document.getElementById('chartTop5').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Yi Score',
+          data: values,
+          backgroundColor: colors,
+          borderColor: '#e8005a',
+          borderWidth: 0,
+          borderRadius: 6,
+          barThickness: 'flex',
+          maxBarThickness: 45
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1a0a0f',
+            padding: 10,
+            titleFont: { size: 12, weight: '700' },
+            bodyFont: { size: 11 },
+            callbacks: {
+              label: (context) => `Yi Score: ${context.parsed.x.toFixed(2)}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            max: maxValue * 1.15,
+            grid: { 
+              color: 'rgba(232, 0, 90, 0.08)',
+              drawBorder: false
+            },
+            ticks: {
+              font: { size: 11 },
+              color: '#b07090',
+              callback: (value) => value.toFixed(2)
+            }
+          },
+          y: {
+            grid: { display: false },
+            ticks: {
+              font: { size: 11, weight: '600' },
+              color: '#1a0a0f',
+              padding: 8
+            }
+          }
+        }
+      }
+    });
+  }
+
   let currentStep = 0;
   const totalSteps = 5;
 

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\KriteriaController;
 use App\Http\Controllers\InputPermintaanController;
@@ -15,7 +16,7 @@ Route::get('/', fn() => redirect('/dashboard'));
 
 Route::middleware('auth')->group(function () {
 
-    Route::get('/dashboard', fn() => view('spk.dashboard'))->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Khusus Admin
     Route::middleware('role:Admin')->group(function () {
