@@ -199,29 +199,29 @@ tr:hover td { background: var(--pink-light); }
 <div class="main">
   <div class="topbar">
     <div class="topbar-title">Hasil Perhitungan</div>
-    <a href="{{ route('perhitungan.riwayat') }}" class="btn btn-sm">← Riwayat</a>
+    <a href="{{ route('perhitungan.riwayat') }}" class="btn btn-sm">Lihat Riwayat</a>
     <a href="{{ route('perhitungan.index') }}" class="btn btn-pink btn-sm">Hitung Ulang</a>
   </div>
   <div class="content">
 
     {{-- HERO: PRODUK TERBAIK --}}
     <div class="hero-box">
-      <div class="hero-label">🏆 Produk Terbaik — {{ $perhitungan->periode_data }}</div>
+      <div class="hero-label">🏆 Produk Terbaik</div>
       <div class="hero-name">{{ $perhitungan->produk_prioritas }}</div>
-      <div class="hero-sub">Ranking #1 berdasarkan metode MOORA</div>
+      <div class="hero-sub">peringkat #1 berdasarkan hasil perhitungan</div>
       <div class="meta-row">
         <div class="meta-item"><b>{{ $perhitungan->jumlah_produk }}</b> produk dihitung</div>
         <div class="meta-item"><b>{{ $kriterias->count() }}</b> kriteria</div>
-        <div class="meta-item">Dihitung: <b>{{ \Carbon\Carbon::parse($perhitungan->created_at)->format('d M Y H:i') }}</b></div>
+        <div class="meta-item">Waktu proses: <b>{{ \Carbon\Carbon::parse($perhitungan->created_at)->format('d M Y H:i') }}</b></div>
       </div>
     </div>
 
-    {{-- TABEL RANKING --}}
+    {{-- TABEL Peringkat --}}
     <div class="card">
       <div class="card-hd">
         <div>
-          <div class="card-title">Hasil Ranking Produk</div>
-          <div class="card-sub">Klik "Detail" untuk melihat breakdown nilai per kriteria</div>
+          <div class="card-title">Daftar peringkat Produk</div>
+          <div class="card-sub">Klik "Detail" untuk melihat rincian nilai tiap kriteria</div>
         </div>
       </div>
       <div class="table-wrap">
@@ -230,9 +230,9 @@ tr:hover td { background: var(--pink-light); }
             <tr>
               <th style="width:50px">Rank</th>
               <th>Nama Produk</th>
-              <th style="text-align:right">Total Benefit</th>
-              <th style="text-align:right">Total Cost</th>
-              <th style="text-align:right">Nilai Yi</th>
+              <th style="text-align:right">Total Nilai Benefit</th>
+              <th style="text-align:right">Total Nilai Cost</th>
+              <th style="text-align:right">Nilai Akhir (Yi)</th>
               <th>Prioritas</th>
               <th style="width:80px">Detail</th>
             </tr>
@@ -257,9 +257,9 @@ tr:hover td { background: var(--pink-light); }
               </td>
               <td>
                 @if($h->prioritas == 'Utama')
-                  <span class="badge badge-green">⭐ Utama</span>
+                  <span class="badge badge-green">⭐ Prioritas Utama</span>
                 @elseif($h->prioritas == 'Pertimbangkan')
-                  <span class="badge badge-amber">~ Pertimbangkan</span>
+                  <span class="badge badge-amber">~ Perlu dipertimbangkan</span>
                 @else
                   <span class="badge badge-pink">Tunda</span>
                 @endif
@@ -276,7 +276,7 @@ tr:hover td { background: var(--pink-light); }
               <td colspan="7">
                 <div class="detail-inner">
                   <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px">
-                    Breakdown nilai kriteria — {{ $h->nama_produk }}
+                    Rincian nilai kriteria — {{ $h->nama_produk }}
                   </div>
                   <table class="detail-table">
                     <thead>
@@ -284,7 +284,7 @@ tr:hover td { background: var(--pink-light); }
                         <th>Kriteria</th>
                         <th>Tipe</th>
                         <th style="text-align:right">Nilai Asli</th>
-                        <th style="text-align:right">Nilai Normal</th>
+                        <th style="text-align:right">Nilai Normalisasi</th>
                         <th style="text-align:right">Bobot</th>
                         <th style="text-align:right">Kontribusi Yi</th>
                       </tr>
@@ -295,9 +295,9 @@ tr:hover td { background: var(--pink-light); }
                         <td style="font-weight:600;font-family:inherit">{{ $d->nama_kriteria }}</td>
                         <td>
                           @if(strtolower($d->tipe_atribut) == 'benefit')
-                            <span style="color:var(--green);font-weight:700;font-family:inherit">↑ B</span>
+                            <span style="color:var(--green);font-weight:700;font-family:inherit">↑ Benefit</span>
                           @else
-                            <span style="color:var(--red);font-weight:700;font-family:inherit">↓ C</span>
+                            <span style="color:var(--red);font-weight:700;font-family:inherit">↓ Cost</span>
                           @endif
                         </td>
                         <td style="text-align:right">{{ number_format($d->nilai_asli, 2) }}</td>

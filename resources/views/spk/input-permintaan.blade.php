@@ -206,8 +206,8 @@ tr:hover td { background: var(--pink-light); }
 
   <div class="content">
     <div class="page-header">
-      <h1>Input Permintaan</h1>
-      <p>Isi nilai kriteria manual (skala 1-5) untuk semua produk sekaligus.</p>
+      <h1>Lengkapi Nilai Kriteria</h1>
+      <p>Lengkapi nilai kriteria dengan (skala 1–5) untuk setiap produk.</p>
     </div>
 
     @if(session('success'))
@@ -236,8 +236,7 @@ tr:hover td { background: var(--pink-light); }
               <option value="filled">Sudah diisi</option>
             </select>
             <button type="button" class="btn btn-pink btn-sm" onclick="saveAllInputs()">
-              <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><path d="M3 8l4 4 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Simpan Semua
+              Simpan nilai
             </button>
           </div>
         </div>
@@ -246,7 +245,7 @@ tr:hover td { background: var(--pink-light); }
           <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7v5M8 5.5v.01" stroke-linecap="round"/></svg>
           <div>
             <b>Skala penilaian 1-5:</b><br>
-            1 = Sangat Kurang, 2 = Kurang, 3 = Cukup, 4 = Baik, 5 = Sangat Baik
+            1 = Sangat jarang dicari, 2 = Jarang dicari, 3 = Cukup banyak dicari, 4 = Sering dicari, 5 = Sangat banyak dicari
           </div>
         </div>
 

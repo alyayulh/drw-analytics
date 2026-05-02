@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $perhitunganTerakhir = Perhitungan::latest('created_at')->first();
 
         // Top 5 rekomendasi dari perhitungan terakhir
-        $top5Rekomendasi = [];
+        $top5Rekomendasi = collect();
         $produkPrioritasUtama = null;
 
         if ($perhitunganTerakhir) {

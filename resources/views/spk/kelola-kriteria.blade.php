@@ -20,24 +20,25 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 
 /* SIDEBAR */
 .sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; box-shadow: 2px 0 12px rgba(232,0,90,.06); }
-.sb-brand { padding: 22px 18px 16px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
+.sb-brand { height: 56px; padding: 0 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
 .sb-logo { display: flex; align-items: center; gap: 10px; }
-.sb-logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--pink), var(--pink-mid)); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(232,0,90,.3); }
-.sb-logo-icon svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 2.2; }
 .sb-logo-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.2; letter-spacing: -.3px; }
 .sb-logo-sub { font-size: 10px; color: var(--text-3); margin-top: 1px; }
-.sb-nav { flex: 1; padding: 14px 10px; }
+.sb-nav { flex: 1; padding: 14px 10px; overflow-y: auto; }
 .nav-section { margin-bottom: 6px; }
 .nav-label { font-size: 10px; font-weight: 700; color: var(--text-3); letter-spacing: .08em; text-transform: uppercase; padding: 6px 8px 4px; }
-.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-2); transition: all .15s; margin-bottom: 2px; position: relative; text-decoration: none; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; font-size: 13px; font-weight: 500; color: var(--text-2); transition: all .15s; margin-bottom: 2px; position: relative; text-decoration: none; }
 .nav-item:hover { background: var(--pink-light); color: var(--pink-dark); }
 .nav-item.active { background: linear-gradient(135deg, var(--pink-light), #ffe4ef); color: var(--pink); font-weight: 700; }
 .nav-item.active::before { content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; background: var(--pink); border-radius:0 3px 3px 0; }
 .nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
-.sb-footer { padding: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
+.nav-divider { height: 1px; background: var(--border); margin: 8px 10px; }
+.sb-footer { padding: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; background: linear-gradient(135deg, #fff5f8, #fff); }
 .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--pink-mid)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
 .sb-user-name { font-size: 12px; font-weight: 700; color: var(--text); }
 .sb-user-role { font-size: 10px; color: var(--text-3); }
+.sb-logout { margin-left: auto; cursor: pointer; color: var(--text-3); }
+.sb-logout:hover { color: var(--pink); }
 
 /* MAIN */
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -62,7 +63,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 .btn-red { background: var(--red-light); color: var(--red); border-color: #fca5a5; }
 .btn-red:hover { background: #fee2e2; }
 .btn-sm { padding: 6px 12px; font-size: 11px; }
-.btn-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 /* INFO BOX */
 .info-box { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 9px; font-size: 12px; margin-bottom: 14px; }
@@ -84,6 +84,11 @@ th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; co
 td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--pink-light); }
+
+/* LEGENDA TIPE */
+.legenda-tipe { display: flex; gap: 16px; margin-top: 14px; padding: 10px 14px; background: var(--bg); border-radius: 9px; border: 1px solid var(--border); flex-wrap: wrap; }
+.legenda-item { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; color: var(--text-2); line-height: 1.5; }
+.legenda-badge { flex-shrink: 0; margin-top: 1px; }
 
 /* FORM */
 .form-input, .form-select { width: 100%; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--surface); outline: none; transition: border .15s; }
@@ -119,29 +124,6 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
 .alert { padding: 10px 14px; border-radius: 9px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
 .alert-success { background: var(--green-light); color: #065f46; border: 1px solid #6ee7b7; }
 .alert-error { background: var(--red-light); color: var(--red); border: 1px solid #fca5a5; }
-
-/* ── SIDEBAR ── */
-.sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; box-shadow: 2px 0 12px rgba(232,0,90,.06); }
-.sb-brand { height: 56px; padding: 0 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
-.sb-logo { display: flex; align-items: center; gap: 10px; }
-.sb-logo-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.2; letter-spacing: -.3px; }
-.sb-logo-sub { font-size: 10px; color: var(--text-3); margin-top: 1px; }
-.sb-nav { flex: 1; padding: 14px 10px; overflow-y: auto; }
-.nav-section { margin-bottom: 6px; }
-.nav-label { font-size: 10px; font-weight: 700; color: var(--text-3); letter-spacing: .08em; text-transform: uppercase; padding: 6px 8px 4px; }
-.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; font-size: 13px; font-weight: 500; color: var(--text-2); transition: all .15s; margin-bottom: 2px; position: relative; text-decoration: none; }
-.nav-item:hover { background: var(--pink-light); color: var(--pink-dark); }
-.nav-item.active { background: linear-gradient(135deg, var(--pink-light), #ffe4ef); color: var(--pink); font-weight: 700; }
-.nav-item.active::before { content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; background: var(--pink); border-radius:0 3px 3px 0; }
-.nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
-.nav-divider { height: 1px; background: var(--border); margin: 8px 10px; }
-.sb-footer { padding: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; background: linear-gradient(135deg, #fff5f8, #fff); }
-.avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--pink-mid)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
-.sb-user-name { font-size: 12px; font-weight: 700; color: var(--text); }
-.sb-user-role { font-size: 10px; color: var(--text-3); }
-.sb-logout { margin-left: auto; cursor: pointer; color: var(--text-3); }
-.sb-logout:hover { color: var(--pink); }
-
 </style>
 </head>
 <body>
@@ -149,7 +131,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
 <div class="sidebar">
   <div class="sb-brand">
     <div class="sb-logo">
-      <div class="sb-logo-icon" style="background:none;box-shadow:none;">
+      <div style="width:36px;height:36px;flex-shrink:0">
         <img src="https://pos.drwskincare.com/logo_drw.svg" alt="DRW" style="width:36px;height:36px;object-fit:contain;">
       </div>
       <div>
@@ -160,7 +142,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
   </div>
   <div class="sb-nav">
     <div class="nav-section">
-      <div class="nav-label">Menentukan Produk Promosi</div>
+      <div class="nav-label">Penentuan Produk Promosi</div>
       <a href="{{ route('dashboard') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
         Dashboard
@@ -226,17 +208,24 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
   </div>
 </div>
 
-
 <!-- MAIN -->
 <div class="main">
   <div class="topbar">
-    <div class="topbar-title">Kelola Kriteria</div>
+    <div class="topbar-title">Pengaturan Kriteria Penilaian</div>
   </div>
 
   <div class="content">
     <div class="page-header">
-      <h1>Kelola Kriteria</h1>
-      <p>Atur kriteria penilaian untuk sistem SPK MOORA. Total bobot harus 100%.</p>
+      <h1>Pengaturan Kriteria Penilaian</h1>
+      <p>Tentukan faktor-faktor yang digunakan untuk menilai produk. Pastikan total bobot mencapai 100% sebelum menjalankan analisis.</p>
+    </div>
+
+    <!-- PANDUAN BOBOT -->
+    <div class="info-box info-pink" style="margin-bottom:20px">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
+      <div>
+        <strong>Panduan Pengisian Bobot:</strong> Bobot menunjukkan tingkat kepentingan relatif setiap kriteria. Contoh: Jika "Penjualan" lebih penting dari "Harga", berikan bobot penjualan lebih besar (misal 60%) dibanding "Harga" (misal 40%). Sesuaikan berdasarkan prioritas promosi Anda.
+      </div>
     </div>
 
     @if(session('success'))
@@ -250,8 +239,8 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
     <div class="card">
       <div class="card-hd">
         <div>
-          <div class="card-title">Total Bobot Kriteria</div>
-          <div class="card-sub">Pastikan total bobot = 100% sebelum menjalankan perhitungan</div>
+          <div class="card-title">Total Bobot Penilaian</div>
+          <div class="card-sub">Total bobot harus 100% agar analisis dapat dijalankan</div>
         </div>
         <button class="btn btn-pink btn-sm" onclick="openModal('modal-tambah')">
           <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
@@ -262,13 +251,13 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
         <div class="progress-fill" style="width: {{ $totalBobot }}%"></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-        <span style="font-size:12px;color:var(--text-2)">Bobot terpakai</span>
+        <span style="font-size:12px;color:var(--text-2)">Bobot yang sudah digunakan</span>
         <span style="font-size:15px;font-weight:800;color:var(--pink);font-family:'DM Mono',monospace">{{ $totalBobot }}%</span>
       </div>
       @if($totalBobot < 100)
         <div class="info-box info-amber" style="margin-top:12px;margin-bottom:0">
           <svg viewBox="0 0 16 16"><path d="M8 2L2 14h12L8 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v3M8 11v.5" stroke-linecap="round"/></svg>
-          Sisa bobot yang bisa dialokasikan: <b>{{ 100 - $totalBobot }}%</b>
+          Masih ada <b>{{ 100 - $totalBobot }}%</b> bobot yang belum dialokasikan ke kriteria.
         </div>
       @endif
     </div>
@@ -277,8 +266,8 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
     <div class="card">
       <div class="card-hd">
         <div>
-          <div class="card-title">Daftar Kriteria</div>
-          <div class="card-sub">{{ $kriterias->count() }} kriteria terdaftar</div>
+          <div class="card-title">Daftar Faktor Penilaian</div>
+          <div class="card-sub">{{ $kriterias->count() }} faktor penilaian aktif</div>
         </div>
       </div>
 
@@ -288,10 +277,10 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
           <thead>
             <tr>
               <th>No</th>
-              <th>Nama Kriteria</th>
-              <th>Tipe</th>
+              <th>Nama Faktor</th>
+              <th>Jenis</th>
               <th>Bobot</th>
-              <th>Sumber Data</th>
+              <th>Sumber Nilai</th>
               <th>Aksi</th>
             </tr>
           </thead>
@@ -320,6 +309,19 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
           </tbody>
         </table>
       </div>
+
+      <!-- LEGENDA -->
+      <div class="legenda-tipe">
+        <div class="legenda-item">
+          <span class="badge badge-green legenda-badge">↑ Benefit</span>
+          <span>Makin tinggi nilainya, makin baik untuk dipromosikan.<br><em>Contoh: Penjualan tinggi, stok banyak, rating positif.</em></span>
+        </div>
+        <div class="legenda-item">
+          <span class="badge badge-amber legenda-badge">↓ Cost</span>
+          <span>Makin rendah nilainya, makin baik untuk dipromosikan.<br><em>Contoh: Harga terjangkau, biaya produksi rendah, risiko kecil.</em></span>
+        </div>
+      </div>
+
       @else
       <div class="empty-state">
         <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="3"/><path d="M20 6v4M20 30v4M6 20h4M30 20h4M10 10l2.8 2.8M27.2 27.2l2.8 2.8M10 30l2.8-2.8M27.2 12.8l2.8-2.8" stroke-linecap="round"/></svg>
@@ -344,8 +346,8 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
         <div class="form-group">
           <label class="form-label">Tipe Atribut</label>
           <select class="form-select" name="tipe_atribut" required>
-            <option value="Benefit">Benefit (lebih besar = lebih baik)</option>
-            <option value="Cost">Cost (lebih kecil = lebih baik)</option>
+            <option value="Benefit">Benefit (makin tinggi = makin baik)</option>
+            <option value="Cost">Cost (makin rendah = makin baik)</option>
           </select>
         </div>
         <div class="form-group">
@@ -356,14 +358,11 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
           </select>
         </div>
       </div>
-
-      <!-- Field Nama Kolom Excel — tampil by default karena default sumber = Excel -->
       <div class="form-group" id="kolom-excel-group-tambah">
         <label class="form-label">Nama Kolom Excel <span style="color:var(--pink)">*</span></label>
         <input class="form-input" name="nama_kolom_excel" id="kolom-excel-tambah" placeholder="cth: HARGA JUAL" required>
-        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nama kolom di file Excel, tidak case-sensitive. Contoh: STOCK AKHIR, TOTAL PENJUALAN</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nama kolom di file Excel. Contoh: STOCK AKHIR, TOTAL PENJUALAN</div>
       </div>
-
       <div class="form-group">
         <label class="form-label">Bobot (%)</label>
         <div class="slider-row">
@@ -394,8 +393,8 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
         <div class="form-group">
           <label class="form-label">Tipe Atribut</label>
           <select class="form-select" name="tipe_atribut" id="edit-tipe" required>
-            <option value="Benefit">Benefit (lebih besar = lebih baik)</option>
-            <option value="Cost">Cost (lebih kecil = lebih baik)</option>
+            <option value="Benefit">Benefit (makin tinggi = makin baik)</option>
+            <option value="Cost">Cost (makin rendah = makin baik)</option>
           </select>
         </div>
         <div class="form-group">
@@ -406,14 +405,11 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
           </select>
         </div>
       </div>
-      
-      <!-- Field Nama Kolom Excel - DI LUAR form-row -->
       <div class="form-group" id="kolom-excel-group-edit" style="display:none">
         <label class="form-label">Nama Kolom Excel</label>
         <input class="form-input" name="nama_kolom_excel" id="kolom-excel-edit" placeholder="Contoh: HARGA JUAL">
-        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Isi dengan nama kolom persis seperti di file Excel (case-sensitive)</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Isi dengan nama kolom persis seperti di file Excel</div>
       </div>
-
       <div class="form-group">
         <label class="form-label">Bobot (%)</label>
         <div class="slider-row">
@@ -446,23 +442,17 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
 </div>
 
 <script>
-function openModal(id) { 
-  document.getElementById(id).classList.add('open');
-}
-
-function closeModal(id) { 
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) {
   document.getElementById(id).classList.remove('open');
-  // Reset modal tambah ke kondisi awal saat ditutup
   if (id === 'modal-tambah') {
     document.querySelector('#modal-tambah form').reset();
     document.getElementById('val-tambah').textContent = '10%';
-    toggleKolomExcel('tambah', 'Excel'); // default kembali ke Excel
+    toggleKolomExcel('tambah', 'Excel');
   }
 }
-
 function openEdit(id, nama, tipe, bobot, sumber, kolomExcel) {
   document.getElementById('edit-nama').value = nama;
-  // Pastikan value match kapital: 'Benefit' atau 'Cost'
   const tipeKapital = tipe.charAt(0).toUpperCase() + tipe.slice(1).toLowerCase();
   document.getElementById('edit-tipe').value = tipeKapital;
   document.getElementById('edit-bobot').value = bobot;
@@ -473,13 +463,11 @@ function openEdit(id, nama, tipe, bobot, sumber, kolomExcel) {
   toggleKolomExcel('edit', sumber);
   openModal('modal-edit');
 }
-
 function openHapus(id, nama) {
   document.getElementById('hapus-text').textContent = 'Yakin ingin menghapus kriteria "' + nama + '"? Data nilai produk terkait juga akan terhapus.';
   document.getElementById('form-hapus').action = '/kelola-kriteria/' + id;
   openModal('modal-hapus');
 }
-
 function toggleKolomExcel(mode, value) {
   const group = document.getElementById('kolom-excel-group-' + mode);
   const input = document.getElementById('kolom-excel-' + mode);
@@ -492,8 +480,6 @@ function toggleKolomExcel(mode, value) {
     input.value = '';
   }
 }
-
-// Tutup modal kalau klik di luar
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', function(e) {
     if (e.target === this) closeModal(this.id);

@@ -345,7 +345,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
   </div>
     <div class="sb-nav">
     <div class="nav-section">
-      <div class="nav-label">Menentukan Produk Promosi</div>
+      <div class="nav-label">Penentuan Produk Promosi</div>
       <a href="{{ route('dashboard') }}" class="nav-item active">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
         Dashboard
@@ -418,8 +418,8 @@ code, .mono { font-family: 'DM Mono', monospace; }
 
     <div class="page-header-row">
       <div class="page-header">
-        <h1>Selamat datang 👋</h1>
-        <p>Ringkasan sistem pendukung keputusan promosi produk DRW Skincare Banjarmasin.</p>
+        <h1>Selamat datang </h1>
+        <p>Pantau data produk dan rekomendasi produk promosi bulan ini.</p>
       </div>
 
     {{-- ── TUTORIAL BANNER ────────────────────────────────────── --}}
@@ -462,7 +462,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
           <div>
             <div class="metric-label">Kriteria Aktif</div>
             <div class="metric-value" style="color:var(--blue)">{{ $totalKriteria }}</div>
-            <div class="metric-sub">kriteria terdaftar</div>
+            <div class="metric-sub">kriteria penilaian</div>
           </div>
           <div class="metric-icon" style="background:var(--blue-light);color:var(--blue)">
             <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke-linecap="round"/></svg>
@@ -477,14 +477,14 @@ code, .mono { font-family: 'DM Mono', monospace; }
               @if($produkPrioritasUtama)
                 {{ Illuminate\Support\Str::limit($produkPrioritasUtama->nama_produk, 18) }}
               @else
-                Belum dihitung
+                Belum ada rekomendasi
               @endif
             </div>
             <div class="metric-sub">
               @if($produkPrioritasUtama)
                 Yi score: {{ number_format($produkPrioritasUtama->nilai_yi, 2, ',', '.') }}
               @else
-                jalankan perhitungan dulu
+                silakan jalankan perhitungan dulu
               @endif
             </div>
           </div>
@@ -499,7 +499,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
       <div class="card">
         <div class="card-hd">
           <div>
-            <div class="card-title">Top 5 Produk Rekomendasi</div>
+            <div class="card-title">Top 5 Produk Prioritas Promosi</div>
             <div class="card-sub">Berdasarkan nilai Yi score tertinggi</div>
           </div>
         </div>
@@ -514,7 +514,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
           <div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:200px">
             <div class="empty-state">
               <svg viewBox="0 0 40 40"><rect x="4" y="20" width="6" height="16" rx="1"/><rect x="13" y="14" width="6" height="22" rx="1"/><rect x="22" y="8" width="6" height="28" rx="1"/><rect x="31" y="16" width="6" height="20" rx="1"/></svg>
-              <p>Belum ada data ranking.<br>Hitung SPK terlebih dahulu.</p>
+              <p>Belum ada data ranking.<br>Jalankan perhitungan terlebih dahulu.</p>
             </div>
           </div>
         @endif
@@ -548,7 +548,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
             </div>
             @endforeach
             <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-              <span style="font-size:12px;color:var(--text-2);font-weight:600">Total bobot</span>
+              <span style="font-size:12px;color:var(--text-2);font-weight:600">Total bobot saat ini</span>
               <span style="font-size:14px;font-weight:800;font-family:'DM Mono',monospace;color:{{ $totalBobot == 100 ? 'var(--green)' : 'var(--red)' }}">{{ $totalBobot }}%</span>
             </div>
           </div>
@@ -575,7 +575,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
     <div class="modal-header">
       <div>
         <div class="modal-header-title">Panduan Penggunaan Sistem</div>
-        <div class="modal-header-sub">SPK MOORA — DRW Skincare Banjarmasin</div>
+        <div class="modal-header-sub">Rekomendasi produk promosi — DRW Skincare Banjarmasin</div>
       </div>
       <button class="modal-close" onclick="closeTutorial()">
         <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -605,13 +605,13 @@ code, .mono { font-family: 'DM Mono', monospace; }
             </div>
             <ul class="step-actions">
               <li><span class="step-dot green"></span>Buka menu Kelola Kriteria, lalu klik Tambah Kriteria.</li>
-              <li><span class="step-dot green"></span>Isi nama kriteria, pilih jenis: Benefit (makin besar makin baik) atau Cost (makin kecil makin baik).</li>
+              <li><span class="step-dot green"></span>Isi nama kriteria, lalu pilih jenis: Benefit (semakin besar nilainya semakin baik) atau Cost (semakin kecil nilainya semakin baik).</li>
               <li><span class="step-dot green"></span>Pilih Sumber Data: Import Excel (otomatis) jika data dari file Excel, atau Manual jika diisi langsung.</li>
-              <li><span class="step-dot green"></span>Jika Import Excel, isi Nama Kolom Excel persis seperti header di file Excel</li>
-              <li><span class="step-dot green"></span>Tentukan bobot masing-masing kriteria sesuai prioritas bisnis.</li>
-              <li><span class="step-dot green"></span>Pastikan total bobot semua kriteria = 100% sebelum lanjut.</li>
+              <li><span class="step-dot green"></span>Jika menggunakan Excel, pastikan nama kolom kriteria sesuai dengan kolom di file Excel</li>
+              <li><span class="step-dot green"></span>Tentukan bobot masing-masing kriteria sesuai prioritas.</li>
+              <li><span class="step-dot green"></span>Pastikan total bobot seluruh kriteria = 100% sebelum melanjutkan.</li>
             </ul>
-            <div class="step-tip"><strong>Catatan:</strong> Diskusikan bobot dengan manajer — ini mencerminkan prioritas bisnis.</div>
+            <div class="step-tip"><strong>Catatan:</strong> Diskusikan penentuan bobot dengan manajer — ini mencerminkan prioritas promosi.</div>
           </div>
         </div>
       </div>
@@ -628,9 +628,9 @@ code, .mono { font-family: 'DM Mono', monospace; }
             <ul class="step-actions">
               <li><span class="step-dot blue"></span>Buka menu Data Produk.</li>
               <li><span class="step-dot blue"></span>Upload data produk dengan nama kolom yang sesuai dengan kriteria yang telah ditentukan.</li>
-              <li><span class="step-dot blue"></span>Data produk yang diinput akan menjadi alternatif dalam perhitungan untuk menentukan produk promosi.</li>
+              <li><span class="step-dot blue"></span>Data produk yang diinput akan digunakan sebagai alternatif dalam perhitungan untuk menentukan produk promosi.</li>
             </ul>
-            <div class="step-tip"><strong>Catatan:</strong> Minimal 2 produk dibutuhkan agar perhitungan SPK dapat dijalankan.</div>
+            <div class="step-tip"><strong>Catatan:</strong> Minimal 2 produk diperlukan agar perhitungan dapat dilakukan.</div>
           </div>
         </div>
       </div>
@@ -646,11 +646,11 @@ code, .mono { font-family: 'DM Mono', monospace; }
             </div>
             <ul class="step-actions">
               <li><span class="step-dot green"></span>Buka menu Input Permintaan di sidebar.</li>
-              <li><span class="step-dot green"></span>Isi nilai tiap produk pada setiap kriteria manual yang sudah ditentukan.</li>
+              <li><span class="step-dot green"></span>Isi nilai untuk setiap produk berdasarkan kriteria yang telah ditentukan.</li>
               <li><span class="step-dot green"></span>Gunakan data aktual dari lapangan.</li>
               <li><span class="step-dot green"></span>Periksa kembali semua nilai sebelum menyimpan.</li>
             </ul>
-            <div class="step-tip"><strong>Catatan:</strong> Nilai yang salah atau kosong akan langsung mempengaruhi hasil perangkingan.</div>
+            <div class="step-tip"><strong>Catatan:</strong> Nilai yang kosong atau tidak sesuai dapat mempengaruhi hasil rekomendasi.</div>
           </div>
         </div>
       </div>
@@ -659,22 +659,22 @@ code, .mono { font-family: 'DM Mono', monospace; }
         <div class="step-wrap">
           <div class="step-num green">4</div>
           <div class="step-info">
-            <div class="step-title">Jalankan perhitungan SPK</div>
+            <div class="step-title">Jalankan perhitungan</div>
             <div class="step-meta">
               <span class="step-role green">Admin / Manajer</span>
-              <span class="step-menu">Menu: <span>Hitung SPK</span></span>
+              <span class="step-menu">Menu: <span> Hitung</span></span>
             </div>
             <ul class="step-actions">
-              <li><span class="step-dot green"></span>Buka menu Hitung SPK di sidebar.</li>
-              <li><span class="step-dot green"></span>Klik tombol Hitung — sistem akan normalisasi matriks secara otomatis.</li>
-              <li><span class="step-dot green"></span>Tunggu hingga hasil Yi score tiap produk muncul.</li>
-              <li><span class="step-dot green"></span>Hasil berupa peringkat produk dari Yi score tertinggi ke terendah.</li>
+              <li><span class="step-dot green"></span>Buka menu Hitung di sidebar.</li>
+              <li><span class="step-dot green"></span>Klik tombol Mulai Perhitungan — sistem akan memproses data secara otomatis.</li>
+              <li><span class="step-dot green"></span>Tunggu hingga hasil perhitungan muncul.</li>
+              <li><span class="step-dot green"></span>Hasil perhitunganberupa peringkat produk dari Yi score tertinggi ke terendah.</li>
             </ul>
              <div class="yi-info">
                 Yi score adalah nilai akhir dari perhitungan yang menunjukkan seberapa layak suatu produk diprioritaskan.
                 Semakin tinggi nilainya, semakin direkomendasikan produk tersebut untuk dipromosikan.
             </div>
-            <div class="step-tip"><strong>Catatan:</strong> Ulangi perhitungan setiap kali ada perubahan data produk, kriteria, atau bobot.</div>
+            <div class="step-tip"><strong>Catatan:</strong> Ulangi perhitungan setiap ada perubahan data produk, kriteria, atau bobot.</div>
           </div>
         </div>
       </div>
@@ -683,18 +683,19 @@ code, .mono { font-family: 'DM Mono', monospace; }
         <div class="step-wrap">
           <div class="step-num purple">5</div>
           <div class="step-info">
-            <div class="step-title">Baca & gunakan hasil</div>
+            <div class="step-title">Lihat & gunakan hasil</div>
             <div class="step-meta">
               <span class="step-role purple">Manajer</span>
               <span class="step-menu">Menu: <span>Hasil & Laporan / Dashboard</span></span>
             </div>
             <ul class="step-actions">
-              <li><span class="step-dot purple"></span>Buka menu Hasil & Laporan untuk melihat detail Yi score tiap produk.</li>
-              <li><span class="step-dot purple"></span>Kembali ke Dashboard — Top 5 Rekomendasi akan terisi otomatis.</li>
-              <li><span class="step-dot purple"></span>Produk dengan Yi score tertinggi adalah prioritas utama promosi.</li>
-              <li><span class="step-dot purple"></span>Cek menu Riwayat untuk melihat histori perhitungan sebelumnya.</li>
+              <li><span class="step-dot purple"></span>Setelah perhitungan selesai, hasil akan ditampilkan secara otomatis.</li>
+              <li><span class="step-dot purple"></span>Lihat detail nilai setiap produk pada halaman hasil.</li>
+              <li><span class="step-dot purple"></span>Dashboard menampilkan ringkasan hasil, termasuk 5 produk dengan nilai tertinggi.</li>
+              <li><span class="step-dot purple"></span>Produk dengan nilai tertinggi menjadi prioritas utama untuk dipromosikan.</li>
+              <li><span class="step-dot purple"></span>Buka menu Riwayat untuk melihat hasil perhitungan sebelumnya.</li>
             </ul>
-            <div class="step-tip"><strong>Catatan:</strong> Hasil perhitungan ini adalah salah satu alat rekomendasi berbasis data.</div>
+            <div class="step-tip"><strong>Catatan:</strong> Hasil ini dapat digunakan sebagai dasar pengambilan keputusan promosi.</div>
           </div>
         </div>
       </div>

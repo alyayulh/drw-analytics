@@ -178,13 +178,13 @@ tr:hover td { background: var(--pink-light); }
 
 <div class="main">
   <div class="topbar">
-    <div class="topbar-title">Riwayat Perhitungan</div>
+    <div class="topbar-title">Riwayat</div>
     <a href="{{ route('perhitungan.index') }}" class="btn btn-pink btn-sm">+ Hitung Baru</a>
   </div>
   <div class="content">
     <div class="page-header">
-      <h1>Riwayat Perhitungan</h1>
-      <p>Semua sesi perhitungan SPK yang pernah dijalankan.</p>
+      <h1> Riwayat Hasil Perhitungan</h1>
+      <p>Daftar semua hasil perhitungan yang pernah dijalankan.</p>
     </div>
 
     @if(session('success'))
@@ -198,10 +198,10 @@ tr:hover td { background: var(--pink-light); }
           <thead>
             <tr>
               <th>No</th>
-              <th>Periode / Sesi</th>
-              <th>Produk Dihitung</th>
+              <th>Nama Periode Promosi</th>
+              <th>JumlahProduk Dihitung</th>
               <th>Produk Terbaik</th>
-              <th>Tanggal</th>
+              <th>Tanggal Hitung</th>
               <th>Aksi</th>
             </tr>
           </thead>

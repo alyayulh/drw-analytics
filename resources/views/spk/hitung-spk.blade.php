@@ -239,8 +239,8 @@ tr:hover td { background: var(--pink-light); }
   <div class="content">
 
     <div class="page-header">
-      <h1>Hitung SPK MOORA</h1>
-      <p>Sesuaikan bobot kriteria, cek data produk, lalu jalankan perhitungan.</p>
+      <h1>Perhitungan Rekomendasi Produk</h1>
+      <p>Atur kriteria dan bobot, cek data produk, lalu jalankan perhitungan.</p>
     </div>
 
     @if(session('success'))
@@ -258,14 +258,14 @@ tr:hover td { background: var(--pink-light); }
         <div class="stat-sub">dari {{ $totalProduk }} produk</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Total Kriteria</div>
+        <div class="stat-label">Jumlah Kriteria</div>
         <div class="stat-val">{{ $kriterias->count() }}</div>
         <div class="stat-sub">kriteria aktif</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Total Bobot</div>
+        <div class="stat-label">Bobot saat ini</div>
         <div class="stat-val" style="color:{{ $totalBobot == 100 ? 'var(--green)' : 'var(--red)' }}">{{ $totalBobot }}%</div>
-        <div class="stat-sub">{{ $totalBobot == 100 ? 'Siap dihitung' : 'Harus = 100%' }}</div>
+        <div class="stat-sub">{{ $totalBobot == 100 ? 'Siap dihitung' : 'bobot harus 100%' }}</div>
       </div>
     </div>
 
@@ -327,7 +327,7 @@ tr:hover td { background: var(--pink-light); }
                   @if($totalBobot == 100)
                     Bobot sudah pas 100%. Siap dihitung.
                   @else
-                    Sisa bobot: <b>{{ 100 - $totalBobot }}%</b>. Total harus tepat 100%.
+                    Sisa bobot: <b>{{ 100 - $totalBobot }}%</b>. Total bobot harus tepat 100%.
                   @endif
                 </span>
               </div>
@@ -349,18 +349,18 @@ tr:hover td { background: var(--pink-light); }
               @csrf
               <div id="hidden-bobots"></div>
               <div style="margin-bottom:12px">
-                <label class="form-label">Nama Periode / Sesi Promosi</label>
+                <label class="form-label">Nama Periode Promosi</label>
                 <input class="form-input" name="periode_data"
-                       placeholder="cth: Ramadhan Sale April 2026"
+                       placeholder="contoh: Ramadhan Sale April 2026"
                        required
                        {{ ($totalBobot != 100 || $produkLengkap < 2) ? 'disabled' : '' }}>
-                <div class="form-hint">Nama ini muncul di riwayat perhitungan.</div>
+                <div class="form-hint">Nama ini akan ditampilkan pada riwayat perhitungan.</div>
               </div>
               <div style="display:flex;justify-content:flex-end">
                 <button type="submit" class="btn btn-pink" id="btn-hitung"
                         {{ ($totalBobot != 100 || $produkLengkap < 2) ? 'disabled' : '' }}>
                   <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
-                  Proses Perhitungan
+                  Mulai Perhitungan
                 </button>
               </div>
             </form>
@@ -373,8 +373,8 @@ tr:hover td { background: var(--pink-light); }
       <div class="card" style="overflow:hidden">
         <div class="card-hd">
           <div>
-            <div class="card-title">Pratinjau matriks keputusan</div>
-            <div class="card-sub">Data nilai tiap produk per kriteria</div>
+            <div class="card-title">Nama Produk & Nilai Kriteria</div>
+            <div class="card-sub">Menampilkan nilai setiap produk berdasarkan kriteria.</div>
           </div>
           <span class="badge badge-pink">{{ $produks->count() }} produk</span>
         </div>
@@ -432,7 +432,6 @@ tr:hover td { background: var(--pink-light); }
       <div class="card-hd">
         <div>
           <div class="card-title">Perhitungan Terakhir</div>
-          <div class="card-sub">5 sesi terbaru</div>
         </div>
         <a href="{{ route('perhitungan.riwayat') }}" class="btn btn-sm">Lihat Semua</a>
       </div>

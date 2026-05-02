@@ -257,8 +257,8 @@ tr:hover td { background: var(--pink-light); }
 
   <div class="content">
     <div class="page-header">
-      <h1>Data Produk</h1>
-      <p>Upload file stok dari Excel atau tambah produk secara manual.</p>
+      <h1>Kelola Data Produk</h1>
+      <p>Upload data produk melalui file Excel atau tambahkan produk secara manual.</p>
     </div>
 
     @if(session('success'))
@@ -274,7 +274,7 @@ tr:hover td { background: var(--pink-light); }
         <div>
           <div class="card-title">① Upload File Excel</div>
           <div class="card-sub">
-            Nilai kriteria produk diambil otomatis dari kolom file Excel
+            Nilai setiap kriteria akan diambil otomatis dari kolom pada file Excel
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
@@ -296,7 +296,7 @@ tr:hover td { background: var(--pink-light); }
           @endif
           <br>
           <span style="font-weight:400;margin-top:2px;display:block">
-            Kolom lain di file akan diabaikan. Nama kolom harus persis sama (tidak case-sensitive).
+            Kolom lain di file akan diabaikan. Pastikan nama kolom sama persis.
           </span>
         </div>
       </div>
@@ -308,8 +308,8 @@ tr:hover td { background: var(--pink-light); }
           <div class="upload-icon">
             <svg viewBox="0 0 20 20"><path d="M10 13V4M7 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 15h14" stroke-linecap="round"/></svg>
           </div>
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Klik untuk pilih file Excel (.xlsx / .xls)</div>
-          <div style="font-size:11px;color:var(--text-3)">File apapun yang memiliki kolom NAMA BARANG dan kolom kriteria yang sudah dikonfigurasi</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Klik untuk memilih  file Excel (.xlsx / .xls)</div>
+          <div style="font-size:11px;color:var(--text-3)">Pastikan file memiliki kolom NAMA BARANG dan kolom kriteria yang telah ditentukan.</div>
         </label>
         <div id="file-preview" style="display:none;margin-top:12px">
           <div class="info-box info-green">
@@ -320,7 +320,7 @@ tr:hover td { background: var(--pink-light); }
             <button type="button" class="btn btn-sm" onclick="batalUpload()">Batal</button>
             <button type="submit" class="btn btn-pink btn-sm">
               <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><path d="M10 13V4M7 7l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 15h14" stroke-linecap="round"/></svg>
-              Baca & Preview File
+              Tampilkan Data
             </button>
           </div>
         </div>
@@ -335,7 +335,7 @@ tr:hover td { background: var(--pink-light); }
           <div class="card-sub">{{ $produks->count() }} produk terdaftar</div>
         </div>
         <div class="btn-group">
-  <input class="form-input" style="width:180px;padding:6px 10px;font-size:12px" placeholder="Cari produk..." oninput="filterProduk(this.value)" id="search-produk">
+  <input class="form-input" style="width:180px;padding:6px 10px;font-size:12px" placeholder="Cari nama produk..." oninput="filterProduk(this.value)" id="search-produk">
   
   {{-- Dropdown sort --}}
   <select class="form-input" style="width:160px;padding:6px 10px;font-size:12px" onchange="sortProduk(this.value)">
@@ -346,7 +346,7 @@ tr:hover td { background: var(--pink-light); }
 
   <button class="btn btn-pink btn-sm" onclick="openModal('modal-tambah')">
     <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
-    Tambah Manual
+    Tambah nama produk
   </button>
 </div>
       </div>
@@ -369,9 +369,9 @@ tr:hover td { background: var(--pink-light); }
               <td style="font-weight:600">{{ $produk->nama_produk }}</td>
               <td>
                 @if($produk->status_data === 'Lengkap')
-                  <span class="badge badge-green">✓ Lengkap</span>
+                  <span class="badge badge-green">✓ Data Lengkap</span>
                 @else
-                  <span class="badge badge-amber">⚠ Belum Lengkap</span>
+                  <span class="badge badge-amber">⚠ Data Belum Lengkap</span>
                 @endif
               </td>
               <td>

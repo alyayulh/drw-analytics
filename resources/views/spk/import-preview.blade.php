@@ -91,19 +91,19 @@ tr:hover td { background: var(--pink-light); }
     <div class="breadcrumb">
       <a href="{{ route('produk.index') }}">← Data Produk</a> / Preview Import
     </div>
-    <h1>Preview Import Excel</h1>
-    <p>Periksa hasil pembacaan file sebelum data disimpan ke sistem.</p>
+    <h1>Preview Data Import </h1>
+    <p>Periksa data sebelum disimpan ke sistem.</p>
   </div>
 
   {{-- Statistik ringkas --}}
   <div class="stat-strip">
     <div class="stat">
       <div class="stat-val">{{ $totalData }}</div>
-      <div class="stat-lbl">Total baris produk</div>
+      <div class="stat-lbl">Total produk</div>
     </div>
     <div class="stat">
       <div class="stat-val" style="color:var(--green)">{{ count($kolomDitemukan) }}</div>
-      <div class="stat-lbl">Kolom kriteria ditemukan</div>
+      <div class="stat-lbl">Jumlah kriteria terdeteksi</div>
     </div>
     @if(count($kolomTidakAda) > 0)
     <div class="stat">
@@ -111,10 +111,6 @@ tr:hover td { background: var(--pink-light); }
       <div class="stat-lbl">Kolom tidak ditemukan</div>
     </div>
     @endif
-    <div class="stat">
-      <div class="stat-val">{{ min(count($previewRows), 5) }}</div>
-      <div class="stat-lbl">Baris ditampilkan (preview)</div>
-    </div>
   </div>
 
   {{-- Peringatan jika ada kolom tidak ditemukan --}}
@@ -136,7 +132,7 @@ tr:hover td { background: var(--pink-light); }
   {{-- Status kolom --}}
   <div class="card">
     <div class="card-title">
-      <span class="dot dot-green"></span> Kolom yang Berhasil Dikenali
+      <span class="dot dot-green"></span> Kolom yang dikenali
     </div>
     <div class="kolom-list">
       <div class="kolom-item kolom-ok">
@@ -204,7 +200,7 @@ tr:hover td { background: var(--pink-light); }
     </div>
     @if($totalData > 5)
       <div style="font-size:11px;color:var(--text-3);margin-top:8px;text-align:center">
-        ... dan {{ $totalData - 5 }} baris lainnya (tidak ditampilkan di preview)
+        ... dan {{ $totalData - 5 }} baris lainnya
       </div>
     @endif
     @else
@@ -217,14 +213,14 @@ tr:hover td { background: var(--pink-light); }
     {{-- Batal --}}
     <form method="POST" action="{{ route('produk.preview.cancel') }}">
       @csrf
-      <button type="submit" class="btn btn-red">✗ Batal, hapus file</button>
+      <button type="submit" class="btn btn-red"> Batal & hapus file</button>
     </form>
 
     {{-- Lanjutkan import --}}
     <form method="POST" action="{{ route('produk.import.confirm') }}">
       @csrf
       <button type="submit" class="btn btn-pink">
-        ✓ Lanjutkan Import {{ $totalData }} Produk
+        Simpan {{ $totalData }} Produk
       </button>
     </form>
   </div>
