@@ -223,20 +223,24 @@ tr:hover td { background: var(--pink-light); }
     {{-- LEGENDA PRIORITAS --}}
     <style>
       .priority-section { margin-bottom: 20px; }
-      .priority-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
-      .priority-card { 
-        background: var(--surface); 
-        border: 1px solid var(--border); 
-        border-radius: var(--radius-lg); 
-        padding: 20px; 
-        box-shadow: var(--shadow);
-        transition: all .2s ease;
+      .priority-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+      .priority-card {
         position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 18px;
+        min-height: 130px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
         overflow: hidden;
       }
       .priority-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(232,0,90,.12);
+        box-shadow: 0 6px 18px rgba(232,0,90,.12);
         border-color: var(--border-strong);
       }
       .priority-card::before {
@@ -250,47 +254,58 @@ tr:hover td { background: var(--pink-light); }
       .priority-card.priority-1::before { background: linear-gradient(90deg, #10b981, #34d399); }
       .priority-card.priority-2::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
       .priority-card.priority-3::before { background: linear-gradient(90deg, #e8005a, #ff4d8d); }
-      
-      .priority-icon { 
-        font-size: 28px; 
-        margin-bottom: 12px; 
-        display: inline-block;
+      .priority-icon {
+        width: 52px;
+        height: 52px;
+        display: grid;
+        place-items: center;
+        border-radius: 16px;
+        background: rgba(232, 0, 90, 0.08);
+        font-size: 24px;
+        flex-shrink: 0;
       }
-      .priority-title { 
-        font-size: 14px; 
-        font-weight: 700; 
-        color: var(--text); 
-        margin-bottom: 8px;
+      .priority-meta { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+      .priority-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--text);
+        margin: 0;
       }
-      .priority-subtitle { 
-        font-size: 12px; 
-        color: var(--text-2); 
-        margin-bottom: 12px;
+      .priority-subtitle {
+        font-size: 12px;
+        color: var(--text-2);
+        line-height: 1.4;
+        margin: 0;
+      }
+      .priority-percentage {
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--text);
+        margin-top: 4px;
+      }
+      .priority-body {
+        display: grid;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-2);
         line-height: 1.5;
       }
-      .priority-details { 
-        font-size: 11px; 
+      .priority-body p { margin: 0; }
+      .priority-details {
+        font-size: 11px;
         color: var(--text-3);
         background: var(--bg);
         padding: 10px 12px;
-        border-radius: 8px;
-        border-left: 2px solid var(--border);
-      }
-      .priority-percentage {
-        font-size: 20px;
-        font-weight: 800;
-        background: linear-gradient(135deg, var(--pink), var(--pink-mid));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-top: 10px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        line-height: 1.5;
       }
       .priority-note {
-        margin-top: 16px;
+        margin-top: 12px;
         padding: 12px;
         background: var(--bg);
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: 12px;
         font-size: 11px;
         color: var(--text-3);
         line-height: 1.6;
@@ -307,14 +322,15 @@ tr:hover td { background: var(--pink-light); }
         {{-- PRIORITAS UTAMA --}}
         <div class="priority-card priority-1">
           <div class="priority-icon">🏆</div>
-          <div class="priority-title">Prioritas Utama</div>
-          <div class="priority-subtitle">Produk bintang lima dengan performa terbaik</div>
-          
-          <div class="priority-percentage">Top 25%</div>
-          
-          <div style="margin-top:14px;margin-bottom:12px;font-size:12px;color:var(--text-2);line-height:1.6;">
-            <p style="margin-bottom:8px;">✓ Produk dengan performa <b>tertinggi</b> dibanding yang lain</p>
-            <p style="margin-bottom:8px;">✓ Merupakan <b>rekomendasi utama</b> untuk dipromosikan</p>
+          <div class="priority-meta">
+            <div>
+              <div class="priority-title">Prioritas Utama</div>
+              <div class="priority-subtitle">Produk bintang lima dengan performa terbaik</div>
+            </div>
+            <div class="priority-percentage">Top 25%</div>
+            <div class="priority-body">
+              <p>✓ Produk dengan performa <b>tertinggi</b> dibanding yang lain</p>
+              <p>✓ <b>Rekomendasi utama</b> untuk dipromosikan</p>
             </div>
           </div>
         </div>
@@ -322,36 +338,38 @@ tr:hover td { background: var(--pink-light); }
         {{-- PERLU DIPERTIMBANGKAN --}}
         <div class="priority-card priority-2">
           <div class="priority-icon">⚖️</div>
-          <div class="priority-title">Perlu Dipertimbangkan</div>
-          <div class="priority-subtitle">Produk bagus dengan potential yang layak</div>
-          
-          <div class="priority-percentage">25-75%</div>
-          
-          <div style="margin-top:14px;margin-bottom:12px;font-size:12px;color:var(--text-2);line-height:1.6;">
-            <p style="margin-bottom:8px;">✓ Performa <b>cukup baik</b> dan konsisten</p>
-            <p style="margin-bottom:8px;">✓ <b>Layak dipromosikan</b> dengan pertimbangan lebih lanjut</p>
-          </div>
-          
-          <div class="priority-details">
-            💡 Dapat menjadi produk pendamping promosi untuk menambah pilihan customer
+          <div class="priority-meta">
+            <div>
+              <div class="priority-title">Perlu Dipertimbangkan</div>
+              <div class="priority-subtitle">Produk bagus dengan potensi yang layak</div>
+            </div>
+            <div class="priority-percentage">25-75%</div>
+            <div class="priority-body">
+              <p>✓ Performa <b>cukup baik</b> dan konsisten</p>
+              <p>✓ <b>Layak dipromosikan</b> dengan pertimbangan lebih lanjut</p>
+            </div>
+            <div class="priority-details">
+              💡 Dapat menjadi produk pendamping promosi untuk menambah pilihan customer
+            </div>
           </div>
         </div>
 
         {{-- TUNDA --}}
         <div class="priority-card priority-3">
           <div class="priority-icon">⏸️</div>
-          <div class="priority-title">Tunda</div>
-          <div class="priority-subtitle">Produk performa rendah, belum siap promosi</div>
-          
-          <div class="priority-percentage">25% terbawah</div>
-          
-          <div style="margin-top:14px;margin-bottom:12px;font-size:12px;color:var(--text-2);line-height:1.6;">
-            <p style="margin-bottom:8px;">✓ Performa <b>rendah</b> dibanding produk lain</p>
-            <p style="margin-bottom:8px;">✓ <b>Belum direkomendasikan</b> untuk dipromosikan saat ini</p>
-          </div>
-          
-          <div class="priority-details">
-            💡 Analisis ulang strategi penjualan atau pertimbangkan perbaikan produk sebelum promosi
+          <div class="priority-meta">
+            <div>
+              <div class="priority-title">Tunda</div>
+              <div class="priority-subtitle">Produk performa rendah, belum siap promosi</div>
+            </div>
+            <div class="priority-percentage">25% terbawah</div>
+            <div class="priority-body">
+              <p>✓ Performa <b>rendah</b> dibanding produk lain</p>
+              <p>✓ <b>Belum direkomendasikan</b> untuk dipromosikan saat ini</p>
+            </div>
+            <div class="priority-details">
+              💡 Analisis ulang strategi penjualan atau pertimbangkan perbaikan produk sebelum promosi
+            </div>
           </div>
         </div>
       </div>
