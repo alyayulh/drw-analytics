@@ -115,6 +115,10 @@ tr:hover td { background: var(--pink-light); }
 </head>
 <body>
 
+{{-- Halaman hasil perhitungan SPK.
+     Menampilkan ringkasan produk terbaik, kategori prioritas, daftar ranking, detail nilai kriteria,
+     dan snapshot bobot kriteria yang digunakan. --}}
+
 <div class="sidebar">
   <div class="sb-brand">
     <div class="sb-logo">
@@ -149,7 +153,7 @@ tr:hover td { background: var(--pink-light); }
         Input Permintaan
       </a>
       <a href="{{ route('perhitungan.index') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5h3" stroke-linecap="round"/><path d="M6.5 8.5h3" stroke-linecap="round"/><path d="M6.5 10.5h3" stroke-linecap="round"/></svg>
         Hitung SPK
       </a>
       <a href="{{ route('perhitungan.riwayat') }}" class="nav-item">
@@ -208,7 +212,7 @@ tr:hover td { background: var(--pink-light); }
     <div class="hero-box">
       <div class="hero-label">🏆 Produk Terbaik</div>
       <div class="hero-name">{{ $perhitungan->produk_prioritas }}</div>
-      <div class="hero-sub">peringkat #1 berdasarkan hasil perhitungan</div>
+      <div class="hero-sub">Produk dikelompokkan berdasarkan performa hasil perhitungan sistem.</div>
       <div class="meta-row">
         <div class="meta-item"><b>{{ $perhitungan->jumlah_produk }}</b> produk dihitung</div>
         <div class="meta-item"><b>{{ $kriterias->count() }}</b> kriteria</div>
@@ -216,7 +220,157 @@ tr:hover td { background: var(--pink-light); }
       </div>
     </div>
 
+    {{-- LEGENDA PRIORITAS --}}
+    <style>
+      .priority-section { margin-bottom: 20px; }
+      .priority-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+      .priority-card { 
+        background: var(--surface); 
+        border: 1px solid var(--border); 
+        border-radius: var(--radius-lg); 
+        padding: 20px; 
+        box-shadow: var(--shadow);
+        transition: all .2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .priority-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(232,0,90,.12);
+        border-color: var(--border-strong);
+      }
+      .priority-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+      }
+      .priority-card.priority-1::before { background: linear-gradient(90deg, #10b981, #34d399); }
+      .priority-card.priority-2::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+      .priority-card.priority-3::before { background: linear-gradient(90deg, #e8005a, #ff4d8d); }
+      
+      .priority-icon { 
+        font-size: 28px; 
+        margin-bottom: 12px; 
+        display: inline-block;
+      }
+      .priority-title { 
+        font-size: 14px; 
+        font-weight: 700; 
+        color: var(--text); 
+        margin-bottom: 8px;
+      }
+      .priority-subtitle { 
+        font-size: 12px; 
+        color: var(--text-2); 
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .priority-details { 
+        font-size: 11px; 
+        color: var(--text-3);
+        background: var(--bg);
+        padding: 10px 12px;
+        border-radius: 8px;
+        border-left: 2px solid var(--border);
+      }
+      .priority-percentage {
+        font-size: 20px;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--pink), var(--pink-mid));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-top: 10px;
+      }
+      .priority-note {
+        margin-top: 16px;
+        padding: 12px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 11px;
+        color: var(--text-3);
+        line-height: 1.6;
+      }
+    </style>
+
+    <div class="priority-section">
+      <div style="margin-bottom: 16px;">
+        <div class="card-title" style="font-size:15px;margin-bottom:4px"> Panduan Kategori Prioritas</div>
+        <div class="card-sub">Setiap produk diklasifikasikan berdasarkan performa hasil perhitungan sistem</div>
+      </div>
+      
+      <div class="priority-grid">
+        {{-- PRIORITAS UTAMA --}}
+        <div class="priority-card priority-1">
+          <div class="priority-icon">🏆</div>
+          <div class="priority-title">Prioritas Utama</div>
+          <div class="priority-subtitle">Produk bintang lima dengan performa terbaik</div>
+          
+          <div class="priority-percentage">Top 25%</div>
+          
+          <div style="margin-top:14px;margin-bottom:12px;font-size:12px;color:var(--text-2);line-height:1.6;">
+            <p style="margin-bottom:8px;">✓ Produk dengan performa <b>tertinggi</b> dibanding yang lain</p>
+            <p style="margin-bottom:8px;">✓ Merupakan <b>rekomendasi utama</b> untuk dipromosikan</p>
+            </div>
+          </div>
+        </div>
+
+        {{-- PERLU DIPERTIMBANGKAN --}}
+        <div class="priority-card priority-2">
+          <div class="priority-icon">⚖️</div>
+          <div class="priority-title">Perlu Dipertimbangkan</div>
+          <div class="priority-subtitle">Produk bagus dengan potential yang layak</div>
+          
+          <div class="priority-percentage">25-75%</div>
+          
+          <div style="margin-top:14px;margin-bottom:12px;font-size:12px;color:var(--text-2);line-height:1.6;">
+            <p style="margin-bottom:8px;">✓ Performa <b>cukup baik</b> dan konsisten</p>
+            <p style="margin-bottom:8px;">✓ <b>Layak dipromosikan</b> dengan pertimbangan lebih lanjut</p>
+          </div>
+          
+          <div class="priority-details">
+            💡 Dapat menjadi produk pendamping promosi untuk menambah pilihan customer
+          </div>
+        </div>
+
+        {{-- TUNDA --}}
+        <div class="priority-card priority-3">
+          <div class="priority-icon">⏸️</div>
+          <div class="priority-title">Tunda</div>
+          <div class="priority-subtitle">Produk performa rendah, belum siap promosi</div>
+          
+          <div class="priority-percentage">25% terbawah</div>
+          
+          <div style="margin-top:14px;margin-bottom:12px;font-size:12px;color:var(--text-2);line-height:1.6;">
+            <p style="margin-bottom:8px;">✓ Performa <b>rendah</b> dibanding produk lain</p>
+            <p style="margin-bottom:8px;">✓ <b>Belum direkomendasikan</b> untuk dipromosikan saat ini</p>
+          </div>
+          
+          <div class="priority-details">
+            💡 Analisis ulang strategi penjualan atau pertimbangkan perbaikan produk sebelum promosi
+          </div>
+        </div>
+      </div>
+
+      <div class="priority-note">
+        <strong>📌 Catatan Penting:</strong> Jika ada produk dengan skor sama, sistem akan mengurutkan berdasarkan: (1) Total keuntungan tertinggi, (2) Total biaya terendah, (3) Nama produk (A–Z). Pengurutan ini memastikan konsistensi dan keadilan dalam penilaian.
+      </div>
+    </div>
+
     {{-- TABEL Peringkat --}}
+    @php
+      // Sort berlapis di blade untuk memastikan urutan konsisten
+      $hasil = $hasil->sortBy([
+        fn($a, $b) => $a->ranking <=> $b->ranking,
+        fn($a, $b) => $b->total_benefit <=> $a->total_benefit,
+        fn($a, $b) => $a->total_cost <=> $b->total_cost,
+        fn($a, $b) => strcmp($a->nama_produk, $b->nama_produk),
+      ]);
+    @endphp
     <div class="card">
       <div class="card-hd">
         <div>
@@ -247,10 +401,10 @@ tr:hover td { background: var(--pink-light); }
               </td>
               <td style="font-weight:600">{{ $h->nama_produk }}</td>
               <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--green);font-size:12px">
-                {{ number_format($h->total_benefit, 4) }}
+                {{ number_format($h->total_benefit, 6) }}
               </td>
               <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--red);font-size:12px">
-                {{ number_format($h->total_cost, 4) }}
+                {{ number_format($h->total_cost, 6) }}
               </td>
               <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:var(--pink)">
                 {{ number_format($h->nilai_yi, 4) }}

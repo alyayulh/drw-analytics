@@ -85,6 +85,11 @@ tr:hover td { background: var(--pink-light); }
 </style>
 </head>
 <body>
+
+{{-- Halaman preview import Excel.
+     Menampilkan validasi data sebelum menyimpan produk impor ke sistem.
+--}}
+
 <div class="container">
 
   <div class="page-header">

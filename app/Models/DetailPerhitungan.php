@@ -4,6 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model detail nilai kriteria untuk setiap produk.
+ * Menyimpan nilai asli, normalisasi, bobot, dan kontribusi terhadap Yi.
+ */
 class DetailPerhitungan extends Model
 {
     protected $table = 'detail_perhitungan';

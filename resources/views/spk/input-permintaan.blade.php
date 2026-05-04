@@ -118,6 +118,10 @@ tr:hover td { background: var(--pink-light); }
 </head>
 <body>
 
+{{-- Halaman input permintaan.
+     Menyediakan form dan tabel untuk memasukkan data permintaan produk.
+--}}
+
 <div class="sidebar">
   <div class="sb-brand">
     <div class="sb-logo">
@@ -132,7 +136,7 @@ tr:hover td { background: var(--pink-light); }
   </div>
   <div class="sb-nav">
     <div class="nav-section">
-      <div class="nav-label">Menentukan Produk Promosi</div>
+      <div class="nav-label">Penentuan Produk Promosi</div>
       <a href="{{ route('dashboard') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
         Dashboard
@@ -152,7 +156,7 @@ tr:hover td { background: var(--pink-light); }
         Input Permintaan
       </a>
       <a href="{{ route('perhitungan.index') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5h3" stroke-linecap="round"/><path d="M6.5 8.5h3" stroke-linecap="round"/><path d="M6.5 10.5h3" stroke-linecap="round"/></svg>
         Hitung SPK
       </a>
       <a href="{{ route('perhitungan.riwayat') }}" class="nav-item">

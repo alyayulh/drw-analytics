@@ -329,6 +329,10 @@ code, .mono { font-family: 'DM Mono', monospace; }
 </head>
 <body>
 
+{{-- Halaman dashboard SPK.
+     Menampilkan ringkasan hasil dan rekomendasi produk terbaik.
+--}}
+
 <div class="sidebar">
   <div class="sb-brand">
     <div class="sb-logo">
@@ -365,7 +369,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
         Input Permintaan
       </a>
       <a href="{{ route('perhitungan.index') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5h3" stroke-linecap="round"/><path d="M6.5 8.5h3" stroke-linecap="round"/><path d="M6.5 10.5h3" stroke-linecap="round"/></svg>
         Hitung SPK
       </a>
       <a href="{{ route('perhitungan.riwayat') }}" class="nav-item">

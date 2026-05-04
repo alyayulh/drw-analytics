@@ -4,6 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model metadata perhitungan SPK.
+ * Menyimpan header perhitungan, snapshot bobot, matriks keputusan, dan relasi ke hasil per produk.
+ */
 class Perhitungan extends Model
 {
     // Nama tabel di database

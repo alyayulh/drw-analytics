@@ -7,6 +7,7 @@ use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\KriteriaController;
 use App\Http\Controllers\InputPermintaanController;
 use App\Http\Controllers\PerhitunganController;
+use App\Http\Controllers\AsosiasiController;
 
 Route::get('/login', fn() => view('auth.login'))->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
@@ -50,17 +51,12 @@ Route::middleware('auth')->group(function () {
 });
 
 // === ROUTES ANALISIS ASOSIASI ===
-Route::get('/asosiasi/dashboard', [AsosiasiController::class, 'dashboard'])->name('asosiasi.dashboard');
-Route::get('/asosiasi/riwayat', [AsosiasiController::class, 'riwayat'])->name('asosiasi.riwayat');
+Route::middleware('auth')->group(function () {
+    Route::get('/asosiasi/dashboard', [AsosiasiController::class, 'dashboard'])->name('asosiasi.dashboard');
+    Route::get('/asosiasi/riwayat', [AsosiasiController::class, 'riwayat'])->name('asosiasi.riwayat');
 
-// Khusus Admin
-Route::middleware('admin')->group(function () {
-    Route::get('/asosiasi/analisis', [AsosiasiController::class, 'analisis'])->name('asosiasi.analisis');
+    // Khusus Admin
+    Route::middleware('admin')->group(function () {
+        Route::get('/asosiasi/analisis', [AsosiasiController::class, 'analisis'])->name('asosiasi.analisis');
+    });
 });
-
-// === ROUTES ANALISIS ASOSIASI ===
-use App\Http\Controllers\AsosiasiController;
-
-Route::get('/asosiasi/dashboard', [AsosiasiController::class, 'dashboard'])->name('asosiasi.dashboard');
-Route::get('/asosiasi/riwayat', [AsosiasiController::class, 'riwayat'])->name('asosiasi.riwayat');
-Route::get('/asosiasi/analisis', [AsosiasiController::class, 'analisis'])->name('asosiasi.analisis');

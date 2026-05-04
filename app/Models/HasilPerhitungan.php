@@ -4,6 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Model hasil perhitungan setiap produk.
+ * Menyimpan nilai akhir Yi, total benefit/cost, ranking, dan kategori prioritas.
+ */
 class HasilPerhitungan extends Model
 {
     protected $table = 'hasil_perhitungan';

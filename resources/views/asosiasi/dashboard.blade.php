@@ -235,7 +235,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
 
     {{-- SPK --}}
     <div class="nav-section">
-      <div class="nav-label">Menentukan Produk Promosi</div>
+      <div class="nav-label">Penentuan Produk Promosi</div>
       <a href="{{ route('dashboard') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
         Dashboard
@@ -255,12 +255,8 @@ code, .mono { font-family: 'DM Mono', monospace; }
         Input Permintaan
       </a>
       <a href="{{ route('perhitungan.index') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5h3" stroke-linecap="round"/><path d="M6.5 8.5h3" stroke-linecap="round"/><path d="M6.5 10.5h3" stroke-linecap="round"/></svg>
         Hitung SPK
-      </a>
-      <a href="{{ route('perhitungan.hasil', ['id' => 'latest']) }}" class="nav-item"> {{-- ✅ atau sesuaikan dengan route yang benar --}}
-        <svg viewBox="0 0 16 16"><path d="M2 12l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Hasil & Laporan
       </a>
       <a href="{{ route('perhitungan.riwayat') }}" class="nav-item"> {{-- ✅ FIX: was route('riwayat') --}}
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
