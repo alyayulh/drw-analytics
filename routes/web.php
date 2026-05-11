@@ -56,12 +56,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/asosiasi/riwayat', [AsosiasiController::class, 'riwayat'])->name('asosiasi.riwayat');
 
     Route::middleware('role:Admin')->group(function () {
-        Route::get('/asosiasi/analisis', [AsosiasiController::class, 'analisis'])->name('asosiasi.analisis');
+    Route::get('/asosiasi/analisis', [AsosiasiController::class, 'analisis'])->name('asosiasi.analisis');
 
-        Route::post('/asosiasi/analisis/proses', [AsosiasiController::class, 'prosesAnalisis'])
-            ->name('asosiasi.proses');
+    Route::post('/asosiasi/analisis/proses', [AsosiasiController::class, 'prosesAnalisis'])
+        ->name('asosiasi.proses');
 
-        Route::get('/asosiasi/hasil', [AsosiasiController::class, 'hasilAnalisis'])
-            ->name('asosiasi.hasil');
-    });
+    Route::get('/asosiasi/hasil', [AsosiasiController::class, 'hasilAnalisis'])
+        ->name('asosiasi.hasil');
+
+    Route::get('/asosiasi/download-laporan', [AsosiasiController::class, 'downloadLaporan'])
+        ->name('asosiasi.download');
+});
 });

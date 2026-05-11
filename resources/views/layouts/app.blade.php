@@ -11,6 +11,7 @@
         'resources/css/app.css',
         'resources/css/asosiasi-analisis.css',
         'resources/css/asosiasi-hasil.css',
+        'resources/css/asosiasi-dashboard.css',
         'resources/js/app.js',
         'resources/js/asosiasi-analisis.js'
     ])
