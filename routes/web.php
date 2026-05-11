@@ -55,8 +55,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/asosiasi/dashboard', [AsosiasiController::class, 'dashboard'])->name('asosiasi.dashboard');
     Route::get('/asosiasi/riwayat', [AsosiasiController::class, 'riwayat'])->name('asosiasi.riwayat');
 
-    // Khusus Admin
-    Route::middleware('admin')->group(function () {
+    Route::middleware('role:Admin')->group(function () {
         Route::get('/asosiasi/analisis', [AsosiasiController::class, 'analisis'])->name('asosiasi.analisis');
+
+        Route::post('/asosiasi/analisis/proses', [AsosiasiController::class, 'prosesAnalisis'])
+            ->name('asosiasi.proses');
+
+        Route::get('/asosiasi/hasil', [AsosiasiController::class, 'hasilAnalisis'])
+            ->name('asosiasi.hasil');
     });
 });
