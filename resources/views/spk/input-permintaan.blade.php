@@ -3,400 +3,763 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Input Permintaan — DRW Skincare SPK</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-:root {
-  --pink: #e8005a; --pink-light: #fff0f5; --pink-mid: #ff4d8d; --pink-dark: #b3004a; --pink-soft: #ffd6e8;
-  --red: #ef4444; --red-light: #fef2f2; --green: #10b981; --green-light: #ecfdf5;
-  --amber: #f59e0b; --amber-light: #fef3c7; --blue: #3b82f6; --blue-light: #eff6ff;
-  --bg: #fff5f8; --surface: #ffffff; --border: #fce7ef; --border-strong: #f9a8c9;
-  --text: #1a0a0f; --text-2: #5a3347; --text-3: #b07090;
-  --sidebar-w: 220px; --radius: 10px; --radius-lg: 14px;
-  --shadow: 0 1px 3px rgba(232,0,90,.06); --shadow-md: 0 4px 16px rgba(232,0,90,.10);
+
+:root{
+    --pink:#e91e63;
+    --pink-soft:#fff1f6;
+    --pink-border:#f5c5d7;
+    --text:#222;
+    --muted:#888;
+    --bg:#fff8fb;
+    --white:#fff;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; font-size: 14px; }
 
-.sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; box-shadow: 2px 0 12px rgba(232,0,90,.06); }
-.sb-brand { padding: 22px 18px 16px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
-.sb-logo { display: flex; align-items: center; gap: 10px; }
-.sb-logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--pink), var(--pink-mid)); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(232,0,90,.3); }
-.sb-logo-icon svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 2.2; }
-.sb-logo-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.2; letter-spacing: -.3px; }
-.sb-logo-sub { font-size: 10px; color: var(--text-3); margin-top: 1px; }
-.sb-nav { flex: 1; padding: 14px 10px; }
-.nav-section { margin-bottom: 6px; }
-.nav-label { font-size: 10px; font-weight: 700; color: var(--text-3); letter-spacing: .08em; text-transform: uppercase; padding: 6px 8px 4px; }
-.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-2); transition: all .15s; margin-bottom: 2px; position: relative; text-decoration: none; }
-.nav-item:hover { background: var(--pink-light); color: var(--pink-dark); }
-.nav-item.active { background: linear-gradient(135deg, var(--pink-light), #ffe4ef); color: var(--pink); font-weight: 700; }
-.nav-item.active::before { content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; background: var(--pink); border-radius:0 3px 3px 0; }
-.nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
-.sb-footer { padding: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
-.avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--pink-mid)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
-.sb-user-name { font-size: 12px; font-weight: 700; color: var(--text); }
-.sb-user-role { font-size: 10px; color: var(--text-3); }
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
-.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.topbar { height: 56px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 28px; gap: 12px; position: sticky; top: 0; z-index: 10; }
-.topbar-title { font-size: 15px; font-weight: 800; color: var(--text); flex: 1; }
-.content { flex: 1; padding: 28px; overflow-y: auto; }
-.page-header { margin-bottom: 24px; }
-.page-header h1 { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -.5px; }
-.page-header p { font-size: 13px; color: var(--text-3); margin-top: 4px; }
+body{
+    font-family:'Plus Jakarta Sans',sans-serif;
+    background:var(--bg);
+    color:var(--text);
+}
 
-.card { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 20px 22px; box-shadow: var(--shadow); margin-bottom: 16px; }
-.card-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
-.card-title { font-size: 13px; font-weight: 700; color: var(--text); }
-.card-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.main{
+    padding:32px;
+    max-width:1400px;
+    margin:auto;
+}
 
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface); font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer; font-family: inherit; transition: all .15s; text-decoration: none; }
-.btn:hover { background: var(--bg); }
-.btn-pink { background: linear-gradient(135deg, var(--pink), var(--pink-mid)); color: #fff; border: none; box-shadow: 0 2px 8px rgba(232,0,90,.25); }
-.btn-pink:hover { opacity: .9; }
-.btn-sm { padding: 6px 12px; font-size: 11px; }
-.btn-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.step-wrapper{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
+    margin-bottom:24px;
+}
 
-.info-box { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 9px; font-size: 12px; margin-bottom: 14px; }
-.info-box svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; margin-top: 1px; }
-.info-pink { background: var(--pink-light); color: var(--pink-dark); border: 1px solid var(--pink-soft); }
+.step{
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    background:#f5d9e4;
+    color:#999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:700;
+}
 
-.badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
-.badge-green { background: var(--green-light); color: #065f46; }
-.badge-amber { background: var(--amber-light); color: #92400e; }
+.step.active{
+    background:var(--pink);
+    color:white;
+}
 
-.form-input, .form-select { width: 100%; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--surface); outline: none; transition: border .15s; }
-.form-input:focus, .form-select:focus { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(232,0,90,.08); }
+.step-line{
+    width:40px;
+    height:2px;
+    background:#f5d9e4;
+}
 
-.table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
-table { width: 100%; border-collapse: collapse; }
-thead { background: var(--pink-light); }
-th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--pink-dark); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap; }
-td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--pink-light); }
+.page-header{
+    margin-bottom:24px;
+}
 
-.rating-cell { display: flex; gap: 4px; justify-content: center; }
-.rating-btn-sm { width: 30px; height: 30px; border: 2px solid var(--border); border-radius: 6px; background: var(--surface); font-size: 11px; font-weight: 700; color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
-.rating-btn-sm:hover { border-color: var(--pink-soft); background: var(--pink-light); }
-.rating-btn-sm.selected { border-color: var(--pink); background: var(--pink); color: #fff; }
+.page-header h1{
+    font-size:26px;
+    font-weight:800;
+    margin-bottom:6px;
+}
 
-.empty-state { text-align: center; padding: 48px 20px; color: var(--text-3); }
-.empty-state svg { width: 44px; height: 44px; stroke: var(--border-strong); fill: none; stroke-width: 1.5; margin: 0 auto 12px; display: block; }
-.empty-state p { font-size: 13px; line-height: 1.6; }
+.page-header p{
+    color:var(--muted);
+    font-size:13px;
+}
 
-.alert { padding: 10px 14px; border-radius: 9px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
-.alert-success { background: var(--green-light); color: #065f46; border: 1px solid #6ee7b7; }
+.top-filter{
+    display:flex;
+    gap:14px;
+    margin-bottom:18px;
+}
 
-.warn-banner { background: var(--amber-light); border: 1px solid #fcd34d; border-radius: var(--radius-lg); padding: 16px 18px; margin-bottom: 20px; font-size: 13px; color: #92400e; line-height: 1.6; }
-.warn-banner b { font-weight: 700; }
+.search-input,
+.category-filter{
+    height:44px;
+    border:1px solid var(--pink-border);
+    border-radius:14px;
+    padding:0 16px;
+    background:white;
+    outline:none;
+    font-family:inherit;
+}
 
-/* ── SIDEBAR ── */
-.sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; box-shadow: 2px 0 12px rgba(232,0,90,.06); }
-.sb-brand { height: 56px; padding: 0 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
-.sb-logo { display: flex; align-items: center; gap: 10px; }
-.sb-logo-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.2; letter-spacing: -.3px; }
-.sb-logo-sub { font-size: 10px; color: var(--text-3); margin-top: 1px; }
-.sb-nav { flex: 1; padding: 14px 10px; overflow-y: auto; }
-.nav-section { margin-bottom: 6px; }
-.nav-label { font-size: 10px; font-weight: 700; color: var(--text-3); letter-spacing: .08em; text-transform: uppercase; padding: 6px 8px 4px; }
-.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; font-size: 13px; font-weight: 500; color: var(--text-2); transition: all .15s; margin-bottom: 2px; position: relative; text-decoration: none; }
-.nav-item:hover { background: var(--pink-light); color: var(--pink-dark); }
-.nav-item.active { background: linear-gradient(135deg, var(--pink-light), #ffe4ef); color: var(--pink); font-weight: 700; }
-.nav-item.active::before { content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; background: var(--pink); border-radius:0 3px 3px 0; }
-.nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
-.nav-divider { height: 1px; background: var(--border); margin: 8px 10px; }
-.sb-footer { padding: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; background: linear-gradient(135deg, #fff5f8, #fff); }
-.avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--pink-mid)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
-.sb-user-name { font-size: 12px; font-weight: 700; color: var(--text); }
-.sb-user-role { font-size: 10px; color: var(--text-3); }
-.sb-logout { margin-left: auto; cursor: pointer; color: var(--text-3); }
-.sb-logout:hover { color: var(--pink); }
+.search-input{
+    flex:1;
+}
+
+.selected-summary{
+    background:white;
+    border:1px solid var(--pink-border);
+    border-radius:18px;
+    padding:20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+.summary-label{
+    font-size:12px;
+    color:var(--muted);
+}
+
+.selected-summary h3{
+    color:var(--pink);
+    margin-top:4px;
+}
+
+.btn-next,
+.btn-save{
+    border:none;
+    background:#f7e7ef;
+    padding:12px 20px;
+    border-radius:14px;
+    cursor:pointer;
+    font-weight:600;
+    transition:0.2s;
+}
+
+.btn-next:hover,
+.btn-save:hover{
+    background:#f2d7e3;
+}
+
+.category-card{
+    background:white;
+    border:1px solid var(--pink-border);
+    border-radius:18px;
+    margin-bottom:14px;
+    overflow:hidden;
+}
+
+.category-header{
+    padding:18px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+}
+
+.category-title{
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.category-count{
+    background:#fde8f1;
+    color:var(--pink);
+    font-size:11px;
+    padding:4px 10px;
+    border-radius:999px;
+}
+
+.category-body{
+    padding:0 20px 20px;
+}
+
+.product-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+}
+
+.product-item{
+    border:1px solid var(--pink-border);
+    border-radius:999px;
+    padding:12px 14px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition:0.2s;
+    font-size:13px;
+}
+
+.product-item:hover{
+    background:var(--pink-soft);
+}
+
+.product-checkbox{
+    accent-color:var(--pink);
+}
+
+.progress-box{
+    background:white;
+    border:1px solid var(--pink-border);
+    border-radius:18px;
+    padding:20px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    margin-bottom:18px;
+}
+
+.btn-back{
+    border:1px solid var(--pink);
+    background:white;
+    color:var(--pink);
+    padding:10px 16px;
+    border-radius:999px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+.table-wrapper{
+    background:white;
+    border:1px solid var(--pink-border);
+    border-radius:18px;
+    overflow:hidden;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    text-align:left;
+    padding:16px 20px;
+    font-size:12px;
+    border-bottom:1px solid #f5d9e4;
+}
+
+td{
+    padding:18px 20px;
+    border-bottom:1px solid #f8dfe8;
+    font-size:13px;
+}
+
+.rating-group{
+    display:flex;
+    gap:8px;
+}
+
+.rating-btn{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    border:1px solid var(--pink);
+    background:white;
+    color:var(--pink);
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.rating-btn.active{
+    background:var(--pink);
+    color:white;
+}
+
+.status-text{
+    font-size:12px;
+    color:#c18ca0;
+    font-weight:600;
+}
+
+.save-wrapper{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:20px;
+}
+
+@media(max-width:900px){
+
+    .product-grid{
+        grid-template-columns:1fr;
+    }
+
+    .top-filter{
+        flex-direction:column;
+    }
+
+}
 
 </style>
 </head>
+
 <body>
 
-{{-- Halaman input permintaan.
-     Menyediakan form dan tabel untuk memasukkan data permintaan produk.
---}}
-
-<div class="sidebar">
-  <div class="sb-brand">
-    <div class="sb-logo">
-      <div class="sb-logo-icon" style="background:none;box-shadow:none;">
-        <img src="https://pos.drwskincare.com/logo_drw.svg" alt="DRW" style="width:36px;height:36px;object-fit:contain;">
-      </div>
-      <div>
-        <div class="sb-logo-name">DRW BANJARMASIN</div>
-        <div class="sb-logo-sub">Analisis penjualan &amp; produk</div>
-      </div>
-    </div>
-  </div>
-  <div class="sb-nav">
-    <div class="nav-section">
-      <div class="nav-label">Penentuan Produk Promosi</div>
-      <a href="{{ route('dashboard') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
-        Dashboard
-      </a>
-      <a href="{{ route('kriteria.index') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.5 3.5l1.4 1.4M11 11l1.4 1.4M3.5 12.5l1.4-1.4M11 5l1.4-1.4" stroke-linecap="round"/></svg>
-        Kelola Kriteria
-      </a>
-      @if(auth()->check() && auth()->user()->role === 'Admin')
-      <a href="{{ route('produk.index') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><path d="M2 4h12v9a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/></svg>
-        Data Produk
-      </a>
-      @endif
-      <a href="{{ route('input.index') }}" class="nav-item active">
-        <svg viewBox="0 0 16 16"><path d="M2 8h8M8 5l3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v10" stroke-linecap="round"/></svg>
-        Input Permintaan
-      </a>
-      <a href="{{ route('perhitungan.index') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5h3" stroke-linecap="round"/><path d="M6.5 8.5h3" stroke-linecap="round"/><path d="M6.5 10.5h3" stroke-linecap="round"/></svg>
-        Hitung SPK
-      </a>
-      <a href="{{ route('perhitungan.riwayat') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
-        Riwayat
-      </a>
-    </div>
-
-    <div class="nav-divider"></div>
-
-    <div class="nav-section">
-      <div class="nav-label">Analisis Asosiasi</div>
-      <a href="{{ route('asosiasi.dashboard') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
-        Dashboard
-      </a>
-      @if(auth()->check() && auth()->user()->role === 'Admin')
-      <a href="{{ route('asosiasi.analisis') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="6" cy="6" r="4"/><path d="M10 10l4 4" stroke-linecap="round"/></svg>
-        Analisis Pola
-      </a>
-      @endif
-      <a href="{{ route('asosiasi.riwayat') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
-        Riwayat Analisis
-      </a>
-    </div>
-  </div>
-  <div class="sb-footer">
-    <div class="avatar">{{ strtoupper(substr(auth()->user()?->nama_lengkap ?? 'U', 0, 2)) }}</div>
-    <div>
-      <div class="sb-user-name">{{ auth()->user()?->nama_lengkap ?? '-' }}</div>
-      <div class="sb-user-role">{{ auth()->user()?->role ?? '-' }}</div>
-    </div>
-    <div class="sb-logout">
-      <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--text-3);display:flex;align-items:center" title="Logout">
-          <svg viewBox="0 0 16 16" width="15" height="15"><path d="M10 3h3a1 1 0 011 1v8a1 1 0 01-1 1h-3M7 11l3-3-3-3M10 8H3" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="none" stroke-width="1.8"/></svg>
-        </button>
-      </form>
-    </div>
-  </div>
-</div>
-
-
 <div class="main">
-  <div class="topbar">
-    <div class="topbar-title">Input Permintaan</div>
-  </div>
 
-  <div class="content">
-    <div class="page-header">
-      <h1>Lengkapi Nilai Kriteria</h1>
-      <p>Lengkapi nilai kriteria dengan (skala 1–5) untuk setiap produk.</p>
+    {{-- STEPPER --}}
+    <div class="step-wrapper">
+        <div class="step active" id="step1Indicator">1</div>
+        <div class="step-line"></div>
+        <div class="step" id="step2Indicator">2</div>
     </div>
 
-    @if(session('success'))
-      <div class="alert alert-success">✓ {{ session('success') }}</div>
-    @endif
+    {{-- STEP 1 --}}
+    <div id="step1">
 
-    @if($kriterias->count() === 0)
-      <div class="warn-banner">
-        <b>Tidak ada kriteria input manual.</b> Halaman ini tidak aktif karena semua kriteria menggunakan sumber data Excel. Tambahkan kriteria dengan sumber "Input Manual" di menu Kelola Kriteria.
-      </div>
-    @elseif($produks->count() === 0)
-      <div class="warn-banner">
-        <b>Belum ada produk.</b> Tambahkan produk terlebih dahulu di halaman Data Produk.
-      </div>
-    @else
-      <div class="card">
-        <div class="card-hd">
-          <div>
-            <div class="card-title">Input Nilai Kriteria Manual</div>
-            <div class="card-sub">Isi nilai untuk setiap produk ({{ $produks->count() }} produk)</div>
-          </div>
-          <div class="btn-group">
-            <select class="form-select" style="width:150px;padding:6px 10px" id="filter-status">
-              <option value="all">Semua produk</option>
-              <option value="empty">Belum diisi</option>
-              <option value="filled">Sudah diisi</option>
-            </select>
-            <button type="button" class="btn btn-pink btn-sm" onclick="saveAllInputs()">
-              Simpan nilai
-            </button>
-          </div>
+        <div class="page-header">
+            <h1>Input Permintaan Produk</h1>
+            <p>
+                Pilih maksimal 5 produk di setiap kategori sebelum melakukan penilaian kriteria.
+            </p>
         </div>
 
-        <div class="info-box info-pink">
-          <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 7v5M8 5.5v.01" stroke-linecap="round"/></svg>
-          <div>
-            <b>Skala penilaian 1-5:</b><br>
-            1 = Sangat jarang dicari, 2 = Jarang dicari, 3 = Cukup banyak dicari, 4 = Sering dicari, 5 = Sangat banyak dicari
-          </div>
-        </div>
+        <div class="top-filter">
 
-        <form id="form-input-all">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width:40px">No</th>
-                  <th style="min-width:200px">Nama Produk</th>
-                  @foreach($kriterias as $k)
-                    <th style="text-align:center;min-width:160px">{{ $k->nama_kriteria }}</th>
-                  @endforeach
-                  <th style="text-align:center;width:80px">Status</th>
-                </tr>
-              </thead>
-              <tbody id="tbody-input">
-                @foreach($produks as $i => $produk)
-                  @php
-                    $produkInputs = $inputs->get($produk->id_produk);
-                    $filled = $produkInputs ? $produkInputs->count() : 0;
-                    $total = $kriterias->count();
-                  @endphp
-                  <tr data-status="{{ $filled == $total ? 'filled' : 'empty' }}">
-                    <td style="color:var(--text-3);font-size:12px">{{ $i + 1 }}</td>
-                    <td style="font-weight:600">{{ $produk->nama_produk }}</td>
-                    @foreach($kriterias as $k)
-                      @php
-                        $existing = $produkInputs ? $produkInputs->firstWhere('id_kriteria', $k->id_kriteria) : null;
-                        $currentValue = $existing ? $existing->nilai_input : null;
-                      @endphp
-                      <td>
-                        <div class="rating-cell">
-                          @for($v = 1; $v <= 5; $v++)
-                            <button type="button" 
-                                    class="rating-btn-sm {{ $currentValue == $v ? 'selected' : '' }}" 
-                                    data-produk="{{ $produk->id_produk }}" 
-                                    data-kriteria="{{ $k->id_kriteria }}" 
-                                    data-value="{{ $v }}"
-                                    onclick="selectValue(this)">
-                              {{ $v }}
-                            </button>
-                          @endfor
-                        </div>
-                      </td>
-                    @endforeach
-                    <td style="text-align:center">
-                      @if($filled == $total)
-                        <span class="badge badge-green">✓ Lengkap</span>
-                      @else
-                        <span class="badge badge-amber">{{ $filled }}/{{ $total }}</span>
-                      @endif
-                    </td>
-                  </tr>
+            <input
+                type="text"
+                class="search-input"
+                id="searchInput"
+                placeholder="Cari produk..."
+            >
+
+            <select
+                class="category-filter"
+                id="kategoriFilter"
+            >
+
+                <option value="all">
+                    Semua Kategori
+                </option>
+
+                @foreach($produkByKategori as $kategori => $items)
+
+                    <option value="{{ strtolower($kategori) }}">
+                        {{ $kategori }}
+                    </option>
+
                 @endforeach
-              </tbody>
+
+            </select>
+
+        </div>
+
+        <div class="selected-summary">
+
+            <div>
+                <div class="summary-label">
+                    Total Produk Dipilih
+                </div>
+
+                <h3 id="totalSelected">
+                    0 produk
+                </h3>
+            </div>
+
+            <button
+                class="btn-next"
+                onclick="goToStep2()"
+            >
+                Lanjut ke Penilaian →
+            </button>
+
+        </div>
+
+        {{-- LIST KATEGORI --}}
+        @foreach($produkByKategori as $kategori => $items)
+
+        <div
+            class="category-card"
+            data-category="{{ strtolower($kategori) }}"
+        >
+
+            <div
+                class="category-header"
+                onclick="toggleCategory(this)"
+            >
+
+                <div class="category-title">
+
+                    {{ $kategori }}
+
+                    <span class="category-count">
+
+                        <span id="count-{{ Str::slug($kategori) }}">
+                            0
+                        </span>
+
+                        /5 dipilih
+
+                    </span>
+
+                </div>
+
+                <div>⌄</div>
+
+            </div>
+
+            <div class="category-body">
+
+                <div class="product-grid">
+
+                    @foreach($items as $produk)
+
+                    <label class="product-item">
+
+                        <input
+                            type="checkbox"
+                            class="product-checkbox"
+                            data-id="{{ $produk->id_produk }}"
+                            data-name="{{ $produk->nama_produk }}"
+                            data-category="{{ $kategori }}"
+                            onchange="toggleProduct(this)"
+                        >
+
+                        <span>
+                            {{ $produk->nama_produk }}
+                        </span>
+
+                    </label>
+
+                    @endforeach
+
+                </div>
+
+            </div>
+
+        </div>
+
+        @endforeach
+
+    </div>
+
+    {{-- STEP 2 --}}
+    <div id="step2" style="display:none;">
+
+        <div class="page-header">
+            <h1>Input Permintaan Produk</h1>
+        </div>
+
+        <div class="progress-box">
+
+            <button
+                class="btn-back"
+                onclick="backToStep1()"
+            >
+                ← Kembali
+            </button>
+
+            <div>
+
+                <div class="summary-label">
+                    Progress Penilaian
+                </div>
+
+                <h3 id="progressText">
+                    0 / 0 produk
+                </h3>
+
+            </div>
+
+        </div>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Produk</th>
+                        <th>Skor Permintaan</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="penilaianTable">
+
+                </tbody>
+
             </table>
-          </div>
-        </form>
-      </div>
-    @endif
-  </div>
+
+        </div>
+
+        <div class="save-wrapper">
+
+            <button
+                class="btn-save"
+                onclick="savePenilaian()"
+            >
+                Simpan Penilaian
+            </button>
+
+        </div>
+
+    </div>
+
 </div>
 
 <script>
-const selectedValues = {};
 
-document.querySelectorAll('.rating-btn-sm.selected').forEach(btn => {
-  const produk = btn.dataset.produk;
-  const kriteria = btn.dataset.kriteria;
-  const value = btn.dataset.value;
-  if (!selectedValues[produk]) selectedValues[produk] = {};
-  selectedValues[produk][kriteria] = value;
+let selectedProducts = [];
+
+function toggleCategory(el){
+
+    const body = el.nextElementSibling;
+
+    body.style.display =
+        body.style.display === 'none'
+        ? 'block'
+        : 'none';
+}
+
+function toggleProduct(el){
+
+    const category = el.dataset.category;
+
+    const categorySlug =
+        category.toLowerCase().replace(/\s+/g,'-');
+
+    const checked =
+        document.querySelectorAll(
+            `input[data-category="${category}"]:checked`
+        );
+
+    if(checked.length > 5){
+
+        el.checked = false;
+
+        alert('Maksimal 5 produk per kategori');
+
+        return;
+    }
+
+    document.getElementById(
+        `count-${categorySlug}`
+    ).innerText = checked.length;
+
+    updateSelectedProducts();
+}
+
+function updateSelectedProducts(){
+
+    selectedProducts = [];
+
+    document.querySelectorAll(
+        '.product-checkbox:checked'
+    ).forEach(item => {
+
+        selectedProducts.push({
+            id:item.dataset.id,
+            name:item.dataset.name,
+        });
+
+    });
+
+    document.getElementById(
+        'totalSelected'
+    ).innerText =
+        selectedProducts.length + ' produk';
+}
+
+function goToStep2(){
+
+    if(selectedProducts.length === 0){
+
+        alert('Pilih produk terlebih dahulu');
+
+        return;
+    }
+
+    document.getElementById('step1')
+        .style.display='none';
+
+    document.getElementById('step2')
+        .style.display='block';
+
+    document.getElementById('step1Indicator')
+        .classList.remove('active');
+
+    document.getElementById('step2Indicator')
+        .classList.add('active');
+
+    renderTable();
+}
+
+function backToStep1(){
+
+    document.getElementById('step1')
+        .style.display='block';
+
+    document.getElementById('step2')
+        .style.display='none';
+
+    document.getElementById('step2Indicator')
+        .classList.remove('active');
+
+    document.getElementById('step1Indicator')
+        .classList.add('active');
+}
+
+function renderTable(){
+
+    const tbody =
+        document.getElementById('penilaianTable');
+
+    tbody.innerHTML = '';
+
+    selectedProducts.forEach((item,index)=>{
+
+        tbody.innerHTML += `
+
+            <tr>
+
+                <td>${index + 1}</td>
+
+                <td>${item.name}</td>
+
+                <td>
+
+                    <div class="rating-group">
+
+                        ${[1,2,3,4,5].map(v=>`
+
+                            <button
+                                type="button"
+                                class="rating-btn"
+                                onclick="selectRating(this)"
+                            >
+                                ${v}
+                            </button>
+
+                        `).join('')}
+
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <span class="status-text">
+                        Belum Selesai
+                    </span>
+
+                </td>
+
+            </tr>
+
+        `;
+    });
+
+    document.getElementById(
+        'progressText'
+    ).innerText =
+        `0 / ${selectedProducts.length} produk`;
+}
+
+function selectRating(el){
+
+    const parent =
+        el.parentElement;
+
+    parent.querySelectorAll('.rating-btn')
+        .forEach(btn=>{
+            btn.classList.remove('active');
+        });
+
+    el.classList.add('active');
+
+    updateProgress();
+}
+
+function updateProgress(){
+
+    const rows =
+        document.querySelectorAll('#penilaianTable tr');
+
+    let done = 0;
+
+    rows.forEach(row=>{
+
+        const active =
+            row.querySelector('.rating-btn.active');
+
+        const status =
+            row.querySelector('.status-text');
+
+        if(active){
+
+            done++;
+
+            status.innerText = 'Selesai';
+
+            status.style.color = '#28a745';
+
+        }else{
+
+            status.innerText = 'Belum Selesai';
+
+            status.style.color = '#c18ca0';
+        }
+
+    });
+
+    document.getElementById(
+        'progressText'
+    ).innerText =
+        `${done} / ${rows.length} produk`;
+}
+
+function savePenilaian(){
+
+    alert('Penilaian berhasil disimpan');
+}
+
+document.getElementById('searchInput')
+.addEventListener('input',function(){
+
+    const keyword =
+        this.value.toLowerCase();
+
+    document.querySelectorAll('.product-item')
+    .forEach(item=>{
+
+        item.style.display =
+            item.innerText
+                .toLowerCase()
+                .includes(keyword)
+            ? 'flex'
+            : 'none';
+
+    });
+
 });
 
-function selectValue(btn) {
-  const produk = btn.dataset.produk;
-  const kriteria = btn.dataset.kriteria;
-  const value = btn.dataset.value;
-  
-  const row = btn.closest('td');
-  row.querySelectorAll('.rating-btn-sm').forEach(b => b.classList.remove('selected'));
-  
-  btn.classList.add('selected');
-  
-  if (!selectedValues[produk]) selectedValues[produk] = {};
-  selectedValues[produk][kriteria] = value;
-  
-  updateStatusBadge(btn.closest('tr'));
-}
+document.getElementById('kategoriFilter')
+.addEventListener('change',function(){
 
-function updateStatusBadge(row) {
-  const produk = row.querySelector('[data-produk]').dataset.produk;
-  const totalKriteria = {{ $kriterias->count() }};
-  const filled = selectedValues[produk] ? Object.keys(selectedValues[produk]).length : 0;
-  
-  const badge = row.querySelector('.badge');
-  if (filled === totalKriteria) {
-    badge.className = 'badge badge-green';
-    badge.textContent = '✓ Lengkap';
-    row.dataset.status = 'filled';
-  } else {
-    badge.className = 'badge badge-amber';
-    badge.textContent = filled + '/' + totalKriteria;
-    row.dataset.status = 'empty';
-  }
-}
+    const value =
+        this.value;
 
-function saveAllInputs() {
-  if (Object.keys(selectedValues).length === 0) {
-    alert('Belum ada nilai yang diinput.');
-    return;
-  }
-  
-  const formData = new FormData();
-  formData.append('_token', '{{ csrf_token() }}');
-  formData.append('data', JSON.stringify(selectedValues));
-  
-  fetch('{{ route("input.store") }}', {
-    method: 'POST',
-    body: formData
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert('Semua data berhasil disimpan!');
-      location.reload();
-    } else {
-      alert('Gagal menyimpan: ' + data.message);
-    }
-  })
-  .catch(err => {
-    alert('Error: ' + err.message);
-  });
-}
+    document.querySelectorAll('.category-card')
+    .forEach(card=>{
 
-document.getElementById('filter-status').addEventListener('change', function() {
-  const value = this.value;
-  const rows = document.querySelectorAll('#tbody-input tr');
-  rows.forEach(row => {
-    if (value === 'all') {
-      row.style.display = '';
-    } else {
-      row.style.display = row.dataset.status === value ? '' : 'none';
-    }
-  });
+        card.style.display =
+            value === 'all'
+            || card.dataset.category === value
+            ? 'block'
+            : 'none';
+
+    });
+
 });
+
 </script>
+
 </body>
 </html>
