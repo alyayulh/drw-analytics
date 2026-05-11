@@ -7,20 +7,30 @@ document.addEventListener("DOMContentLoaded", function () {
     const loadingCard = document.getElementById("loadingAnalisis");
     const steps = document.querySelectorAll(".process-step");
 
+    const defaultFileText = "Belum ada file yang dipilih";
+
     if (!form) return;
 
-    fileInput.addEventListener("change", function () {
-        if (fileInput.files.length > 0 && fileName) {
-            fileName.textContent = fileInput.files[0].name;
-        }
-    });
+    if (fileInput && fileName) {
+        fileInput.addEventListener("change", function () {
+            if (fileInput.files.length > 0) {
+                fileName.textContent = fileInput.files[0].name;
+            } else {
+                fileName.textContent = defaultFileText;
+            }
+        });
+    }
 
     if (btnReset) {
-        btnReset.addEventListener("click", function () {
-            fileInput.value = "";
+        btnReset.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            if (fileInput) {
+                fileInput.value = "";
+            }
 
             if (fileName) {
-                fileName.textContent = "Product Sales Details - DRW SKIN CARE BEAUTY - All Outlets - 01 Jan 2026 - 31 Mar 2026.xls";
+                fileName.textContent = defaultFileText;
             }
 
             steps.forEach(function (step) {
@@ -31,8 +41,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 loadingCard.classList.add("hidden");
             }
 
-            btnProses.disabled = false;
-            btnProses.innerHTML = "▷ Proses Analisis";
+            if (btnProses) {
+                btnProses.disabled = false;
+                btnProses.innerHTML = "▷ Proses Analisis";
+            }
         });
     }
 

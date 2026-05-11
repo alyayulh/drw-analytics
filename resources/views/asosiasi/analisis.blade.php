@@ -18,21 +18,17 @@
     <div class="analysis-card">
         <h2>Dataset Upload</h2>
 
-        <div class="upload-box">
-            <input type="file" name="file_excel" id="file_excel" accept=".xlsx,.xls,.csv" required hidden>
+        <div class="upload-box simple-upload">
+    <input type="file" name="file_excel" id="file_excel" accept=".xlsx,.xls,.csv" required hidden>
 
-            <div class="file-icon">▤</div>
+    <label for="file_excel" class="btn-upload">
+        Pilih File Excel
+    </label>
 
-            <p id="fileName" class="file-name">
-                Product Sales Details - DRW SKIN CARE BEAUTY - All Outlets - 01 Jan 2026 - 31 Mar 2026.xls
-            </p>
-
-            <span class="upload-separator">atau</span>
-
-            <label for="file_excel" class="btn-upload">
-                Pilih File Excel
-            </label>
-        </div>
+    <p id="fileName" class="selected-file-name">
+        Belum ada file yang dipilih
+    </p>
+</div>
 
         <div class="upload-notes">
             <div>ⓘ Format file yang diterima: .xlsx atau .xls</div>
