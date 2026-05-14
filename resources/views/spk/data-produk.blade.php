@@ -265,11 +265,13 @@ tr:hover td { background: var(--pink-light); }
       <p>Upload data produk melalui file Excel atau tambahkan produk secara manual.</p>
     </div>
 
-    @if(session('success'))
-      <div class="alert alert-success">✓ {{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-      <div class="alert alert-error">✗ {{ session('error') }}</div>
+   {{-- Banner warning: produk tanpa kategori tidak muncul di Input Permintaan --}}
+    @if(($produkBelumBerkategori ?? 0) > 0)
+      <div class="alert alert-error" style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e">
+        ⚠ Ada <strong>{{ $produkBelumBerkategori }}</strong> produk yang belum berkategori.
+        Produk-produk ini <strong>tidak akan muncul</strong> di halaman Input Permintaan.
+        Klik tombol <strong>Edit</strong> pada baris produk yang ditandai 🏷 untuk menetapkan kategori.
+      </div>
     @endif
 
     <!-- UPLOAD EXCEL -->
@@ -357,11 +359,12 @@ tr:hover td { background: var(--pink-light); }
 
       @if($produks->count() > 0)
       <div class="table-wrap">
-        <table id="tabel-produk">
+       <table id="tabel-produk">
           <thead>
             <tr>
               <th>No</th>
               <th>Nama Produk</th>
+              <th>Kategori</th>
               <th>Status Data</th>
               <th>Aksi</th>
             </tr>
@@ -372,6 +375,17 @@ tr:hover td { background: var(--pink-light); }
               <td style="color:var(--text-3);font-size:12px">{{ $i + 1 }}</td>
               <td style="font-weight:600">{{ $produk->nama_produk }}</td>
               <td>
+                @if($produk->kategoriProduk)
+                  <span class="badge" style="background:#fce7f3;color:#9d174d;border:1px solid #fbcfe8">
+                    {{ $produk->kategoriProduk->nama_kategori }}
+                  </span>
+                @else
+                  <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d">
+                    🏷 Belum Berkategori
+                  </span>
+                @endif
+              </td>
+              <td>
                 @if($produk->status_data === 'Lengkap')
                   <span class="badge badge-green">✓ Data Lengkap</span>
                 @else
@@ -380,7 +394,10 @@ tr:hover td { background: var(--pink-light); }
               </td>
               <td>
                 <div style="display:flex;gap:6px">
-                  <button class="btn btn-sm" onclick="openEdit({{ $produk->id_produk }}, '{{ addslashes($produk->nama_produk) }}')">Edit</button>
+                  <button class="btn btn-sm"
+                          onclick="openEdit({{ $produk->id_produk }}, '{{ addslashes($produk->nama_produk) }}', {{ $produk->id_kategori ?? 'null' }})">
+                    Edit
+                  </button>
                   <button class="btn btn-red btn-sm" onclick="openHapus({{ $produk->id_produk }}, '{{ addslashes($produk->nama_produk) }}')">Hapus</button>
                 </div>
               </td>
@@ -408,6 +425,22 @@ tr:hover td { background: var(--pink-light); }
       <div class="form-group">
         <label class="form-label">Nama Produk</label>
         <input class="form-input" name="nama_produk" placeholder="Nama produk" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          Kategori
+          <span style="font-weight:400;color:var(--text-3)">(opsional — kosongkan untuk otomatis)</span>
+        </label>
+        <select class="form-input" name="id_kategori">
+          <option value="">— Otomatis dari nama produk —</option>
+          @foreach($kategoris as $kat)
+            <option value="{{ $kat->id_kategori }}">{{ $kat->nama_kategori }}</option>
+          @endforeach
+        </select>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">
+          Jika dibiarkan kosong, sistem mencoba mendeteksi dari kata kunci nama produk.
+        </div>
       </div>
 
       {{-- Field nilai kriteria Manual -- tampil dinamis sesuai kriteria yang ada --}}
@@ -457,6 +490,18 @@ tr:hover td { background: var(--pink-light); }
         <label class="form-label">Nama Produk</label>
         <input class="form-input" name="nama_produk" id="edit-nama" required>
       </div>
+      <div class="form-group">
+        <label class="form-label">Kategori</label>
+        <select class="form-input" name="id_kategori" id="edit-kategori">
+          <option value="">— Tanpa Kategori —</option>
+          @foreach($kategoris as $kat)
+            <option value="{{ $kat->id_kategori }}">{{ $kat->nama_kategori }}</option>
+          @endforeach
+        </select>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">
+          Produk tanpa kategori tidak akan muncul di halaman Input Permintaan.
+        </div>
+      </div>
       <div class="modal-actions">
         <button type="button" class="btn" onclick="closeModal('modal-edit')">Batal</button>
         <button type="submit" class="btn btn-pink">Simpan</button>
@@ -501,8 +546,11 @@ function highlightRadio(input) {
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-function openEdit(id, nama) {
+function openEdit(id, nama, idKategori) {
   document.getElementById('edit-nama').value = nama;
+  // idKategori bisa null dari Blade -> set ke '' supaya option "Tanpa Kategori" terpilih
+  const selectKat = document.getElementById('edit-kategori');
+  selectKat.value = (idKategori === null || idKategori === undefined) ? '' : String(idKategori);
   document.getElementById('form-edit').action = '/data-produk/' + id;
   openModal('modal-edit');
 }

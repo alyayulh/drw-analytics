@@ -46,6 +46,147 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 .page-header { margin-bottom: 24px; }
 .page-header h1 { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -.5px; }
 .page-header p { font-size: 13px; color: var(--text-3); margin-top: 4px; }
+
+/* ============ MODE TOGGLE ============ */
+.mode-switcher {
+  display: inline-flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+.mode-btn {
+  background: transparent;
+  border: none;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all .15s ease;
+  font-family: inherit;
+}
+.mode-btn.active {
+  background: var(--surface);
+  color: var(--pink);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.mode-btn:hover:not(.active) { color: var(--text-2); }
+
+/* Sembunyikan mode yang tidak aktif. Pakai !important supaya menang dari style inline. */
+body[data-mode="awam"]   .mode-detail-only { display: none !important; }
+body[data-mode="detail"] .mode-awam-only   { display: none !important; }
+
+/* ============ KARTU PRODUK MODE AWAM ============ */
+.produk-card-awam {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  transition: border-color .15s, transform .15s;
+}
+.produk-card-awam:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+.produk-card-awam.top1 { border-color: #fbbf24; background: linear-gradient(to right, #fffbeb 0%, var(--surface) 50%); }
+.produk-rank-bubble {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; flex-shrink: 0;
+  background: #f3f4f6; color: #6b7280;
+  font-family: 'DM Mono', monospace;
+}
+.produk-rank-bubble.top1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #fff; box-shadow: 0 2px 6px rgba(251,191,36,.35); }
+.produk-rank-bubble.top2 { background: #d1d5db; color: #374151; }
+.produk-rank-bubble.top3 { background: linear-gradient(135deg, #fdba74, #fb923c); color: #fff; }
+.produk-info-awam { flex: 1; min-width: 0; }
+.produk-nama-awam {
+  font-weight: 700; font-size: 14px;
+  color: var(--text); margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.produk-alasan-awam {
+  font-size: 12px; color: var(--text-2); line-height: 1.5;
+}
+.produk-alasan-awam .icon-bulb { margin-right: 4px; }
+.produk-badge-awam {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+  white-space: nowrap;
+}
+.badge-awam-utama  { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.badge-awam-pertim { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+.badge-awam-tunda  { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+
+.section-title-awam {
+  font-size: 13px; font-weight: 700; color: var(--text-2);
+  margin: 18px 0 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title-awam:first-child { margin-top: 0; }
+.section-count-pill {
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 2px 8px; border-radius: 6px;
+  font-size: 11px; color: var(--text-3); font-weight: 600;
+}
+.empty-state-awam {
+  text-align: center; padding: 30px 20px;
+  color: var(--text-3); font-size: 12px;
+  background: var(--bg); border-radius: 10px; border: 1px dashed var(--border);
+}
+
+/* ============ PANDUAN VERSI AWAM (simpel, bahasa bisnis) ============ */
+.guide-awam {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.guide-awam-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: border-color .15s, transform .15s;
+}
+.guide-awam-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+.guide-awam-card .ga-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.guide-awam-card.ga-utama  .ga-icon { background: #dcfce7; }
+.guide-awam-card.ga-pertim .ga-icon { background: #fef3c7; }
+.guide-awam-card.ga-tunda  .ga-icon { background: #f3f4f6; }
+.guide-awam-card .ga-body { flex: 1; min-width: 0; }
+.guide-awam-card .ga-label {
+  font-size: 12px; font-weight: 800; color: var(--text);
+  margin-bottom: 3px;
+}
+.guide-awam-card .ga-desc {
+  font-size: 11px; color: var(--text-3); line-height: 1.5;
+}
+.guide-awam-title {
+  font-size: 13px; font-weight: 800; color: var(--text);
+  margin-bottom: 4px;
+}
+.guide-awam-sub {
+  font-size: 11px; color: var(--text-3);
+  margin-bottom: 12px;
+}
+
 .card { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 20px 22px; box-shadow: var(--shadow); margin-bottom: 16px; }
 .card-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
 .card-title { font-size: 13px; font-weight: 700; color: var(--text); }
@@ -90,34 +231,26 @@ tr:hover td { background: var(--pink-light); }
 .detail-table tr:last-child td { border-bottom: none; }
 
 /* ── SIDEBAR ── */
-.sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; box-shadow: 2px 0 12px rgba(232,0,90,.06); }
 .sb-brand { height: 56px; padding: 0 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
-.sb-logo { display: flex; align-items: center; gap: 10px; }
-.sb-logo-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.2; letter-spacing: -.3px; }
-.sb-logo-sub { font-size: 10px; color: var(--text-3); margin-top: 1px; }
-.sb-nav { flex: 1; padding: 14px 10px; overflow-y: auto; }
-.nav-section { margin-bottom: 6px; }
-.nav-label { font-size: 10px; font-weight: 700; color: var(--text-3); letter-spacing: .08em; text-transform: uppercase; padding: 6px 8px 4px; }
-.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; font-size: 13px; font-weight: 500; color: var(--text-2); transition: all .15s; margin-bottom: 2px; position: relative; text-decoration: none; }
-.nav-item:hover { background: var(--pink-light); color: var(--pink-dark); }
-.nav-item.active { background: linear-gradient(135deg, var(--pink-light), #ffe4ef); color: var(--pink); font-weight: 700; }
-.nav-item.active::before { content:''; position:absolute; left:0; top:6px; bottom:6px; width:3px; background: var(--pink); border-radius:0 3px 3px 0; }
-.nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+.sb-logo-name { letter-spacing: -.3px; }
+.sb-nav { overflow-y: auto; }
 .nav-divider { height: 1px; background: var(--border); margin: 8px 10px; }
-.sb-footer { padding: 14px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; background: linear-gradient(135deg, #fff5f8, #fff); }
-.avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--pink), var(--pink-mid)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
-.sb-user-name { font-size: 12px; font-weight: 700; color: var(--text); }
-.sb-user-role { font-size: 10px; color: var(--text-3); }
+.sb-footer { background: linear-gradient(135deg, #fff5f8, #fff); }
 .sb-logout { margin-left: auto; cursor: pointer; color: var(--text-3); }
 .sb-logout:hover { color: var(--pink); }
 
 </style>
 </head>
-<body>
+{{-- 
+  data-mode="awam" wajib agar mode default benar SEBELUM JS jalan
+  (cegah flash kedua mode muncul bersamaan saat halaman pertama dimuat).
+  Nanti JS akan override dari localStorage kalau user pernah pilih mode lain.
+--}}
+<body data-mode="awam">
 
 {{-- Halaman hasil perhitungan SPK.
-     Menampilkan ringkasan produk terbaik, kategori prioritas, daftar ranking, detail nilai kriteria,
-     dan snapshot bobot kriteria yang digunakan. --}}
+     2 mode: "awam" (default, bahasa bisnis) dan "detail" (perhitungan MOORA lengkap).
+     Switching via tombol di topbar, preferensi disimpan di localStorage. --}}
 
 <div class="sidebar">
   <div class="sb-brand">
@@ -203,12 +336,22 @@ tr:hover td { background: var(--pink-light); }
 <div class="main">
   <div class="topbar">
     <div class="topbar-title">Hasil Perhitungan</div>
+
+    <div class="mode-switcher" role="tablist" aria-label="Pilih mode tampilan">
+      <button type="button" class="mode-btn active" data-mode="awam" onclick="switchMode('awam')">
+        🎯 Rekomendasi
+      </button>
+      <button type="button" class="mode-btn" data-mode="detail" onclick="switchMode('detail')">
+        📊 Detail Perhitungan
+      </button>
+    </div>
+
     <a href="{{ route('perhitungan.riwayat') }}" class="btn btn-sm">Lihat Riwayat</a>
     <a href="{{ route('perhitungan.index') }}" class="btn btn-pink btn-sm">Hitung Ulang</a>
   </div>
   <div class="content">
 
-    {{-- HERO: PRODUK TERBAIK --}}
+    {{-- HERO: PRODUK TERBAIK (tampil di kedua mode, karena ini ringkasan tertinggi) --}}
     <div class="hero-box">
       <div class="hero-label">🏆 Produk Terbaik</div>
       <div class="hero-name">{{ $perhitungan->produk_prioritas }}</div>
@@ -220,7 +363,7 @@ tr:hover td { background: var(--pink-light); }
       </div>
     </div>
 
-    {{-- LEGENDA PRIORITAS --}}
+    {{-- ========== LEGENDA PRIORITAS (hanya muncul di mode DETAIL) ========== --}}
     <style>
       .priority-section { margin-bottom: 20px; }
       .priority-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
@@ -265,61 +408,22 @@ tr:hover td { background: var(--pink-light); }
         flex-shrink: 0;
       }
       .priority-meta { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-      .priority-title {
-        font-size: 13px;
-        font-weight: 800;
-        color: var(--text);
-        margin: 0;
-      }
-      .priority-subtitle {
-        font-size: 12px;
-        color: var(--text-2);
-        line-height: 1.4;
-        margin: 0;
-      }
-      .priority-percentage {
-        font-size: 14px;
-        font-weight: 800;
-        color: var(--text);
-        margin-top: 4px;
-      }
-      .priority-body {
-        display: grid;
-        gap: 6px;
-        font-size: 12px;
-        color: var(--text-2);
-        line-height: 1.5;
-      }
+      .priority-title { font-size: 13px; font-weight: 800; color: var(--text); margin: 0; }
+      .priority-subtitle { font-size: 12px; color: var(--text-2); line-height: 1.4; margin: 0; }
+      .priority-percentage { font-size: 14px; font-weight: 800; color: var(--text); margin-top: 4px; }
+      .priority-body { display: grid; gap: 6px; font-size: 12px; color: var(--text-2); line-height: 1.5; }
       .priority-body p { margin: 0; }
-      .priority-details {
-        font-size: 11px;
-        color: var(--text-3);
-        background: var(--bg);
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        line-height: 1.5;
-      }
-      .priority-note {
-        margin-top: 12px;
-        padding: 12px;
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        font-size: 11px;
-        color: var(--text-3);
-        line-height: 1.6;
-      }
+      .priority-details { font-size: 11px; color: var(--text-3); background: var(--bg); padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); line-height: 1.5; }
+      .priority-note { margin-top: 12px; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; font-size: 11px; color: var(--text-3); line-height: 1.6; }
     </style>
 
-    <div class="priority-section">
+    <div class="priority-section mode-detail-only">
       <div style="margin-bottom: 16px;">
         <div class="card-title" style="font-size:15px;margin-bottom:4px"> Panduan Kategori Prioritas</div>
         <div class="card-sub">Setiap produk diklasifikasikan berdasarkan performa hasil perhitungan sistem</div>
       </div>
-      
+
       <div class="priority-grid">
-        {{-- PRIORITAS UTAMA --}}
         <div class="priority-card priority-1">
           <div class="priority-icon">🏆</div>
           <div class="priority-meta">
@@ -335,7 +439,6 @@ tr:hover td { background: var(--pink-light); }
           </div>
         </div>
 
-        {{-- PERLU DIPERTIMBANGKAN --}}
         <div class="priority-card priority-2">
           <div class="priority-icon">⚖️</div>
           <div class="priority-meta">
@@ -354,7 +457,6 @@ tr:hover td { background: var(--pink-light); }
           </div>
         </div>
 
-        {{-- TUNDA --}}
         <div class="priority-card priority-3">
           <div class="priority-icon">⏸️</div>
           <div class="priority-meta">
@@ -379,17 +481,185 @@ tr:hover td { background: var(--pink-light); }
       </div>
     </div>
 
-    {{-- TABEL Peringkat --}}
+    {{-- Persiapan data untuk kedua mode --}}
     @php
-      // Sort berlapis di blade untuk memastikan urutan konsisten
+      // Sort berlapis untuk memastikan urutan konsisten
       $hasil = $hasil->sortBy([
         fn($a, $b) => $a->ranking <=> $b->ranking,
         fn($a, $b) => $b->total_benefit <=> $a->total_benefit,
         fn($a, $b) => $a->total_cost <=> $b->total_cost,
         fn($a, $b) => strcmp($a->nama_produk, $b->nama_produk),
       ]);
+
+      // ===== Generator narasi otomatis (mode awam) =====
+      // Mapping nama kriteria umum -> frasa awam.
+      // Kalau kriteria tidak ada di map, pakai fallback (nama kriteria + status).
+      $frasaKriteria = [
+        'jumlah_penjualan'   => ['baik' => 'penjualan tinggi',    'buruk' => 'penjualan rendah'],
+        'penjualan'          => ['baik' => 'penjualan tinggi',    'buruk' => 'penjualan rendah'],
+        'tingkat_permintaan' => ['baik' => 'permintaan tinggi',   'buruk' => 'permintaan rendah'],
+        'permintaan'         => ['baik' => 'permintaan tinggi',   'buruk' => 'permintaan rendah'],
+        'stok'               => ['baik' => 'stok mencukupi',      'buruk' => 'stok menipis'],
+        'harga_jual'         => ['baik' => 'harga menarik',       'buruk' => 'harga kurang kompetitif'],
+        'harga'              => ['baik' => 'harga menarik',       'buruk' => 'harga kurang kompetitif'],
+        'rating'             => ['baik' => 'rating bagus',        'buruk' => 'rating kurang'],
+        'margin'             => ['baik' => 'margin menguntungkan','buruk' => 'margin tipis'],
+        'biaya'              => ['baik' => 'biaya rendah',        'buruk' => 'biaya tinggi'],
+      ];
+
+      $generateNarasi = function($detailPerhitungan) use ($frasaKriteria) {
+          $faktor = [];
+          foreach ($detailPerhitungan as $d) {
+              $kontribusi = abs(($d->nilai_normal ?? 0) * ($d->bobot ?? 0) / 100);
+              $isBenefit  = strtolower($d->tipe_atribut ?? '') === 'benefit';
+              // Indikator "baik": Benefit dgn nilai normal tinggi, atau Cost dgn nilai normal rendah.
+              // Threshold 0.4 = heuristic median normalisasi MOORA.
+              $isPositif = $isBenefit ? ($d->nilai_normal >= 0.4) : ($d->nilai_normal < 0.4);
+
+              $key = strtolower(str_replace([' ', '-'], '_', $d->nama_kriteria));
+              $frasa = $frasaKriteria[$key] ?? [
+                  'baik'  => strtolower($d->nama_kriteria) . ' bagus',
+                  'buruk' => strtolower($d->nama_kriteria) . ' rendah',
+              ];
+              $faktor[] = [
+                  'kontribusi' => $kontribusi,
+                  'positif'    => $isPositif,
+                  'frasa'      => $isPositif ? $frasa['baik'] : $frasa['buruk'],
+              ];
+          }
+          // Sort kontribusi terbesar, ambil top 2 yg positif
+          usort($faktor, fn($a, $b) => $b['kontribusi'] <=> $a['kontribusi']);
+          $positif = array_values(array_filter($faktor, fn($f) => $f['positif']));
+          $top = array_slice($positif, 0, 2);
+          if (count($top) === 0) return 'Skor keseluruhan masih perlu ditingkatkan.';
+          if (count($top) === 1) return ucfirst($top[0]['frasa']) . '.';
+          return ucfirst($top[0]['frasa']) . ' dan ' . $top[1]['frasa'] . '.';
+      };
+
+      // Kelompokkan hasil berdasarkan prioritas
+      $utama      = $hasil->where('prioritas', 'Utama')->values();
+      $pertimbang = $hasil->where('prioritas', 'Pertimbangkan')->values();
+      $tunda      = $hasil->whereNotIn('prioritas', ['Utama', 'Pertimbangkan'])->values();
     @endphp
-    <div class="card">
+
+    {{-- ============================================================ --}}
+    {{-- ========== MODE AWAM (default, bahasa bisnis) ============== --}}
+    {{-- ============================================================ --}}
+
+    {{-- Panduan ringkas untuk user awam: jelaskan arti tiap label --}}
+    <div class="mode-awam-only">
+      <div class="guide-awam-title">📌 Panduan Rekomendasi</div>
+      <div class="guide-awam-sub">Setiap produk dikelompokkan ke salah satu kategori berikut</div>
+      <div class="guide-awam">
+        <div class="guide-awam-card ga-utama">
+          <div class="ga-icon">⭐</div>
+          <div class="ga-body">
+            <div class="ga-label">Sangat Direkomendasikan</div>
+            <div class="ga-desc">Produk terbaik dan paling layak untuk dipromosikan saat ini.</div>
+          </div>
+        </div>
+        <div class="guide-awam-card ga-pertim">
+          <div class="ga-icon">🤔</div>
+          <div class="ga-body">
+            <div class="ga-label">Perlu Pertimbangan</div>
+            <div class="ga-desc">Layak dipromosikan, tapi pertimbangkan dengan strategi tambahan.</div>
+          </div>
+        </div>
+        <div class="guide-awam-card ga-tunda">
+          <div class="ga-icon">⏸</div>
+          <div class="ga-body">
+            <div class="ga-label">Sebaiknya Ditunda</div>
+            <div class="ga-desc">Belum direkomendasikan untuk promosi saat ini.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mode-awam-only">
+      <div class="card-hd">
+        <div>
+          <div class="card-title">Rekomendasi Produk Promosi</div>
+          <div class="card-sub">Daftar produk yang sebaiknya diprioritaskan untuk dipromosikan, berdasarkan data penjualan dan stok.</div>
+        </div>
+      </div>
+
+      <div>
+        {{-- KATEGORI 1: SANGAT DIREKOMENDASIKAN --}}
+        @if($utama->count() > 0)
+          <div class="section-title-awam">
+            ⭐ Sangat Direkomendasikan
+            <span class="section-count-pill">{{ $utama->count() }} produk</span>
+          </div>
+          @foreach($utama as $h)
+            <div class="produk-card-awam {{ $h->ranking == 1 ? 'top1' : '' }}">
+              <div class="produk-rank-bubble {{ $h->ranking == 1 ? 'top1' : ($h->ranking == 2 ? 'top2' : ($h->ranking == 3 ? 'top3' : '')) }}">
+                #{{ $h->ranking }}
+              </div>
+              <div class="produk-info-awam">
+                <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
+                <div class="produk-alasan-awam">
+                  <span class="icon-bulb">💡</span>{{ $generateNarasi($h->detailPerhitungan) }}
+                </div>
+              </div>
+              <span class="produk-badge-awam badge-awam-utama">Sangat Direkomendasikan</span>
+            </div>
+          @endforeach
+        @endif
+
+        {{-- KATEGORI 2: PERLU PERTIMBANGAN --}}
+        @if($pertimbang->count() > 0)
+          <div class="section-title-awam">
+            🤔 Perlu Pertimbangan
+            <span class="section-count-pill">{{ $pertimbang->count() }} produk</span>
+          </div>
+          @foreach($pertimbang as $h)
+            <div class="produk-card-awam">
+              <div class="produk-rank-bubble">#{{ $h->ranking }}</div>
+              <div class="produk-info-awam">
+                <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
+                <div class="produk-alasan-awam">
+                  <span class="icon-bulb">💡</span>{{ $generateNarasi($h->detailPerhitungan) }}
+                </div>
+              </div>
+              <span class="produk-badge-awam badge-awam-pertim">Perlu Pertimbangan</span>
+            </div>
+          @endforeach
+        @endif
+
+        {{-- KATEGORI 3: SEBAIKNYA DITUNDA (collapse default) --}}
+        @if($tunda->count() > 0)
+          <div class="section-title-awam" style="cursor:pointer" onclick="toggleTunda()">
+            ⏸ Sebaiknya Ditunda
+            <span class="section-count-pill">{{ $tunda->count() }} produk</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text-3);font-weight:600" id="tunda-toggle-label">Klik untuk lihat ▾</span>
+          </div>
+          <div id="tunda-list" style="display:none">
+            @foreach($tunda as $h)
+              <div class="produk-card-awam">
+                <div class="produk-rank-bubble">#{{ $h->ranking }}</div>
+                <div class="produk-info-awam">
+                  <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
+                  <div class="produk-alasan-awam">
+                    <span class="icon-bulb">💡</span>{{ $generateNarasi($h->detailPerhitungan) }}
+                  </div>
+                </div>
+                <span class="produk-badge-awam badge-awam-tunda">Ditunda</span>
+              </div>
+            @endforeach
+          </div>
+        @endif
+
+        {{-- Empty state kalau tidak ada produk sama sekali --}}
+        @if($utama->count() === 0 && $pertimbang->count() === 0 && $tunda->count() === 0)
+          <div class="empty-state-awam">Belum ada hasil perhitungan untuk ditampilkan.</div>
+        @endif
+      </div>
+    </div>
+
+    {{-- ============================================================ --}}
+    {{-- ========== MODE DETAIL (perhitungan MOORA lengkap) ========== --}}
+    {{-- ============================================================ --}}
+    <div class="card mode-detail-only">
       <div class="card-hd">
         <div>
           <div class="card-title">Daftar peringkat Produk</div>
@@ -491,23 +761,24 @@ tr:hover td { background: var(--pink-light); }
       </div>
     </div>
 
-    {{-- BOBOT SNAPSHOT --}}
-    <div class="card">
+    {{-- BOBOT SNAPSHOT (hanya muncul di mode DETAIL karena ini info teknis) --}}
+    <div class="card mode-detail-only">
       <div class="card-hd">
         <div>
-          <div class="card-title">Snapshot Bobot Kriteria</div>
+          <div class="card-title">Ringkasan Bobot Kriteria</div>
           <div class="card-sub">Bobot yang digunakan saat perhitungan ini dijalankan</div>
         </div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         @foreach($kriterias as $k)
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 14px;min-width:140px">
-          <div style="font-size:11px;color:var(--text-3);margin-bottom:2px">{{ $k['nama'] }}</div>
-          <div style="font-size:18px;font-weight:800;color:var(--pink);font-family:'DM Mono',monospace">{{ $k['bobot'] }}%</div>
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:2px">{{ $k['nama'] ?? '-' }}</div>
+          <div style="font-size:18px;font-weight:800;color:var(--pink);font-family:'DM Mono',monospace">{{ $k['bobot'] ?? 0 }}%</div>
           <div style="font-size:10px;margin-top:2px">
-            @if(strtolower($k['tipe_atribut']) == 'benefit')
+            @php $tipe = strtolower($k['tipe_atribut'] ?? $k['tipe'] ?? ''); @endphp
+            @if($tipe === 'benefit')
               <span style="color:var(--green);font-weight:700">↑ Benefit</span>
-            @else
+            @elseif($tipe === 'cost')
               <span style="color:var(--red);font-weight:700">↓ Cost</span>
             @endif
           </div>
@@ -520,9 +791,47 @@ tr:hover td { background: var(--pink-light); }
 </div>
 
 <script>
+// ============================================================
+// MODE TOGGLE — switch antara Mode Rekomendasi (awam) & Detail
+// ============================================================
+function switchMode(mode) {
+  document.body.setAttribute('data-mode', mode);
+  document.querySelectorAll('.mode-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  try { localStorage.setItem('spk_hasil_mode', mode); } catch(e) {}
+}
+
+// Restore mode dari localStorage saat halaman dibuka.
+// Default tetap "awam" (sudah di-set via attribute data-mode di <body>).
+(function restoreMode() {
+  var mode = 'awam';
+  try { mode = localStorage.getItem('spk_hasil_mode') || 'awam'; } catch(e) {}
+  if (mode !== 'awam' && mode !== 'detail') mode = 'awam'; // sanitize
+  document.body.setAttribute('data-mode', mode);
+  document.querySelectorAll('.mode-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+})();
+
+// ============================================================
+// TOGGLE LIST PRODUK "DITUNDA" — collapse/expand di mode awam
+// ============================================================
+function toggleTunda() {
+  var list  = document.getElementById('tunda-list');
+  var label = document.getElementById('tunda-toggle-label');
+  if (!list) return;
+  var isOpen = list.style.display === 'block';
+  list.style.display = isOpen ? 'none' : 'block';
+  if (label) label.textContent = isOpen ? 'Klik untuk lihat ▾' : 'Sembunyikan ▴';
+}
+
+// ============================================================
+// TOGGLE DETAIL ROW — expand baris detail di tabel mode detail
+// ============================================================
 function toggleDetail(id) {
-  const row = document.getElementById('detail-' + id);
-  row.classList.toggle('open');
+  var row = document.getElementById('detail-' + id);
+  if (row) row.classList.toggle('open');
 }
 </script>
 </body>

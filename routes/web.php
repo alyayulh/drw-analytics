@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/input-permintaan', [InputPermintaanController::class, 'index'])->name('input.index');
     Route::post('/input-permintaan', [InputPermintaanController::class, 'store'])->name('input.store');
+    Route::delete('/input-permintaan/{idProduk}', [InputPermintaanController::class, 'destroy'])->name('input.destroy');
 
     Route::get('/hitung-spk', [PerhitunganController::class, 'index'])->name('perhitungan.index');
     Route::post('/hitung-spk', [PerhitunganController::class, 'hitung'])->name('perhitungan.hitung');

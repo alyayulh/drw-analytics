@@ -21,5 +21,10 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Seed kategori produk (wajib untuk halaman Produk & Input Permintaan)
+        $this->call([
+            KategoriProdukSeeder::class,
+        ]);
     }
 }

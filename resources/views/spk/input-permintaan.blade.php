@@ -16,6 +16,141 @@ foreach ($inputs as $idProduk => $rows) {
         $savedData[(string)$idProduk][(string)$row->id_kriteria] = (int)$row->nilai_input;
     }
 }
+// Helper dinamis untuk menampilkan keterangan skala 1-5 berdasarkan kriteria saat ini
+$scaleLabel = function(string $namaKriteria, int $nilai): string {
+    $key = strtolower($namaKriteria);
+
+    if (str_contains($key, 'permintaan') || str_contains($key, 'demand') || str_contains($key, 'minat')) {
+        return match ($nilai) {
+            1 => 'sangat jarang dicari',
+            2 => 'jarang dicari',
+            3 => 'cukup dicari',
+            4 => 'sering dicari',
+            5 => 'sangat sering dicari',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    if (str_contains($key, 'popularitas') || str_contains($key, 'populer')) {
+        return match ($nilai) {
+            1 => 'sangat tidak populer',
+            2 => 'kurang populer',
+            3 => 'cukup populer',
+            4 => 'populer',
+            5 => 'sangat populer',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    if (str_contains($key, 'tren') || str_contains($key, 'trend')) {
+        return match ($nilai) {
+            1 => 'tidak tren',
+            2 => 'kurang tren',
+            3 => 'cukup tren',
+            4 => 'tren',
+            5 => 'sangat tren',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    if (str_contains($key, 'kepuasan')) {
+        return match ($nilai) {
+            1 => 'sangat buruk',
+            2 => 'buruk',
+            3 => 'cukup puas',
+            4 => 'puas',
+            5 => 'sangat puas',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    if (str_contains($key, 'repeat') || str_contains($key, 'ulang')) {
+        return match ($nilai) {
+            1 => 'jarang dibeli ulang',
+            2 => 'kadang dibeli ulang',
+            3 => 'cukup sering dibeli ulang',
+            4 => 'sering dibeli ulang',
+            5 => 'sangat sering dibeli ulang',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    if (str_contains($key, 'kemasan') || str_contains($key, 'menarik')) {
+        return match ($nilai) {
+            1 => 'kurang menarik',
+            2 => 'sedikit menarik',
+            3 => 'cukup menarik',
+            4 => 'menarik',
+            5 => 'sangat menarik',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    if (str_contains($key, 'penjualan') || str_contains($key, 'jual')) {
+        return match ($nilai) {
+            1 => 'sangat sulit dijual',
+            2 => 'sulit dijual',
+            3 => 'cukup mudah dijual',
+            4 => 'mudah dijual',
+            5 => 'sangat mudah dijual',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    if (str_contains($key, 'persaingan') || str_contains($key, 'kompetisi')) {
+        return match ($nilai) {
+            1 => 'persaingan sangat tinggi',
+            2 => 'persaingan tinggi',
+            3 => 'persaingan sedang',
+            4 => 'persaingan rendah',
+            5 => 'persaingan sangat rendah',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    if (str_contains($key, 'kualitas')) {
+        return match ($nilai) {
+            1 => 'sangat buruk',
+            2 => 'buruk',
+            3 => 'cukup baik',
+            4 => 'baik',
+            5 => 'sangat baik',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    if (str_contains($key, 'target') || str_contains($key, 'sesuai')) {
+        return match ($nilai) {
+            1 => 'kurang sesuai',
+            2 => 'sedikit sesuai',
+            3 => 'cukup sesuai',
+            4 => 'sesuai',
+            5 => 'sangat sesuai',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    if (str_contains($key, 'harga') || str_contains($key, 'biaya') || str_contains($key, 'cost')) {
+        return match ($nilai) {
+            1 => 'biaya sangat rendah',
+            2 => 'biaya rendah',
+            3 => 'biaya sedang',
+            4 => 'biaya tinggi',
+            5 => 'biaya sangat tinggi',
+            default => 'nilai tidak diketahui',
+        };
+    }
+
+    return match ($nilai) {
+        1 => 'sangat rendah',
+        2 => 'rendah',
+        3 => 'sedang',
+        4 => 'tinggi',
+        5 => 'sangat tinggi',
+        default => 'nilai tidak diketahui',
+    };
+};
+
 // Validasi ulang: max 5 per kategori
 $savedProdukIds = [];
 foreach ($produkByKategori as $_kat => $_items) {
@@ -171,6 +306,11 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 .kriteria-banner-text strong { font-weight: 700; color: var(--pink); }
 .kriteria-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .kriteria-chip { display: inline-flex; align-items: center; gap: 5px; background: #fff; border: 1px solid var(--pink-border-strong); border-radius: var(--radius-pill); padding: 3px 10px; font-size: 11px; font-weight: 600; color: var(--pink); }
+.kriteria-scale { margin-top: 14px; padding: 12px 14px; background: #fff; border: 1px solid var(--pink-border); border-radius: var(--radius); }
+.kriteria-scale strong { display: block; margin-bottom: 8px; font-size: 12px; color: var(--pink-dark); }
+.scale-list { list-style: disc; margin: 0; padding-left: 18px; color: var(--text-2); font-size: 12px; line-height: 1.5; }
+.scale-list li { margin-bottom: 4px; }
+.scale-list li span { font-weight: 700; color: var(--text); }
 
 /* TABLE */
 .table-wrapper { background: var(--surface); border: 1px solid var(--pink-border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); overflow-x: auto; }
@@ -298,7 +438,6 @@ td.status-col { white-space: nowrap; }
 <div class="main-wrap">
   <div class="topbar">
     <div class="topbar-title">Input Permintaan Produk</div>
-    <span class="topbar-pill">SPK WASPAS</span>
   </div>
 
   <div class="content">
@@ -316,7 +455,13 @@ td.status-col { white-space: nowrap; }
         <h1>Input Permintaan Produk</h1>
         <p>Pilih maksimal 5 produk di setiap kategori sebelum melakukan penilaian kriteria.</p>
       </div>
-
+        {{-- Banner: ada produk yang tidak muncul karena belum berkategori --}}
+      @if(($produkBelumBerkategori ?? 0) > 0)
+        <div style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;line-height:1.5">
+          ⚠ <strong>{{ $produkBelumBerkategori }}</strong> produk tidak ditampilkan di sini karena belum berkategori.
+          Admin perlu menetapkan kategorinya dulu di halaman <a href="{{ route('produk.index') }}" style="color:#b45309;text-decoration:underline;font-weight:600">Data Produk</a>.
+        </div>
+      @endif
       {{-- Filter --}}
       <div class="top-filter">
         <div class="search-wrap">
@@ -420,6 +565,21 @@ td.status-col { white-space: nowrap; }
                 {{ $k->nama_kriteria }}
               </span>
             @endforeach
+          </div>
+          <div class="kriteria-scale">
+            <strong>Skala 1–5 untuk kriteria saat ini:</strong>
+            <ul class="scale-list">
+              @foreach($kriterias as $k)
+                <li>
+                  <span>{{ $k->nama_kriteria }}:</span>
+                  1 = {{ $scaleLabel($k->nama_kriteria, 1) }},
+                  2 = {{ $scaleLabel($k->nama_kriteria, 2) }},
+                  3 = {{ $scaleLabel($k->nama_kriteria, 3) }},
+                  4 = {{ $scaleLabel($k->nama_kriteria, 4) }},
+                  5 = {{ $scaleLabel($k->nama_kriteria, 5) }}
+                </li>
+              @endforeach
+            </ul>
           </div>
         </div>
       </div>

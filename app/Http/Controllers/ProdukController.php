@@ -6,6 +6,7 @@ use App\Models\Produk;
 use App\Models\NilaiProduk;
 use App\Models\Kriteria;
 use App\Models\KategoriProduk;
+use App\Models\InputPermintaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Shuchkin\SimpleXLSX;
@@ -27,36 +28,66 @@ class ProdukController extends Controller
             ->whereNotNull('nama_kolom_excel')
             ->get();
 
+        // List kategori untuk dropdown di modal Tambah & Edit
+        $kategoris = KategoriProduk::orderBy('nama_kategori')->get();
+        // Untuk warning banner: berapa produk yang belum berkategori
+        $produkBelumBerkategori = $produks->whereNull('id_kategori')->count();
+
         return view('spk.data-produk', compact(
-            'produks', 'kriteriaManual', 'semuaKriteria', 'kriteriaExcel'
+            'produks', 'kriteriaManual', 'semuaKriteria', 'kriteriaExcel',
+            'kategoris', 'produkBelumBerkategori'
         ));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nama_produk'    => 'required|string|max:255',
-            'nilai_kriteria' => 'nullable|array',
+            'nama_produk'      => 'required|string|max:255',
+            'id_kategori'      => 'nullable|integer|exists:kategori_produk,id_kategori',
+            'nilai_kriteria'   => 'nullable|array',
+            // Skala 1-5 sesuai constraint CHECK di tabel input_permintaan
+            'nilai_kriteria.*' => 'nullable|integer|between:1,5',
         ]);
 
-        $produk = Produk::create([
-            'nama_produk' => $request->nama_produk,
-            'id_kategori' => $this->resolveKategori($request->nama_produk),
-            'status_data' => 'Belum Lengkap',
-        ]);
+        // Whitelist id_kriteria yang sah (cegah payload isi nilai utk kriteria Excel)
+        $manualKriteriaIds = Kriteria::where('sumber_data', 'Manual')
+            ->pluck('id_kriteria')->map(fn($id) => (string)$id)->all();
 
-        if ($request->has('nilai_kriteria')) {
-            foreach ($request->nilai_kriteria as $idKriteria => $nilai) {
-                if ($nilai !== null && $nilai !== '') {
+        // Prioritas penentuan kategori:
+        // 1) Dropdown eksplisit dari admin, 2) Auto-resolve dari nama, 3) NULL
+        $idKategori = $request->filled('id_kategori')
+            ? (int) $request->id_kategori
+            : $this->resolveKategori($request->nama_produk);
+
+        DB::transaction(function () use ($request, $idKategori, $manualKriteriaIds) {
+            $produk = Produk::create([
+                'nama_produk' => $request->nama_produk,
+                'id_kategori' => $idKategori,
+                'status_data' => 'Belum Lengkap',
+            ]);
+
+            if ($request->filled('nilai_kriteria')) {
+                foreach ($request->nilai_kriteria as $idKriteria => $nilai) {
+                    if ($nilai === null || $nilai === '') continue;
+                    if (!in_array((string)$idKriteria, $manualKriteriaIds, true)) continue;
+
+                    $nilaiInt = (int) $nilai;
+
+                    // Tulis ke DUA tabel agar konsisten dgn halaman Input Permintaan
+                    InputPermintaan::updateOrCreate(
+                        ['id_produk' => $produk->id_produk, 'id_kriteria' => $idKriteria],
+                        ['nilai_input' => $nilaiInt]
+                    );
                     NilaiProduk::updateOrCreate(
                         ['id_produk' => $produk->id_produk, 'id_kriteria' => $idKriteria],
-                        ['nilai' => (float) $nilai]
+                        ['nilai' => (float) $nilaiInt]
                     );
                 }
             }
-        }
 
-        $this->updateStatusProduk($produk);
+            $this->updateStatusProduk($produk);
+        });
+
         return back()->with('success', 'Produk berhasil ditambahkan.');
     }
 
@@ -295,15 +326,27 @@ class ProdukController extends Controller
         return redirect()->route('produk.index')->with('info', 'Import dibatalkan.');
     }
 
-    public function update(Request $request, $id)
+   public function update(Request $request, $id)
     {
         $produk = Produk::findOrFail($id);
-        $request->validate(['nama_produk' => 'required|string|max:255']);
 
-        $idKategori = $this->resolveKategori($request->nama_produk);
+        $request->validate([
+            'nama_produk' => 'required|string|max:255',
+            'id_kategori' => 'nullable|integer|exists:kategori_produk,id_kategori',
+        ]);
+
+        // Prioritas kategori saat update:
+        // - Kalau dropdown muncul di payload -> hormati pilihan admin (termasuk kosong)
+        // - Kalau dropdown tidak ada -> coba auto-resolve, fallback ke kategori lama
+        if ($request->has('id_kategori')) {
+            $idKategori = $request->filled('id_kategori') ? (int) $request->id_kategori : null;
+        } else {
+            $idKategori = $this->resolveKategori($request->nama_produk) ?? $produk->id_kategori;
+        }
+
         $produk->update([
             'nama_produk' => $request->nama_produk,
-            'id_kategori' => $idKategori ?? $produk->id_kategori,
+            'id_kategori' => $idKategori,
         ]);
 
         return back()->with('success', 'Produk berhasil diupdate.');
