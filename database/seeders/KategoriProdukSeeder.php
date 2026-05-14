@@ -3,128 +3,160 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\KategoriProduk;
 use App\Models\Produk;
+use Illuminate\Support\Facades\DB;
 
 class KategoriProdukSeeder extends Seeder
 {
-    /**
-     * Jalankan dengan: php artisan db:seed --class=KategoriProdukSeeder
-     */
     public function run(): void
     {
-        // Map kategori => keyword (lowercase)
-        // Urutan PENTING: lebih spesifik di atas, lebih umum di bawah
-        $kategoriMap = [
-            'Acne Care' => [
-                'acne cream', 'acne brightening', 'soft acne', 'day acne',
-                'serum for acne', 'serum acne', 'facial wash oily acne',
-                'facial wash tea tree', 'facial wash hijau acne',
-                'acne brightening cream for men', 'sunscreen acne',
-                'sunscreen for oily and acne', 'sunscreen oily acne',
-                'peel off mask for oily and acne',
-            ],
-            'Brightening Cream' => [
-                'brightening cream', 'day pink cream', 'day white cream',
-                'night cream', 'snail cream', 'cnr', 'glowtech',
-                'soft brightening cream for men', 'radiant bright',
-                'luminous brightening', 'serum brightening',
-            ],
-            'Lip Matte / Lip Product' => [
-                'lip cream matte', 'lips cream matte', 'amour matte lip',
-                'lipstik matte', 'lipgloss', 'lips care', 'lip matte',
-            ],
-            'Cushion / BB Cream / Powder' => [
-                'cushion', 'bb cream', 'bb -', 'compact powder',
-                'daily compact powder', 'silky soft face powder',
-                'silky soft powder', 'lightening silky', 'face powder',
-                'setting powder', 'loose powder',
-            ],
-            'Facial Wash' => [
-                'facial wash', 'face wash',
-            ],
-            'Toner' => [
-                'toner', 'face toner', 'hydrating essence toner',
-                'exfoliating complex toner',
-            ],
-            'Serum & Essence' => [
-                'serum', 'essence', 'dna salmon extra marine collagen',
-                'beauty dna salmon', 'radiant glow booster',
-            ],
-            'Moisturizer & Gel' => [
-                'moisturizer gel', 'daily ceramoist', 'hydra gel',
-                'aloe vera gel', 'face mist', 'tinted moisturizer',
-            ],
-            'Sunscreen' => [
-                'sunscreen', 'sunblok', 'spf',
-            ],
-            'Face Mask' => [
-                'face mask', 'mask premium', 'rice face mask',
-                'green tea face mask', 'honey face mask', 'tea tree oil face mask',
-                'brightening peel off mask',
-            ],
-            'Exfoliating' => [
-                'exfoliating', 'aha bha', 'serum aha',
-            ],
-            'Cleansing & Micellar' => [
-                'micellar', 'cleansing milk', 'bloome',
-            ],
-            'Body Care' => [
-                'body lotion', 'body cream', 'body wash', 'body scrub',
-                'body firming', 'firming body', 'night body lotion',
-                'stretchmark', 'lulur', 'hand body', 'day body lotion',
-                'day body foundation',
-            ],
-            'Hair Care' => [
-                'shampoo', 'hair tonic', 'hair serum', 'aloe vera shampoo',
-            ],
-            'Soap' => [
-                'soap', 'kojic',
-            ],
-            'Deodorant' => [
-                'deo', 'deodorant', 'coolbright',
-            ],
-            'Supplement & Slimming' => [
-                'slimming', 'kapsul gemuk', 'kapsul', 'd\'etawa', 'susu etawa',
-                'collagen rasa',
-            ],
-            'Special Treatment / Spray' => [
-                'spray', 'beauty dna', 'glowtech spicule', 'hb dosting',
-                'stretchmark', 'breast cream',
-            ],
-        ];
+        DB::transaction(function () {
+            $kategoriList = [
+                'Krim Wajah', 'Pembersih Wajah', 'Toner & Essence',
+                'Serum', 'Exfoliating', 'Masker & Peeling', 'Sunscreen',
+                'Makeup', 'Perawatan Tubuh', 'Perawatan Rambut', 'Suplemen & Lainnya',
+            ];
 
-        $produkList = Produk::all();
-        $updated    = 0;
-        $notFound   = [];
+            $kategoriMap = [];
+            foreach ($kategoriList as $nama) {
+                $kat = KategoriProduk::firstOrCreate(['nama_kategori' => $nama]);
+                $kategoriMap[$nama] = $kat->id_kategori;
+            }
 
-        foreach ($produkList as $produk) {
-            $nama       = strtolower($produk->nama_produk);
-            $matched    = null;
+            $produks  = Produk::all();
+            $assigned = 0;
+            $skipped  = 0;
 
-            foreach ($kategoriMap as $kategori => $keywords) {
-                foreach ($keywords as $kw) {
-                    if (str_contains($nama, strtolower($kw))) {
-                        $matched = $kategori;
-                        break 2;
-                    }
+            foreach ($produks as $produk) {
+                $kat = $this->resolveKategori($produk->nama_produk, $kategoriMap);
+                if ($kat) {
+                    $produk->update(['id_kategori' => $kat]);
+                    $assigned++;
+                } else {
+                    $skipped++;
                 }
             }
 
-            if ($matched) {
-                $produk->update(['kategori' => $matched]);
-                $updated++;
-            } else {
-                $notFound[] = $produk->nama_produk;
+            $this->command->info("✓ {$assigned} produk berhasil dikategorikan");
+            if ($skipped > 0) {
+                $this->command->warn("⚠ {$skipped} produk tidak cocok keyword manapun:");
+                foreach (Produk::whereNull('id_kategori')->pluck('nama_produk') as $nama) {
+                    $this->command->warn("  - {$nama}");
+                }
+            }
+        });
+    }
+
+    private function resolveKategori(string $namaProduk, array $kategoriMap): ?int
+    {
+        $upper = strtoupper($namaProduk);
+
+        $rules = [
+            // KRIM WAJAH
+            'DAY ACNE CREAM'            => 'Krim Wajah',
+            'ACNE CREAM'                => 'Krim Wajah',
+            'SOFT ACNE CREAM'           => 'Krim Wajah',
+            'SOFT BRIGHTENING CREAM'    => 'Krim Wajah',
+            'DAY WHITE CREAM'           => 'Krim Wajah',
+            'DAY PINK CREAM'            => 'Krim Wajah',
+            'DAY CREAM'                 => 'Krim Wajah',
+            'BRIGHTENING CREAM'         => 'Krim Wajah',
+            'SNAIL CREAM'               => 'Krim Wajah',
+            'CNR PLUS'                  => 'Krim Wajah',
+            'RADIANT BRIGHT'            => 'Krim Wajah',
+            'RADIANT GLOW'              => 'Krim Wajah',
+            'BREAST CREAM'              => 'Krim Wajah',
+            'ANTI AGING EYE GEL'        => 'Krim Wajah',
+            // PEMBERSIH WAJAH
+            'FACIAL WASH'               => 'Pembersih Wajah',
+            'CLEANSING MILK'            => 'Pembersih Wajah',
+            'MILK CLEANSER'             => 'Pembersih Wajah',
+            'MICELLAR'                  => 'Pembersih Wajah',
+            // TONER & ESSENCE
+            'EXFOLIATING COMPLEX TONER' => 'Toner & Essence',
+            'HYDRATING ESSENCE'         => 'Toner & Essence',
+            'FACE MIST'                 => 'Toner & Essence',
+            'T- CHAMOMILE'              => 'Toner & Essence',
+            'TONER'                     => 'Toner & Essence',
+            // SERUM
+            'LUMINOUS BRIGHTENING'      => 'Serum',
+            'BEAUTY DNA SALMON'         => 'Serum',
+            'DNA SALMON EXTRA'          => 'Serum',
+            'GLOWTECH'                  => 'Serum',
+            'SERUM'                     => 'Serum',
+            // EXFOLIATING
+            'EXFOLIATING'               => 'Exfoliating',
+            // MASKER & PEELING
+            'BRIGHTENING PEEL'          => 'Masker & Peeling',
+            'PEEL OFF MASK'             => 'Masker & Peeling',
+            'PEEL OF MASK'              => 'Masker & Peeling',
+            'PEELING GEL'               => 'Masker & Peeling',
+            'GREEN TEA MASK'            => 'Masker & Peeling',
+            'HONEY MASK'                => 'Masker & Peeling',
+            'TEA TREE OIL MASK'         => 'Masker & Peeling',
+            'RICE MASK'                 => 'Masker & Peeling',
+            'FACE MASK'                 => 'Masker & Peeling',
+            // SUNSCREEN
+            'SUNSCREEN'                 => 'Sunscreen',
+            'SUNCREEN'                  => 'Sunscreen',
+            'SUNBLOK'                   => 'Sunscreen',
+            // MAKEUP
+            'DAILY COMPACT POWDER'      => 'Makeup',
+            'COMPACT POWDER'            => 'Makeup',
+            'SILKY SOFT FACE POWDER'    => 'Makeup',
+            'LIGHT SILKY SOFT POWDER'   => 'Makeup',
+            'LIGHTENING SILKY'          => 'Makeup',
+            'BB -'                      => 'Makeup',
+            'BB CUSHION'                => 'Makeup',
+            'BB CREAM'                  => 'Makeup',
+            'DAY BODY FOUNDATION'       => 'Makeup',
+            'AMOUR MATTE LIP'           => 'Makeup',
+            'LIPS CREAM'                => 'Makeup',
+            'LIPS MATTE'                => 'Makeup',
+            'LIPS CARE'                 => 'Makeup',
+            'LIPGLOSS'                  => 'Makeup',
+            'LIPSTIK'                   => 'Makeup',
+            'LIPSKRIM'                  => 'Makeup',
+            // PERAWATAN TUBUH
+            'BODY FIRMING'              => 'Perawatan Tubuh',
+            'FIRMING BODY'              => 'Perawatan Tubuh',
+            'DAY BODY LOTION'           => 'Perawatan Tubuh',
+            'NIGHT BODY LOTION'         => 'Perawatan Tubuh',
+            'LOTION BODY'               => 'Perawatan Tubuh',
+            'BODY LOTION'               => 'Perawatan Tubuh',
+            'BODY SCRUB'                => 'Perawatan Tubuh',
+            'BODY WASH'                 => 'Perawatan Tubuh',
+            'HAND BODY'                 => 'Perawatan Tubuh',
+            'LULUR'                     => 'Perawatan Tubuh',
+            'STRETCH MARK'              => 'Perawatan Tubuh',
+            'STRETCHMARK'               => 'Perawatan Tubuh',
+            'SULFUR SOAP'               => 'Perawatan Tubuh',
+            'KOJIC'                     => 'Perawatan Tubuh',
+            'BAMBOO CHARCOAL'           => 'Perawatan Tubuh',
+            'COOLBRIGHT'                => 'Perawatan Tubuh',
+            'MOISTURIZER GEL'           => 'Perawatan Tubuh',
+            'DAILY CERAMOIST'           => 'Perawatan Tubuh',
+            // PERAWATAN RAMBUT — HAIR SERUM harus di atas SERUM
+            'HAIR SERUM'                => 'Perawatan Rambut',
+            'HAIR TONIC'                => 'Perawatan Rambut',
+            'ALOE VERA SHAMPOO'         => 'Perawatan Rambut',
+            'SHAMPOO'                   => 'Perawatan Rambut',
+            // SUPLEMEN & LAINNYA
+            "D'ETAWA"                   => 'Suplemen & Lainnya',
+            'DETAWA'                    => 'Suplemen & Lainnya',
+            'DRW KAPSUL'                => 'Suplemen & Lainnya',
+            'DRW SLIMMING'              => 'Suplemen & Lainnya',
+            'HB DOSTING'                => 'Suplemen & Lainnya',
+            'POUCH'                     => 'Suplemen & Lainnya',
+        ];
+
+        foreach ($rules as $keyword => $namaKategori) {
+            if (str_contains($upper, strtoupper($keyword))) {
+                return $kategoriMap[$namaKategori] ?? null;
             }
         }
 
-        $this->command->info("✅ {$updated} produk berhasil dikategorikan.");
-
-        if (count($notFound) > 0) {
-            $this->command->warn('⚠️  ' . count($notFound) . ' produk tidak masuk kategori manapun:');
-            foreach ($notFound as $name) {
-                $this->command->line('   - ' . $name);
-            }
-        }
+        return null;
     }
 }

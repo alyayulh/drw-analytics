@@ -143,7 +143,7 @@ tr:hover td { background: var(--pink-light); }
       <div class="kolom-item kolom-ok">
         <span class="icon">✓</span>
         <span class="kolom-name">NAMA BARANG</span>
-        <span class="kolom-kriteria">— Nama produk</span>
+        <span class="kolom-kriteria">— Kriteria: Nama produk</span>
       </div>
       @foreach($kolomDitemukan as $k)
       <div class="kolom-item kolom-ok">

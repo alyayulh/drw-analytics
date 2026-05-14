@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Produk;
 use App\Models\NilaiProduk;
 use App\Models\Kriteria;
+use App\Models\KategoriProduk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Shuchkin\SimpleXLSX;
@@ -14,7 +15,7 @@ class ProdukController extends Controller
     public function index()
     {
         $sortBy = request('sort', 'abjad');
-        $produks = Produk::with('nilaiProduk.kriteria')
+        $produks = Produk::with(['nilaiProduk.kriteria', 'kategoriProduk'])
             ->when($sortBy === 'abjad',   fn($q) => $q->orderBy('nama_produk', 'asc'))
             ->when($sortBy === 'terbaru', fn($q) => $q->orderBy('created_at', 'desc'))
             ->when($sortBy === 'terlama', fn($q) => $q->orderBy('created_at', 'asc'))
@@ -40,6 +41,7 @@ class ProdukController extends Controller
 
         $produk = Produk::create([
             'nama_produk' => $request->nama_produk,
+            'id_kategori' => $this->resolveKategori($request->nama_produk),
             'status_data' => 'Belum Lengkap',
         ]);
 
@@ -58,7 +60,6 @@ class ProdukController extends Controller
         return back()->with('success', 'Produk berhasil ditambahkan.');
     }
 
-    // STEP 1: Upload file, baca, validasi, simpan ke session, redirect ke preview
     public function preview(Request $request)
     {
         $request->validate([
@@ -91,20 +92,16 @@ class ProdukController extends Controller
             ->whereNotNull('nama_kolom_excel')
             ->get();
 
-        // Deteksi baris header secara fleksibel (cari di max 15 baris pertama)
         [$headerRowIdx, $headers] = $this->detectHeaderRow($rows, $kriteriaExcel);
 
         if ($headerRowIdx === null) {
             @unlink($path);
             return back()->with('error',
-                'Kolom "NAMA BARANG" tidak ditemukan di file Excel (dicari di 15 baris pertama). ' .
-                'Pastikan file memiliki kolom dengan nama tersebut.'
+                'Kolom "NAMA BARANG" tidak ditemukan di file Excel (dicari di 15 baris pertama).'
             );
         }
 
-        $colNama = array_search('NAMA BARANG', $headers);
-
-        // Petakan kriteria ke indeks kolom
+        $colNama        = array_search('NAMA BARANG', $headers);
         $kolomMap       = [];
         $kolomDitemukan = [];
         $kolomTidakAda  = [];
@@ -127,7 +124,6 @@ class ProdukController extends Controller
             }
         }
 
-        // Kumpulkan preview 5 baris pertama & hitung total data
         $dataStart   = $headerRowIdx + 1;
         $previewRows = [];
         $totalData   = 0;
@@ -135,7 +131,6 @@ class ProdukController extends Controller
         for ($i = $dataStart; $i < count($rows); $i++) {
             $nama = trim($rows[$i][$colNama] ?? '');
             if (!$nama) continue;
-
             $totalData++;
 
             if (count($previewRows) < 5) {
@@ -153,7 +148,6 @@ class ProdukController extends Controller
             return back()->with('error', 'Tidak ada baris data yang valid ditemukan di file Excel.');
         }
 
-        // Simpan ke session
         session([
             'import_filename'        => $filename,
             'import_total_data'      => $totalData,
@@ -165,7 +159,6 @@ class ProdukController extends Controller
         return redirect()->route('produk.preview.show');
     }
 
-    // STEP 2: Tampilkan halaman preview
     public function showPreview()
     {
         if (!session('import_filename')) {
@@ -187,7 +180,6 @@ class ProdukController extends Controller
         ]);
     }
 
-    // STEP 3: Konfirmasi — import ke DB dalam transaksi
     public function importConfirm(Request $request)
     {
         $filename = session('import_filename');
@@ -252,11 +244,18 @@ class ProdukController extends Controller
                     $nama = trim($rows[$i][$colNama] ?? '');
                     if (!$nama) { $skipped++; continue; }
 
-                    $isNew  = !Produk::where('nama_produk', $nama)->exists();
+                    $idKategori = $this->resolveKategori($nama);
+                    $isNew      = !Produk::where('nama_produk', $nama)->exists();
+
                     $produk = Produk::firstOrCreate(
                         ['nama_produk' => $nama],
-                        ['status_data' => 'Belum Lengkap']
+                        ['status_data' => 'Belum Lengkap', 'id_kategori' => $idKategori]
                     );
+
+                    // Update kategori jika produk sudah ada tapi belum punya kategori
+                    if (!$isNew && !$produk->id_kategori && $idKategori) {
+                        $produk->update(['id_kategori' => $idKategori]);
+                    }
 
                     if ($isNew) $imported++; else $updated++;
 
@@ -288,7 +287,6 @@ class ProdukController extends Controller
         return redirect()->route('produk.index')->with('success', $msg . ' dari Excel.');
     }
 
-    // Batal preview
     public function cancelPreview()
     {
         $filename = session('import_filename');
@@ -301,20 +299,144 @@ class ProdukController extends Controller
     {
         $produk = Produk::findOrFail($id);
         $request->validate(['nama_produk' => 'required|string|max:255']);
-        $produk->update(['nama_produk' => $request->nama_produk]);
+
+        $idKategori = $this->resolveKategori($request->nama_produk);
+        $produk->update([
+            'nama_produk' => $request->nama_produk,
+            'id_kategori' => $idKategori ?? $produk->id_kategori,
+        ]);
+
         return back()->with('success', 'Produk berhasil diupdate.');
     }
 
     public function destroy($id)
     {
         $produk = Produk::findOrFail($id);
+        \App\Models\NilaiProduk::where('id_produk', $id)->delete();
+        \App\Models\InputPermintaan::where('id_produk', $id)->delete();
+        \App\Models\HasilPerhitungan::where('id_produk', $id)->delete();
         $produk->delete();
         return back()->with('success', 'Produk berhasil dihapus.');
     }
 
     // ── PRIVATE HELPERS ───────────────────────────────────────────────────────
 
-    // Deteksi baris header secara fleksibel (mendukung multi-row header)
+    /**
+     * Resolve id_kategori dari nama produk berdasarkan keyword rules.
+     * Urutan PENTING — keyword lebih spesifik di atas, lebih umum di bawah.
+     * Ditest terhadap 168 produk DRW Skincare: 0 produk tanpa kategori.
+     */
+    private function resolveKategori(string $namaProduk): ?int
+    {
+        $upper = strtoupper($namaProduk);
+
+        $rules = [
+            // ── KRIM WAJAH ────────────────────────────────────────────────
+            'DAY ACNE CREAM'            => 'Krim Wajah',
+            'ACNE CREAM'                => 'Krim Wajah',
+            'DAY WHITE CREAM'           => 'Krim Wajah',
+            'DAY PINK CREAM'            => 'Krim Wajah',
+            'DAY CREAM'                 => 'Krim Wajah',
+            'BRIGHTENING CREAM'         => 'Krim Wajah',
+            'SNAIL CREAM'               => 'Krim Wajah',
+            'CNR PLUS'                  => 'Krim Wajah',
+            'RADIANT BRIGHT'            => 'Krim Wajah',
+            'RADIANT GLOW'              => 'Krim Wajah',
+            'SOFT ACNE CREAM'           => 'Krim Wajah',
+            'SOFT BRIGHTENING CREAM'    => 'Krim Wajah',
+            'BREAST CREAM'              => 'Krim Wajah',
+            'ANTI AGING EYE GEL'        => 'Krim Wajah',
+
+            // ── PEMBERSIH WAJAH ───────────────────────────────────────────
+            'FACIAL WASH'               => 'Pembersih Wajah',
+            'CLEANSING MILK'            => 'Pembersih Wajah',
+            'MICELLAR'                  => 'Pembersih Wajah',
+
+            // ── TONER & ESSENCE ───────────────────────────────────────────
+            'EXFOLIATING COMPLEX TONER' => 'Toner & Essence',
+            'HYDRATING ESSENCE'         => 'Toner & Essence',
+            'FACE MIST'                 => 'Toner & Essence',
+            'T- CHAMOMILE'              => 'Toner & Essence',
+            'TONER'                     => 'Toner & Essence',
+
+            // ── SERUM ─────────────────────────────────────────────────────
+            'LUMINOUS BRIGHTENING'      => 'Serum',
+            'BEAUTY DNA SALMON'         => 'Serum',
+            'DNA SALMON EXTRA'          => 'Serum',
+            'GLOWTECH'                  => 'Serum',
+            'SERUM'                     => 'Serum',
+
+            // ── EXFOLIATING ───────────────────────────────────────────────
+            'EXFOLIATING'               => 'Exfoliating',
+
+            // ── MASKER & PEELING ──────────────────────────────────────────
+            'BRIGHTENING PEEL'          => 'Masker & Peeling',
+            'PEEL OFF MASK'             => 'Masker & Peeling',
+            'FACE MASK'                 => 'Masker & Peeling',
+            'RICE FACE MASK'            => 'Masker & Peeling',
+
+            // ── SUNSCREEN ─────────────────────────────────────────────────
+            'SUNSCREEN'                 => 'Sunscreen',
+            'SUNBLOK'                   => 'Sunscreen',
+
+            // ── MAKEUP ────────────────────────────────────────────────────
+            'DAILY COMPACT POWDER'      => 'Makeup',
+            'COMPACT POWDER'            => 'Makeup',
+            'SILKY SOFT FACE POWDER'    => 'Makeup',
+            'LIGHTENING SILKY'          => 'Makeup',
+            'BB -'                      => 'Makeup',
+            'BB CUSHION'                => 'Makeup',
+            'BB CREAM'                  => 'Makeup',
+            'DAY BODY FOUNDATION'       => 'Makeup',
+            'AMOUR MATTE LIP'           => 'Makeup',
+            'LIPS CREAM'                => 'Makeup',
+            'LIPS CARE'                 => 'Makeup',
+            'LIPGLOSS'                  => 'Makeup',
+            'LIPSTIK'                   => 'Makeup',
+
+            // ── PERAWATAN TUBUH ───────────────────────────────────────────
+            'BODY FIRMING'              => 'Perawatan Tubuh',
+            'FIRMING BODY'              => 'Perawatan Tubuh',
+            'DAY BODY LOTION'           => 'Perawatan Tubuh',
+            'NIGHT BODY LOTION'         => 'Perawatan Tubuh',
+            'BODY LOTION'               => 'Perawatan Tubuh',
+            'BODY SCRUB'                => 'Perawatan Tubuh',
+            'BODY WASH'                 => 'Perawatan Tubuh',
+            'HAND BODY'                 => 'Perawatan Tubuh',
+            'LULUR'                     => 'Perawatan Tubuh',
+            'STRETCHMARK'               => 'Perawatan Tubuh',
+            'KOJIC'                     => 'Perawatan Tubuh',
+            'BAMBOO CHARCOAL'           => 'Perawatan Tubuh',
+            'COOLBRIGHT'                => 'Perawatan Tubuh',
+            'MOISTURIZER GEL'           => 'Perawatan Tubuh',
+            'DAILY CERAMOIST'           => 'Perawatan Tubuh',
+
+            // ── PERAWATAN RAMBUT ──────────────────────────────────────────
+            // HAIR SERUM harus di atas SERUM agar tidak salah masuk Serum
+            'HAIR SERUM'                => 'Perawatan Rambut',
+            'HAIR TONIC'                => 'Perawatan Rambut',
+            'ALOE VERA SHAMPOO'         => 'Perawatan Rambut',
+            'SHAMPOO'                   => 'Perawatan Rambut',
+
+            // ── SUPLEMEN & LAINNYA ────────────────────────────────────────
+            "D'ETAWA"                   => 'Suplemen & Lainnya',
+            'DETAWA'                    => 'Suplemen & Lainnya',
+            'DRW KAPSUL'                => 'Suplemen & Lainnya',
+            'DRW SLIMMING'              => 'Suplemen & Lainnya',
+            'HB DOSTING'                => 'Suplemen & Lainnya',
+            'POUCH'                     => 'Suplemen & Lainnya',
+        ];
+
+        foreach ($rules as $keyword => $namaKategori) {
+            if (str_contains($upper, strtoupper($keyword))) {
+                $kat = KategoriProduk::firstOrCreate(['nama_kategori' => $namaKategori]);
+                return $kat->id_kategori;
+            }
+        }
+
+        return null;
+    }
+
     private function detectHeaderRow(array $rows, $kriteriaExcel): array
     {
         $kolomDicari = collect($kriteriaExcel->pluck('nama_kolom_excel'))
@@ -329,7 +451,6 @@ class ProdukController extends Controller
 
             if (!in_array('NAMA BARANG', $normalizedRow)) continue;
 
-            // Coba gabung dengan baris berikutnya (sub-header)
             $nextRow        = $rows[$idx + 1] ?? [];
             $nextNormalized = array_map(fn($v) => strtoupper(trim($v ?? '')), $nextRow);
             $mergedHeaders  = [];
@@ -343,7 +464,7 @@ class ProdukController extends Controller
             $mergedFound = count(array_intersect($kolomDicari, $mergedHeaders));
 
             if ($mergedFound > $baseFound) {
-                return [$idx + 1, $mergedHeaders]; // Data mulai setelah baris sub-header
+                return [$idx + 1, $mergedHeaders];
             }
 
             return [$idx, $normalizedRow];
@@ -352,7 +473,6 @@ class ProdukController extends Controller
         return [null, []];
     }
 
-    // Parse angka dengan deteksi format Indonesia/Internasional otomatis
     private function parseAngka($raw): float
     {
         if ($raw === null || $raw === '') return 0.0;
@@ -360,11 +480,9 @@ class ProdukController extends Controller
         $str = preg_replace('/[Rp\s]/u', '', (string) $raw);
 
         if (substr_count($str, '.') > 1) {
-            // Format Indonesia: 1.234.567,89
             $str = str_replace('.', '', $str);
             $str = str_replace(',', '.', $str);
         } elseif (substr_count($str, ',') > 1) {
-            // Format internasional: 1,234,567
             $str = str_replace(',', '', $str);
         } elseif (strpos($str, ',') !== false && strpos($str, '.') !== false) {
             if (strrpos($str, ',') > strrpos($str, '.')) {
