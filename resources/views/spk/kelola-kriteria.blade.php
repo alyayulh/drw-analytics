@@ -287,8 +287,8 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
           <thead>
             <tr>
               <th>No</th>
-              <th>Nama Faktor</th>
-              <th>Jenis</th>
+              <th>Nama Kriteria </th>
+              <th>Tipe Kriteria</th>
               <th>Bobot</th>
               <th>Sumber Nilai</th>
               <th>Aksi</th>
@@ -354,14 +354,14 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Tipe Atribut</label>
+          <label class="form-label">Tipe Kriteria</label>
           <select class="form-select" name="tipe_atribut" required>
             <option value="Benefit">Benefit (makin tinggi = makin baik)</option>
             <option value="Cost">Cost (makin rendah = makin baik)</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Sumber Data</label>
+          <label class="form-label">Sumber Nilai</label>
           <select class="form-select" name="sumber_data" id="sumber-tambah" onchange="toggleKolomExcel('tambah', this.value)" required>
             <option value="Excel">Import Excel (otomatis)</option>
             <option value="Manual">Input Manual (di web)</option>
@@ -371,7 +371,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       <div class="form-group" id="kolom-excel-group-tambah">
         <label class="form-label">Nama Kolom Excel <span style="color:var(--pink)">*</span></label>
         <input class="form-input" name="nama_kolom_excel" id="kolom-excel-tambah" placeholder="cth: HARGA JUAL" required>
-        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nama kolom di file Excel. Contoh: STOCK AKHIR, TOTAL PENJUALAN</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nama kolom di file Excel yang berkaitan dengan kriteria ini</div>
       </div>
       <div class="form-group">
         <label class="form-label">Bobot (%)</label>
