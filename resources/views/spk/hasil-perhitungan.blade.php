@@ -152,31 +152,50 @@ body[data-mode="detail"] .mode-awam-only   { display: none !important; }
 .guide-awam-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 16px;
+  border-radius: 18px;
+  padding: 18px 18px;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  transition: border-color .15s, transform .15s;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: transform .15s, border-color .15s, box-shadow .15s;
 }
-.guide-awam-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+.guide-awam-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: 0 12px 30px rgba(0,0,0,.06);
+}
+.guide-awam-card .ga-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
 .guide-awam-card .ga-icon {
-  width: 36px; height: 36px;
-  border-radius: 10px;
+  width: 44px; height: 44px;
+  border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
+  font-size: 20px;
   flex-shrink: 0;
 }
-.guide-awam-card.ga-utama  .ga-icon { background: #dcfce7; }
-.guide-awam-card.ga-pertim .ga-icon { background: #fef3c7; }
-.guide-awam-card.ga-tunda  .ga-icon { background: #f3f4f6; }
-.guide-awam-card .ga-body { flex: 1; min-width: 0; }
+.guide-awam-card.ga-utama { background: #fdf2f8; border-color: #fbcfe8; }
+.guide-awam-card.ga-utama .ga-icon { background: #fce7f3; color: #9d174d; }
+.guide-awam-card.ga-pertim { background: #fffbeb; border-color: #fde68a; }
+.guide-awam-card.ga-pertim .ga-icon { background: #fef3c7; color: #92400e; }
+.guide-awam-card.ga-tunda { background: #eff6ff; border-color: #bfdbfe; }
+.guide-awam-card.ga-tunda .ga-icon { background: #dbeafe; color: #1d4ed8; }
+.guide-awam-card .ga-body { min-width: 0; }
 .guide-awam-card .ga-label {
-  font-size: 12px; font-weight: 800; color: var(--text);
-  margin-bottom: 3px;
+  font-size: 13px; font-weight: 800; color: var(--text);
+  margin-bottom: 4px;
 }
 .guide-awam-card .ga-desc {
-  font-size: 11px; color: var(--text-3); line-height: 1.5;
+  font-size: 12px; color: var(--text-3); line-height: 1.6;
+}
+.guide-awam-card .ga-count {
+  font-size: 32px; font-weight: 800; color: var(--text);
+  min-width: 54px;
+  text-align: right;
 }
 .guide-awam-title {
   font-size: 13px; font-weight: 800; color: var(--text);
@@ -231,7 +250,7 @@ tr:hover td { background: var(--pink-light); }
 .detail-table tr:last-child td { border-bottom: none; }
 
 /* ── SIDEBAR ── */
-.sb-brand { height: 56px; padding: 0 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
+.sb-brand { padding: 22px 18px 16px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
 .sb-logo-name { letter-spacing: -.3px; }
 .sb-nav { overflow-y: auto; }
 .nav-divider { height: 1px; background: var(--border); margin: 8px 10px; }
@@ -266,7 +285,7 @@ tr:hover td { background: var(--pink-light); }
   </div>
   <div class="sb-nav">
     <div class="nav-section">
-      <div class="nav-label">Menentukan Produk Promosi</div>
+      <div class="nav-label">Penentuan Produk Promosi</div>
       <a href="{{ route('dashboard') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
         Dashboard
@@ -287,25 +306,31 @@ tr:hover td { background: var(--pink-light); }
       </a>
       <a href="{{ route('perhitungan.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5h3" stroke-linecap="round"/><path d="M6.5 8.5h3" stroke-linecap="round"/><path d="M6.5 10.5h3" stroke-linecap="round"/></svg>
-        Hitung SPK
+        Menghitung Prioritas
       </a>
       <a href="{{ route('perhitungan.riwayat') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
-        Riwayat
+        Riwayat Perhitungan
       </a>
     </div>
 
     <div class="nav-divider"></div>
 
     <div class="nav-section">
-      <div class="nav-label">Analisis Asosiasi</div>
+      <div class="nav-label">Pola & Insight Penjualan</div>
       <a href="{{ route('asosiasi.dashboard') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
-        Dashboard
+        Dashboard Insight
       </a>
       @if(auth()->check() && auth()->user()->role === 'Admin')
       <a href="{{ route('asosiasi.analisis') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="6" cy="6" r="4"/><path d="M10 10l4 4" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16">
+          <circle cx="7" cy="7" r="4"/>
+          <path d="M10 10l3.5 3.5" stroke-linecap="round"/>
+          <path d="M5.5 8.5V6.8" stroke-linecap="round"/>
+          <path d="M7 8.5V5.5" stroke-linecap="round"/>
+          <path d="M8.5 8.5V4.5" stroke-linecap="round"/>
+        </svg>
         Analisis Pola
       </a>
       @endif
@@ -552,25 +577,34 @@ tr:hover td { background: var(--pink-light); }
       <div class="guide-awam-sub">Setiap produk dikelompokkan ke salah satu kategori berikut</div>
       <div class="guide-awam">
         <div class="guide-awam-card ga-utama">
-          <div class="ga-icon">⭐</div>
-          <div class="ga-body">
-            <div class="ga-label">Sangat Direkomendasikan</div>
-            <div class="ga-desc">Produk terbaik dan paling layak untuk dipromosikan saat ini.</div>
+          <div class="ga-left">
+            <div class="ga-icon">⭐</div>
+            <div class="ga-body">
+              <div class="ga-label">Sangat Direkomendasikan</div>
+              <div class="ga-desc">Produk paling sesuai — siap digunakan atau dipasarkan.</div>
+            </div>
           </div>
+          <div class="ga-count">{{ $utama->count() }}</div>
         </div>
         <div class="guide-awam-card ga-pertim">
-          <div class="ga-icon">🤔</div>
-          <div class="ga-body">
-            <div class="ga-label">Perlu Pertimbangan</div>
-            <div class="ga-desc">Layak dipromosikan, tapi pertimbangkan dengan strategi tambahan.</div>
+          <div class="ga-left">
+            <div class="ga-icon">⚖️</div>
+            <div class="ga-body">
+              <div class="ga-label">Perlu Pertimbangan</div>
+              <div class="ga-desc">Perlu evaluasi tambahan sebelum keputusan final.</div>
+            </div>
           </div>
+          <div class="ga-count">{{ $pertimbang->count() }}</div>
         </div>
         <div class="guide-awam-card ga-tunda">
-          <div class="ga-icon">⏸</div>
-          <div class="ga-body">
-            <div class="ga-label">Sebaiknya Ditunda</div>
-            <div class="ga-desc">Belum direkomendasikan untuk promosi saat ini.</div>
+          <div class="ga-left">
+            <div class="ga-icon">⏳</div>
+            <div class="ga-body">
+              <div class="ga-label">Sebaiknya Ditunda</div>
+              <div class="ga-desc">Tunda hingga kondisi lebih optimal.</div>
+            </div>
           </div>
+          <div class="ga-count">{{ $tunda->count() }}</div>
         </div>
       </div>
     </div>
@@ -597,9 +631,6 @@ tr:hover td { background: var(--pink-light); }
               </div>
               <div class="produk-info-awam">
                 <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
-                <div class="produk-alasan-awam">
-                  <span class="icon-bulb">💡</span>{{ $generateNarasi($h->detailPerhitungan) }}
-                </div>
               </div>
               <span class="produk-badge-awam badge-awam-utama">Sangat Direkomendasikan</span>
             </div>
@@ -617,9 +648,6 @@ tr:hover td { background: var(--pink-light); }
               <div class="produk-rank-bubble">#{{ $h->ranking }}</div>
               <div class="produk-info-awam">
                 <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
-                <div class="produk-alasan-awam">
-                  <span class="icon-bulb">💡</span>{{ $generateNarasi($h->detailPerhitungan) }}
-                </div>
               </div>
               <span class="produk-badge-awam badge-awam-pertim">Perlu Pertimbangan</span>
             </div>
@@ -639,9 +667,6 @@ tr:hover td { background: var(--pink-light); }
                 <div class="produk-rank-bubble">#{{ $h->ranking }}</div>
                 <div class="produk-info-awam">
                   <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
-                  <div class="produk-alasan-awam">
-                    <span class="icon-bulb">💡</span>{{ $generateNarasi($h->detailPerhitungan) }}
-                  </div>
                 </div>
                 <span class="produk-badge-awam badge-awam-tunda">Ditunda</span>
               </div>

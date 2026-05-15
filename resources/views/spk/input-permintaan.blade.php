@@ -391,23 +391,29 @@ td.status-col { white-space: nowrap; }
       </a>
       <a href="{{ route('perhitungan.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="none"/><path d="M6.5 6.5h3M6.5 8.5h3M6.5 10.5h3" stroke-linecap="round"/></svg>
-        Hitung SPK
+        Menghitung Prioritas
       </a>
       <a href="{{ route('perhitungan.riwayat') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
-        Riwayat
+        Riwayat Perhitungan
       </a>
     </div>
     <div class="nav-divider"></div>
     <div class="nav-section">
-      <div class="nav-label">Analisis Asosiasi</div>
+      <div class="nav-label">Pola & Insight Penjualan</div>
       <a href="{{ route('asosiasi.dashboard') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
-        Dashboard
+        Dashboard Insight
       </a>
       @if(auth()->check() && auth()->user()->role === 'Admin')
       <a href="{{ route('asosiasi.analisis') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="6" cy="6" r="4"/><path d="M10 10l4 4" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16">
+          <circle cx="7" cy="7" r="4"/>
+          <path d="M10 10l3.5 3.5" stroke-linecap="round"/>
+          <path d="M5.5 8.5V6.8" stroke-linecap="round"/>
+          <path d="M7 8.5V5.5" stroke-linecap="round"/>
+          <path d="M8.5 8.5V4.5" stroke-linecap="round"/>
+        </svg>
         Analisis Pola
       </a>
       @endif
@@ -437,7 +443,7 @@ td.status-col { white-space: nowrap; }
 {{-- ===== MAIN ===== --}}
 <div class="main-wrap">
   <div class="topbar">
-    <div class="topbar-title">Input Permintaan Produk</div>
+    <div class="topbar-title">Input Permintaan</div>
   </div>
 
   <div class="content">
