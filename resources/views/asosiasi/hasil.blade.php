@@ -16,12 +16,12 @@
             </div>
 
             <div class="summary-item">
-                <span>Setelah Preprocessing</span>
+                <span>Setelah Dibersihlan</span>
                 <strong>{{ number_format($summary['setelah_preprocessing']) }}</strong>
             </div>
 
             <div class="summary-item">
-                <span>Total Basket</span>
+                <span>Total Transaksi Akhir</span>
                 <strong>{{ number_format($summary['total_basket']) }}</strong>
             </div>
 
@@ -47,7 +47,7 @@
 
             <div class="summary-item best-rule">
                 <span>Rule Terbaik</span>
-                <strong>{{ $summary['rule_terbaik'] }}</strong>
+                <strong>{{ $summary['rule_terbaik'] ?? 'Belum ada rule' }}</strong>
             </div>
         </div>
     </div>

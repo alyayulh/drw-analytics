@@ -45,12 +45,13 @@
         </div>
 
         <div class="metric-card">
-            <div>
-                <span>Rule Terbaik</span>
-                <strong>{{ $summary['rule_terbaik'] }}</strong>
-            </div>
-            <div class="metric-icon yellow">🎖</div>
-        </div>
+    <div>
+        <span>Rule Terbaik</span>
+        <strong>{{ $summary['rule_terbaik'] ?? 'Belum ada rule' }}</strong>
+    </div>
+
+    <div class="metric-icon yellow">🎖</div>
+</div>
     </div>
 
     <div class="dashboard-card">
@@ -73,7 +74,7 @@
             </div>
 
             <div class="dataset-item">
-                <span>Data Setelah Preprocessing</span>
+                <span>Data Setelah Dibersihkan</span>
                 <strong>{{ $dataset['data_setelah_preprocessing'] }}</strong>
             </div>
 
@@ -83,7 +84,7 @@
             </div>
 
             <div class="dataset-item">
-                <span>Basket Transaksi Terbentuk</span>
+                <span>Transaksi yang Akan Diproses</span>
                 <strong>{{ $dataset['basket_transaksi_terbentuk'] }}</strong>
             </div>
         </div>
@@ -245,6 +246,6 @@ if (waktuCanvas) {
             }
         }
     });
-}
+}  
 </script>
 @endpush
