@@ -8,7 +8,82 @@ class AsosiasiController extends Controller
 {
     public function dashboard()
     {
-        return view('asosiasi.dashboard');
+        $rules = $this->getDummyRules();
+        $bestRule = $rules->sortByDesc('lift')->first();
+
+        $summary = [
+            'total_data_awal' => 1285,
+            'setelah_preprocessing' => 1220,
+            'total_basket' => 1220,
+            'produk_unik' => 156,
+            'total_operator' => 8,
+            'frequent_itemsets' => 456,
+            'association_rules' => 342,
+            'rule_terbaik' => $bestRule
+                ? $bestRule['antecedents'] . ' → ' . $bestRule['consequents']
+                : 'Belum ada rule',
+        ];
+
+        $dataset = [
+            'nama_file' => 'data_penjualan_april_2026.xlsx',
+            'periode_data' => '1 April - 30 April 2026',
+            'tanggal_analisis' => '8 Mei 2026',
+            'jumlah_data_awal' => 1285,
+            'data_setelah_preprocessing' => 1220,
+            'transaksi_refund_dihapus' => 65,
+            'basket_transaksi_terbentuk' => 1220,
+            'status' => 'Selesai',
+        ];
+
+        $topProduk = collect([
+            [
+                'nama' => 'Serum Wajah A',
+                'jumlah' => 120,
+            ],
+            [
+                'nama' => 'Moisturizer B',
+                'jumlah' => 95,
+            ],
+            [
+                'nama' => 'Toner C',
+                'jumlah' => 80,
+            ],
+            [
+                'nama' => 'Sunscreen D',
+                'jumlah' => 72,
+            ],
+            [
+                'nama' => 'Cleanser E',
+                'jumlah' => 60,
+            ],
+        ]);
+
+        $distribusiWaktu = collect([
+            [
+                'label' => 'Pagi',
+                'nilai' => 320,
+            ],
+            [
+                'label' => 'Siang',
+                'nilai' => 450,
+            ],
+            [
+                'label' => 'Sore',
+                'nilai' => 280,
+            ],
+            [
+                'label' => 'Malam',
+                'nilai' => 170,
+            ],
+        ]);
+
+        return view('asosiasi.dashboard', compact(
+            'summary',
+            'rules',
+            'dataset',
+            'topProduk',
+            'distribusiWaktu'
+        ));
     }
 
     public function kelolaKriteria()
@@ -33,7 +108,23 @@ class AsosiasiController extends Controller
 
     public function dashboardInsight()
     {
-        return view('asosiasi.dashboard-insight');
+        $rules = $this->getDummyRules();
+        $bestRule = $rules->sortByDesc('lift')->first();
+
+        $summary = [
+            'total_data_awal' => 1285,
+            'setelah_preprocessing' => 1220,
+            'total_basket' => 1220,
+            'produk_unik' => 156,
+            'total_operator' => 8,
+            'frequent_itemsets' => 456,
+            'association_rules' => 342,
+            'rule_terbaik' => $bestRule
+                ? $bestRule['antecedents'] . ' → ' . $bestRule['consequents']
+                : 'Belum ada rule',
+        ];
+
+        return view('asosiasi.dashboard-insight', compact('summary', 'rules'));
     }
 
     public function analisisPola()
@@ -44,7 +135,6 @@ class AsosiasiController extends Controller
     public function hasil()
     {
         $rules = $this->getDummyRules();
-
         $bestRule = $rules->sortByDesc('lift')->first();
 
         $summary = [
@@ -79,7 +169,6 @@ class AsosiasiController extends Controller
         }
 
         $rules = $this->getDummyRules();
-
         $bestRule = $rules->sortByDesc('lift')->first();
 
         $riwayat['rule_terbaik'] = $bestRule
