@@ -7,8 +7,8 @@
 <div class="association-dashboard">
 
     <div class="dashboard-header">
-        <h1>Dashboard Analisis Asosiasi</h1>
-        <p>Analisis Pola Hubungan Data Penjualan dengan FP-Growth</p>
+        <h1>Dashboard Analisis Transaksi Penjualan</h1>
+        <p>Menampilkan insight transaksi penjualan berdasarkan pola data historis</p>
     </div>
 
     <div class="metric-grid">
