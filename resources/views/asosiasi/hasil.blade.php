@@ -143,7 +143,7 @@
         </button>
 
         <a href="{{ route('asosiasi.riwayat') }}" class="btn-secondary-action">
-            ↗ Lihat Riwayat Analisis
+            ↺ Lihat Riwayat Analisis
         </button>
 
         <a href="{{ route('asosiasi.dashboard') }}" class="btn-secondary-action">

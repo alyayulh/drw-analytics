@@ -151,41 +151,42 @@
 
     </div>
     <!-- SIDEBAR FOOTER -->
+@php
+    $role = strtolower(auth()->user()->role ?? 'user');
+
+    if ($role === 'manajer') {
+        $displayName = 'Manajer DRW';
+        $displayRole = 'Manajer';
+        $avatarText = 'MA';
+    } else {
+        $displayName = 'Administrator';
+        $displayRole = 'Admin';
+        $avatarText = 'AD';
+    }
+@endphp
+
 <div class="sb-footer">
+    <div class="avatar">{{ $avatarText }}</div>
 
-    <div class="avatar">
-        AD
+    <div class="sb-user-text">
+        <div class="sb-user-name">{{ $displayName }}</div>
+        <div class="sb-user-role">{{ $displayRole }}</div>
     </div>
 
-    <div>
-        <div class="sb-user-name">Administrator</div>
-        <div class="sb-user-role">Admin</div>
-    </div>
-
-    <form action="{{ route('logout') }}" method="POST">
+    <form method="POST" action="{{ route('logout') }}" class="sb-logout">
         @csrf
 
-        <button type="submit" class="sb-logout">
-
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 width="20"
-                 height="20"
-                 viewBox="0 0 24 24"
-                 fill="none"
-                 stroke="currentColor"
-                 stroke-width="2"
-                 stroke-linecap="round"
-                 stroke-linejoin="round">
-
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-
+        <button type="submit" class="logout-button" title="Logout">
+            <svg viewBox="0 0 16 16" width="15" height="15">
+                <path d="M10 3h3a1 1 0 011 1v8a1 1 0 01-1 1h-3M7 11l3-3-3-3M10 8H3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke="currentColor"
+                      fill="none"
+                      stroke-width="1.8"/>
             </svg>
-
         </button>
     </form>
-
 </div>
 </div>
 
