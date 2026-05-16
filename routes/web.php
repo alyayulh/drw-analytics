@@ -41,8 +41,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/input-permintaan', [InputPermintaanController::class, 'index'])->name('input.index');
     Route::post('/input-permintaan', [InputPermintaanController::class, 'store'])->name('input.store');
-    Route::delete('/input-permintaan/{idProduk}', [InputPermintaanController::class, 'destroy'])->name('input.destroy');
 
+        // FIX BUG #2: Route DELETE /input-permintaan/{idProduk} dihapus.
+    
     Route::get('/hitung-spk', [PerhitunganController::class, 'index'])->name('perhitungan.index');
     Route::post('/hitung-spk', [PerhitunganController::class, 'hitung'])->name('perhitungan.hitung');
     Route::get('/perhitungan/{id}/hasil', [PerhitunganController::class, 'hasil'])->name('perhitungan.hasil');
