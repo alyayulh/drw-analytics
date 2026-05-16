@@ -144,6 +144,55 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
 .alert { padding: 10px 14px; border-radius: 9px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
 .alert-success { background: var(--green-light); color: #065f46; border: 1px solid #6ee7b7; }
 .alert-error { background: var(--red-light); color: var(--red); border: 1px solid #fca5a5; }
+
+/* ============================================
+   REDESIGN: GUIDE BENEFIT & COST
+   ============================================ */
+.guide-panels { display: flex; gap: 12px; margin-top: 4px; }
+.guide-panel { flex: 1; border-radius: 12px; padding: 14px 16px; border: 1.5px solid; position: relative; overflow: hidden; }
+.guide-panel-benefit { background: #E1F5EE; border-color: #1D9E75; }
+.guide-panel-cost    { background: #FAEEDA; border-color: #BA7517; }
+.guide-panel-accent  { position: absolute; top: 0; left: 0; width: 5px; height: 100%; border-radius: 12px 0 0 12px; }
+.guide-panel-benefit .guide-panel-accent { background: #1D9E75; }
+.guide-panel-cost    .guide-panel-accent { background: #BA7517; }
+.guide-panel-inner   { margin-left: 10px; }
+.guide-panel-header  { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.guide-panel-icon    { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.guide-panel-benefit .guide-panel-icon { background: #1D9E75; }
+.guide-panel-cost    .guide-panel-icon { background: #BA7517; }
+.guide-panel-icon svg { width: 16px; height: 16px; stroke-width: 2; fill: none; }
+.guide-panel-benefit .guide-panel-icon svg { stroke: #E1F5EE; }
+.guide-panel-cost    .guide-panel-icon svg { stroke: #FAEEDA; }
+.guide-panel-name    { font-size: 14px; font-weight: 700; }
+.guide-panel-benefit .guide-panel-name { color: #085041; }
+.guide-panel-cost    .guide-panel-name { color: #412402; }
+.guide-panel-badge   { margin-left: auto; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.guide-panel-benefit .guide-panel-badge { background: #1D9E75; color: #E1F5EE; }
+.guide-panel-cost    .guide-panel-badge { background: #BA7517; color: #FAEEDA; }
+
+/* Question box */
+.guide-question { display: flex; align-items: flex-start; gap: 10px; background: rgba(255,255,255,0.55); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; }
+.guide-question svg { width: 14px; height: 14px; stroke-width: 1.8; fill: none; flex-shrink: 0; margin-top: 2px; }
+.guide-panel-benefit .guide-question svg { stroke: #1D9E75; }
+.guide-panel-cost    .guide-question svg { stroke: #BA7517; }
+.guide-question p    { font-size: 12px; font-weight: 600; margin: 0; line-height: 1.5; }
+.guide-panel-benefit .guide-question p { color: #085041; }
+.guide-panel-cost    .guide-question p { color: #412402; }
+
+/* Example rows */
+.guide-examples      { display: flex; flex-direction: column; gap: 6px; }
+.guide-ex-label      { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 4px; }
+.guide-panel-benefit .guide-ex-label { color: #0F6E56; }
+.guide-panel-cost    .guide-ex-label { color: #854F0B; }
+.guide-ex-item       { background: rgba(255,255,255,0.55); border-radius: 8px; padding: 7px 11px; }
+.guide-ex-name       { font-size: 11px; font-weight: 700; margin: 0 0 4px; }
+.guide-panel-benefit .guide-ex-name { color: #085041; }
+.guide-panel-cost    .guide-ex-name { color: #412402; }
+.guide-ex-pills      { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.guide-pill          { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+.guide-panel-benefit .guide-pill { background: #9FE1CB; color: #085041; }
+.guide-panel-cost    .guide-pill  { background: #FAC775; color: #412402; }
+.guide-pill-vs       { font-size: 10px; color: #888; }
 </style>
 </head>
 <body>
@@ -250,7 +299,6 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       <p>Tentukan faktor-faktor yang digunakan untuk menilai produk. Pastikan total bobot mencapai 100% sebelum menjalankan analisis.</p>
     </div>
 
-    <!-- PANDUAN BOBOT + TOTAL BOBOT (DUA KOLOM) -->
     @if(session('success'))
       <div class="alert alert-success">✓ {{ session('success') }}</div>
     @endif
@@ -262,29 +310,110 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       <!-- KIRI: Panduan -->
       <div style="flex:1">
         <div class="card guide-card">
-          <div class="card-hd" style="align-items:flex-start">
+          <div class="card-hd" style="align-items:flex-start; margin-bottom: 8px;">
             <div>
-              <div class="card-title">Panduan pengisian bobot</div>
-              <div class="card-sub">Pilih jenis kriteria sesuai sifat nilainya</div>
-            </div>
-            <div></div>
-          </div>
-          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
-            <div class="info-box guide-benefit" style="flex:1;min-width:220px">
-              <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
-              <div>
-                <strong>Benefit</strong>
-                <div style="margin-top:8px;color:var(--text-2)">Nilai lebih tinggi → produk lebih layak dipromosikan.<br><em>Contoh: penjualan tinggi, stok banyak, rating positif.</em></div>
-              </div>
-            </div>
-            <div class="info-box guide-cost" style="flex:1;min-width:220px">
-              <svg viewBox="0 0 16 16"><path d="M8 2L2 14h12L8 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v3M8 11v.5" stroke-linecap="round"/></svg>
-              <div>
-                <strong>Cost</strong>
-                <div style="margin-top:8px;color:var(--text-2)">Nilai lebih rendah → produk lebih efisien untuk dipromosikan.<br><em>Contoh: harga terjangkau, biaya produksi rendah, risiko kecil.</em></div>
-              </div>
+              <div class="card-title">Panduan memilih tipe kriteria</div>
+              <div class="card-sub">Tanyakan: untuk kriteria ini, apakah saya ingin nilainya setinggi mungkin atau serendah mungkin?</div>
             </div>
           </div>
+
+          <div class="guide-panels">
+
+            <!-- BENEFIT -->
+            <div class="guide-panel guide-panel-benefit">
+              <div class="guide-panel-accent"></div>
+              <div class="guide-panel-inner">
+                <div class="guide-panel-header">
+                  <div class="guide-panel-icon">
+                    <svg viewBox="0 0 16 16"><path d="M3 11L8 5l5 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span class="guide-panel-name">Benefit</span>
+                  <span class="guide-panel-badge">Nilai tertinggi = terbaik</span>
+                </div>
+
+                <div class="guide-question">
+                  <svg viewBox="0 0 16 16"><path d="M8 2a6 6 0 100 12A6 6 0 008 2zM8 7v1M8 10v.5" stroke-linecap="round"/></svg>
+                  <p>semakin tinggi nilainya → semakin baik untuk dipromosikan</p>
+                </div>
+
+                <p class="guide-ex-label">Contoh kriteria:</p>
+                <div class="guide-examples">
+                  <div class="guide-ex-item">
+                    <p class="guide-ex-name">Jumlah penjualan</p>
+                    <div class="guide-ex-pills">
+                      <span class="guide-pill">500 pcs/bulan</span>
+                      <span class="guide-pill-vs">lebih baik dari</span>
+                      <span class="guide-pill">50 pcs/bulan</span>
+                    </div>
+                  </div>
+                  <div class="guide-ex-item">
+                    <p class="guide-ex-name">Stok tersedia</p>
+                    <div class="guide-ex-pills">
+                      <span class="guide-pill">1.000 unit</span>
+                      <span class="guide-pill-vs">lebih baik dari</span>
+                      <span class="guide-pill">20 unit</span>
+                    </div>
+                  </div>
+                  <div class="guide-ex-item">
+                    <p class="guide-ex-name">Rating produk</p>
+                    <div class="guide-ex-pills">
+                      <span class="guide-pill">4.8 bintang</span>
+                      <span class="guide-pill-vs">lebih baik dari</span>
+                      <span class="guide-pill">3.1 bintang</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- COST -->
+            <div class="guide-panel guide-panel-cost">
+              <div class="guide-panel-accent"></div>
+              <div class="guide-panel-inner">
+                <div class="guide-panel-header">
+                  <div class="guide-panel-icon">
+                    <svg viewBox="0 0 16 16"><path d="M3 5l5 6 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span class="guide-panel-name">Cost</span>
+                  <span class="guide-panel-badge">Nilai terendah = terbaik</span>
+                </div>
+
+                <div class="guide-question">
+                  <svg viewBox="0 0 16 16"><path d="M8 2a6 6 0 100 12A6 6 0 008 2zM8 7v1M8 10v.5" stroke-linecap="round"/></svg>
+                  <p>semakin rendah nilainya → semakin baik untuk dipromosikan</p>
+                </div>
+
+                <p class="guide-ex-label">Contoh kriteria:</p>
+                <div class="guide-examples">
+                  <div class="guide-ex-item">
+                    <p class="guide-ex-name">Harga jual</p>
+                    <div class="guide-ex-pills">
+                      <span class="guide-pill">Rp 15.000</span>
+                      <span class="guide-pill-vs">lebih baik dari</span>
+                      <span class="guide-pill">Rp 150.000</span>
+                    </div>
+                  </div>
+                  <div class="guide-ex-item">
+                    <p class="guide-ex-name">Biaya produksi</p>
+                    <div class="guide-ex-pills">
+                      <span class="guide-pill">Rp 5.000/pcs</span>
+                      <span class="guide-pill-vs">lebih baik dari</span>
+                      <span class="guide-pill">Rp 80.000/pcs</span>
+                    </div>
+                  </div>
+                  <div class="guide-ex-item">
+                    <p class="guide-ex-name">Tingkat retur</p>
+                    <div class="guide-ex-pills">
+                      <span class="guide-pill">2% retur</span>
+                      <span class="guide-pill-vs">lebih baik dari</span>
+                      <span class="guide-pill">40% retur</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /guide-panels -->
         </div>
       </div>
 
@@ -367,7 +496,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
           <thead>
             <tr>
               <th>No</th>
-              <th>Nama Kriteria </th>
+              <th>Nama Kriteria</th>
               <th>Tipe Kriteria</th>
               <th>Bobot</th>
               <th>Sumber Nilai</th>
@@ -404,11 +533,11 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       <div class="legenda-tipe">
         <div class="legenda-item">
           <span class="badge badge-green legenda-badge">↑ Benefit</span>
-          <span>Makin tinggi nilainya, makin baik untuk dipromosikan.<br><em>Contoh: Penjualan tinggi, stok banyak, rating positif.</em></span>
+          <span>semakin tinggi nilainya, semakin baik untuk dipromosikan.<br><em>Contoh: Penjualan tinggi, stok banyak, rating positif.</em></span>
         </div>
         <div class="legenda-item">
           <span class="badge badge-amber legenda-badge">↓ Cost</span>
-          <span>Makin rendah nilainya, makin baik untuk dipromosikan.<br><em>Contoh: Harga terjangkau, biaya produksi rendah, risiko kecil.</em></span>
+          <span>semakin rendah nilainya, semakin baik untuk dipromosikan.<br><em>Contoh: Harga terjangkau, biaya produksi rendah, risiko kecil.</em></span>
         </div>
       </div>
 
@@ -436,8 +565,8 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
         <div class="form-group">
           <label class="form-label">Tipe Kriteria</label>
           <select class="form-select" name="tipe_atribut" required>
-            <option value="Benefit">Benefit (makin tinggi = makin baik)</option>
-            <option value="Cost">Cost (makin rendah = makin baik)</option>
+            <option value="Benefit">Benefit (semakin tinggi = semakin baik)</option>
+            <option value="Cost">Cost (semakin rendah = semakin baik)</option>
           </select>
         </div>
         <div class="form-group">
@@ -483,8 +612,8 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
         <div class="form-group">
           <label class="form-label">Tipe Atribut</label>
           <select class="form-select" name="tipe_atribut" id="edit-tipe" required>
-            <option value="Benefit">Benefit (makin tinggi = makin baik)</option>
-            <option value="Cost">Cost (makin rendah = makin baik)</option>
+            <option value="Benefit">Benefit (semakin tinggi = semakin baik)</option>
+            <option value="Cost">Cost (semakin rendah = semakin baik)</option>
           </select>
         </div>
         <div class="form-group">
