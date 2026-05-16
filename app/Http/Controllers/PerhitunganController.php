@@ -47,7 +47,7 @@ class PerhitunganController extends Controller
     public function hitung(Request $request)
     {
         $request->validate([
-            'periode_data' => 'required|string|max:50',
+            'periode_data' => 'required|string|max:100',
         ]);
 
         // Ambil semua kriteria

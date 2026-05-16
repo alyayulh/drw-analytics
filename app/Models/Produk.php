@@ -3,9 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Produk extends Model
 {
+    // FIX BUG #3: Pakai SoftDeletes trait.
+    // Produk yang dihapus admin tidak benar-benar dihilangkan dari DB,
+    // melainkan ditandai dengan kolom `deleted_at`. Tujuan: menjaga
+    // integritas riwayat perhitungan SPK — produk yang pernah masuk
+    // ranking tetap bisa di-trace meskipun "dihapus".
+    use SoftDeletes;
+
     protected $table = 'produk';
     protected $primaryKey = 'id_produk';
 

@@ -352,14 +352,49 @@ class ProdukController extends Controller
         return back()->with('success', 'Produk berhasil diupdate.');
     }
 
+    /**
+     * Hapus produk.
+     *
+     * FIX BUG #3: pakai SOFT DELETE supaya riwayat perhitungan tetap utuh.
+     *
+     * Strategi:
+     * - Produk hanya ditandai `deleted_at` (tidak benar-benar dihapus dari DB).
+     * - Data terkait yang harus ikut hilang: nilai_produk & input_permintaan
+     *   (karena ini data "operasional" yang tidak perlu dipertahankan).
+     * - Data yang HARUS DIPERTAHANKAN: hasil_perhitungan (riwayat ranking).
+     *   Baris ini tetap di DB dan tetap merujuk ke produk (via id_produk +
+     *   snapshot nama_produk), sehingga riwayat tetap konsisten.
+     *
+     * Bug lama:
+     *   HasilPerhitungan::where('id_produk', $id)->delete();
+     *   → menghapus seluruh riwayat ranking produk ini.
+     *   → riwayat perhitungan jadi tidak konsisten dengan jumlah_produk
+     *     dan produk_prioritas yang sudah snapshot di tabel perhitungan.
+     *
+     * Catatan:
+     * - Kalau di masa depan butuh "Restore Produk", tinggal panggil
+     *   $produk->restore() pada produk yang trashed.
+     * - Halaman Data Produk otomatis menyembunyikan produk soft-deleted
+     *   karena SoftDeletes trait di Model Produk.
+     */
     public function destroy($id)
     {
         $produk = Produk::findOrFail($id);
-        \App\Models\NilaiProduk::where('id_produk', $id)->delete();
-        \App\Models\InputPermintaan::where('id_produk', $id)->delete();
-        \App\Models\HasilPerhitungan::where('id_produk', $id)->delete();
-        $produk->delete();
-        return back()->with('success', 'Produk berhasil dihapus.');
+
+        DB::transaction(function () use ($produk, $id) {
+            // Hapus data operasional terkait (tidak dipertahankan)
+            \App\Models\NilaiProduk::where('id_produk', $id)->delete();
+            \App\Models\InputPermintaan::where('id_produk', $id)->delete();
+
+            // PENTING: HasilPerhitungan TIDAK dihapus.
+            // Riwayat ranking tetap utuh — tabel hasil_perhitungan sudah
+            // menyimpan snapshot nama_produk dan nilai-nilai ranking.
+
+            // Soft delete produk (hanya set deleted_at, baris fisik tetap ada)
+            $produk->delete();
+        });
+
+        return back()->with('success', 'Produk berhasil dihapus. Riwayat perhitungan tetap tersimpan.');
     }
 
     // ── PRIVATE HELPERS ───────────────────────────────────────────────────────
