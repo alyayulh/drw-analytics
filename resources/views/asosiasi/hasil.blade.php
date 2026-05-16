@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Hasil Analisis Asosiasi - DRW Analytics')
+@section('title', 'Hasil Analisis - DRW Skincare Analytics')
 
 @section('content')
 
@@ -142,17 +142,14 @@
             ⇩ Unduh Hasil
         </button>
 
-        <button class="btn-secondary-action">
-            ▣ Simpan ke Riwayat
+        <a href="{{ route('asosiasi.riwayat') }}" class="btn-secondary-action">
+            ↗ Lihat Riwayat Analisis
         </button>
 
         <a href="{{ route('asosiasi.dashboard') }}" class="btn-secondary-action">
             ↗ Lihat Dashboard
         </a>
 
-        <button class="btn-secondary-action">
-            ◉ Lihat Detail Rules
-        </button>
     </div>
 
 </div>
@@ -169,10 +166,10 @@ if (ctx) {
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Rule 1', 'Rule 2', 'Rule 3', 'Rule 4', 'Rule 5'],
+            labels: ['Rule 1', 'Rule 3', 'Rule 5'],
             datasets: [{
                 label: 'Lift',
-                data: [2.4, 4.2, 1.9, 3.8, 1.8],
+                data: [2.4, 1.9, 1.8],
                 backgroundColor: '#e8007a',
                 borderRadius: 6,
                 barThickness: 70
