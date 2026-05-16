@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Analisis Data Penjualan - DRW Analytics')
+@section('title', 'Analisis Pola - DRW Skincare Analytics')
 
 @section('content')
 

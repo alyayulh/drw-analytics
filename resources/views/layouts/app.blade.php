@@ -12,6 +12,7 @@
         'resources/css/asosiasi-analisis.css',
         'resources/css/asosiasi-hasil.css',
         'resources/css/asosiasi-dashboard.css',
+        'resources/css/asosiasi-riwayat.css',
         'resources/css/asosiasi-layout.css',
         'resources/js/app.js',
         'resources/js/asosiasi-analisis.js'
@@ -24,11 +25,11 @@
 <div class="sidebar">
     <div class="sidebar-brand">
         <div class="brand-logo">
-            <span class="brand-icon">
+            <div class="sb-logo-icon" style="background:none; box-shadow:none;">
                 <img src="https://pos.drwskincare.com/logo_drw.svg"
                      alt="DRW Skincare"
                      style="width:36px; height:36px; object-fit:contain;">
-            </span>
+            </div>
 
             <div>
                 <div class="brand-title">DRW BANJARMASIN</div>
@@ -92,7 +93,7 @@
                         <path d="M6.5 10.5h3" stroke-linecap="round"/>
                     </svg>
                 </span>
-                <span>Hitung SPK</span>
+                <span>Menghitung Prioritas</span>
             </a>
 
             <a href="{{ route('perhitungan.riwayat') }}" class="menu-link {{ request()->routeIs('perhitungan.riwayat') ? 'active' : '' }}">
@@ -102,7 +103,7 @@
                         <path d="M8 5v3l-2 2" stroke-linecap="round"/>
                     </svg>
                 </span>
-                <span>Riwayat</span>
+                <span>Riwayat Perhitungan</span>
             </a>
         </div>
 
@@ -150,6 +151,44 @@
         </div>
 
     </div>
+    <!-- SIDEBAR FOOTER -->
+@php
+    $role = strtolower(auth()->user()->role ?? 'user');
+
+    if ($role === 'manajer') {
+        $displayName = 'Manajer DRW';
+        $displayRole = 'Manajer';
+        $avatarText = 'MA';
+    } else {
+        $displayName = 'Administrator';
+        $displayRole = 'Admin';
+        $avatarText = 'AD';
+    }
+@endphp
+
+<div class="sb-footer">
+    <div class="avatar">{{ $avatarText }}</div>
+
+    <div class="sb-user-text">
+        <div class="sb-user-name">{{ $displayName }}</div>
+        <div class="sb-user-role">{{ $displayRole }}</div>
+    </div>
+
+    <form method="POST" action="{{ route('logout') }}" class="sb-logout">
+        @csrf
+
+        <button type="submit" class="logout-button" title="Logout">
+            <svg viewBox="0 0 16 16" width="15" height="15">
+                <path d="M10 3h3a1 1 0 011 1v8a1 1 0 01-1 1h-3M7 11l3-3-3-3M10 8H3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke="currentColor"
+                      fill="none"
+                      stroke-width="1.8"/>
+            </svg>
+        </button>
+    </form>
+</div>
 </div>
 
 <main class="main-content">

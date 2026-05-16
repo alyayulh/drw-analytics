@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Analisis Asosiasi - DRW Analytics')
+@section('title', 'Dashboard Insight - DRW Skincare Analytics')
 
 @section('content')
 
 <div class="association-dashboard">
 
     <div class="dashboard-header">
-        <h1>Dashboard Analisis Asosiasi</h1>
-        <p>Analisis Pola Hubungan Data Penjualan dengan FP-Growth</p>
+        <h1>Dashboard Analisis Transaksi Penjualan</h1>
+        <p>Menampilkan insight transaksi penjualan berdasarkan pola data historis</p>
     </div>
 
     <div class="metric-grid">
@@ -144,7 +144,7 @@
         <ul>
             <li><strong>Pola Pembelian Terkuat:</strong> Pelanggan yang membeli Serum Wajah A cenderung membeli Moisturizer B dengan tingkat kepercayaan 85%.</li>
             <li><strong>Waktu Transaksi Optimal:</strong> Transaksi terbanyak terjadi pada waktu siang (12:00-17:00) dengan 412 transaksi.</li>
-            <li><strong>Rekomendasi:</strong> Pertimbangkan untuk menempatkan produk-produk dengan asosiasi tinggi berdekatan atau membuat paket bundling.</li>
+            <li><strong>Rekomendasi:</strong> Produk Serum Wajah A dan Moisturizer B disarankan untuk dijadikan paket bundling.</li>
         </ul>
     </div>
 

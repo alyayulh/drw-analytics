@@ -24,7 +24,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/data-produk', [ProdukController::class, 'index'])->name('produk.index');
         Route::post('/data-produk', [ProdukController::class, 'store'])->name('produk.store');
 
-        // Import: upload → preview → konfirmasi
         Route::post('/data-produk/preview', [ProdukController::class, 'preview'])->name('produk.preview');
         Route::get('/data-produk/preview', [ProdukController::class, 'showPreview'])->name('produk.preview.show');
         Route::post('/data-produk/import-confirm', [ProdukController::class, 'importConfirm'])->name('produk.import.confirm');
@@ -49,23 +48,24 @@ Route::middleware('auth')->group(function () {
     Route::get('/perhitungan/{id}/hasil', [PerhitunganController::class, 'hasil'])->name('perhitungan.hasil');
     Route::get('/riwayat', [PerhitunganController::class, 'riwayat'])->name('perhitungan.riwayat');
     Route::delete('/perhitungan/{id}', [PerhitunganController::class, 'destroy'])->name('perhitungan.destroy');
-});
 
-// === ROUTES ANALISIS ASOSIASI ===
-Route::middleware('auth')->group(function () {
-    Route::get('/asosiasi/dashboard', [AsosiasiController::class, 'dashboard'])->name('asosiasi.dashboard');
-    Route::get('/asosiasi/riwayat', [AsosiasiController::class, 'riwayat'])->name('asosiasi.riwayat');
+    // === ROUTES ANALISIS ASOSIASI ===
+    Route::prefix('asosiasi')->name('asosiasi.')->group(function () {
 
-    Route::middleware('role:Admin')->group(function () {
-    Route::get('/asosiasi/analisis', [AsosiasiController::class, 'analisis'])->name('asosiasi.analisis');
+        Route::get('/dashboard', [AsosiasiController::class, 'dashboard'])->name('dashboard');
 
-    Route::post('/asosiasi/analisis/proses', [AsosiasiController::class, 'prosesAnalisis'])
-        ->name('asosiasi.proses');
+        Route::get('/riwayat', [AsosiasiController::class, 'riwayat'])->name('riwayat');
 
-    Route::get('/asosiasi/hasil', [AsosiasiController::class, 'hasilAnalisis'])
-        ->name('asosiasi.hasil');
+        Route::get('/riwayat/{id}', [AsosiasiController::class, 'detailRiwayat'])->name('riwayat.detail');
 
-    Route::get('/asosiasi/download-laporan', [AsosiasiController::class, 'downloadLaporan'])
-        ->name('asosiasi.download');
-});
+        Route::middleware('role:Admin')->group(function () {
+            Route::get('/analisis', [AsosiasiController::class, 'analisis'])->name('analisis');
+
+            Route::post('/analisis/proses', [AsosiasiController::class, 'prosesAnalisis'])->name('proses');
+
+            Route::get('/hasil', [AsosiasiController::class, 'hasilAnalisis'])->name('hasil');
+
+            Route::get('/download-laporan', [AsosiasiController::class, 'downloadLaporan'])->name('download');
+        });
+    });
 });
