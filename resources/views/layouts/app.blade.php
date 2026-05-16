@@ -12,6 +12,7 @@
         'resources/css/asosiasi-analisis.css',
         'resources/css/asosiasi-hasil.css',
         'resources/css/asosiasi-dashboard.css',
+        'resources/css/asosiasi-riwayat.css',
         'resources/css/asosiasi-layout.css',
         'resources/js/app.js',
         'resources/js/asosiasi-analisis.js'
@@ -92,7 +93,7 @@
                         <path d="M6.5 10.5h3" stroke-linecap="round"/>
                     </svg>
                 </span>
-                <span>Hitung SPK</span>
+                <span>Menghitung Prioritas</span>
             </a>
 
             <a href="{{ route('perhitungan.riwayat') }}" class="menu-link {{ request()->routeIs('perhitungan.riwayat') ? 'active' : '' }}">
@@ -102,7 +103,7 @@
                         <path d="M8 5v3l-2 2" stroke-linecap="round"/>
                     </svg>
                 </span>
-                <span>Riwayat</span>
+                <span>Riwayat Perhitungan</span>
             </a>
         </div>
 

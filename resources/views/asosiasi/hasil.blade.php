@@ -99,8 +99,8 @@
                 </thead>
                 <tbody>
                     @foreach ($rules as $rule)
-                        <tr class="{{ strtolower($rule['status']) === 'anomali' ? 'row-anomaly' : 'row-normal' }}">
-                            <td>{{ $rule['no'] }}</td>
+                            <tr class="{{ strtolower($rule['status'] ?? '') === 'anomali' ? 'row-anomaly' : 'row-normal' }}">
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $rule['antecedents'] }}</td>
                             <td>{{ $rule['consequents'] }}</td>
                             <td>{{ $rule['support'] }}</td>
