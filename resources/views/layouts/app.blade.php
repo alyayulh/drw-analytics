@@ -24,11 +24,11 @@
 <div class="sidebar">
     <div class="sidebar-brand">
         <div class="brand-logo">
-            <span class="brand-icon">
+            <div class="sb-logo-icon" style="background:none; box-shadow:none;">
                 <img src="https://pos.drwskincare.com/logo_drw.svg"
                      alt="DRW Skincare"
                      style="width:36px; height:36px; object-fit:contain;">
-            </span>
+            </div>
 
             <div>
                 <div class="brand-title">DRW BANJARMASIN</div>
