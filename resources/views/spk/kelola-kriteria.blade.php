@@ -70,6 +70,26 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 .info-pink { background: var(--pink-light); color: var(--pink-dark); border: 1px solid var(--pink-soft); }
 .info-amber { background: var(--amber-light); color: #92400e; border: 1px solid #fcd34d; }
 
+/* GUIDE / TWO-COLUMN LAYOUT */
+.cards-row { display:flex; gap:16px; align-items:stretch; }
+.cards-row > div { display:flex; flex-direction:column; }
+.guide-card .info-box { border-radius:12px; padding:14px; }
+.guide-benefit { background: var(--green-light); color: #065f46; border: 1px solid #bbf7d0; }
+.guide-cost { background: var(--amber-light); color: #92400e; border: 1px solid #fcd34d; }
+.percentage-big { font-size:40px; font-weight:800; color:var(--pink); font-family:'DM Mono', monospace; line-height:1; }
+.segments { display:flex; gap:6px; align-items:center; }
+.segment { height:12px; border-radius:6px; display:inline-block; }
+.legend-item { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-2); }
+
+/* Make cards equal height and improve readability */
+.cards-row > div > .card { display:flex; flex-direction:column; height:100%; }
+.card .card-hd { flex:0 0 auto; }
+.card .segments, .card > .table-wrap, .card .legenda-tipe, .card .empty-state { flex:0 0 auto; }
+.card { font-size:14px; }
+.card-title { font-size:14px; }
+.card-sub { font-size:12px; color:var(--text-3); }
+.guide-card .info-box div { font-size:13px; }
+
 /* BADGE */
 .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
 .badge-pink { background: var(--pink-light); color: var(--pink); }
@@ -230,14 +250,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       <p>Tentukan faktor-faktor yang digunakan untuk menilai produk. Pastikan total bobot mencapai 100% sebelum menjalankan analisis.</p>
     </div>
 
-    <!-- PANDUAN BOBOT -->
-    <div class="info-box info-pink" style="margin-bottom:20px">
-      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
-      <div>
-        <strong>Panduan Pengisian Bobot:</strong> Bobot menunjukkan tingkat kepentingan relatif setiap kriteria. Contoh: Jika "Penjualan" lebih penting dari "Harga", berikan bobot penjualan lebih besar (misal 60%) dibanding "Harga" (misal 40%). Sesuaikan berdasarkan prioritas promosi Anda.
-      </div>
-    </div>
-
+    <!-- PANDUAN BOBOT + TOTAL BOBOT (DUA KOLOM) -->
     @if(session('success'))
       <div class="alert alert-success">✓ {{ session('success') }}</div>
     @endif
@@ -245,31 +258,98 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       <div class="alert alert-error">✗ {{ session('error') }}</div>
     @endif
 
-    <!-- TOTAL BOBOT -->
-    <div class="card">
-      <div class="card-hd">
-        <div>
-          <div class="card-title">Total Bobot Penilaian</div>
-          <div class="card-sub">Total bobot harus 100% agar analisis dapat dijalankan</div>
+    <div class="cards-row">
+      <!-- KIRI: Panduan -->
+      <div style="flex:1">
+        <div class="card guide-card">
+          <div class="card-hd" style="align-items:flex-start">
+            <div>
+              <div class="card-title">Panduan pengisian bobot</div>
+              <div class="card-sub">Pilih jenis kriteria sesuai sifat nilainya</div>
+            </div>
+            <div></div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+            <div class="info-box guide-benefit" style="flex:1;min-width:220px">
+              <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
+              <div>
+                <strong>Benefit</strong>
+                <div style="margin-top:8px;color:var(--text-2)">Nilai lebih tinggi → produk lebih layak dipromosikan.<br><em>Contoh: penjualan tinggi, stok banyak, rating positif.</em></div>
+              </div>
+            </div>
+            <div class="info-box guide-cost" style="flex:1;min-width:220px">
+              <svg viewBox="0 0 16 16"><path d="M8 2L2 14h12L8 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v3M8 11v.5" stroke-linecap="round"/></svg>
+              <div>
+                <strong>Cost</strong>
+                <div style="margin-top:8px;color:var(--text-2)">Nilai lebih rendah → produk lebih efisien untuk dipromosikan.<br><em>Contoh: harga terjangkau, biaya produksi rendah, risiko kecil.</em></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <button class="btn btn-pink btn-sm" onclick="openModal('modal-tambah')">
-          <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
-          Tambah Kriteria
-        </button>
       </div>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: {{ $totalBobot }}%"></div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
-        <span style="font-size:12px;color:var(--text-2)">Bobot yang sudah digunakan</span>
-        <span style="font-size:15px;font-weight:800;color:var(--pink);font-family:'DM Mono',monospace">{{ $totalBobot }}%</span>
-      </div>
-      @if($totalBobot < 100)
-        <div class="info-box info-amber" style="margin-top:12px;margin-bottom:0">
-          <svg viewBox="0 0 16 16"><path d="M8 2L2 14h12L8 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v3M8 11v.5" stroke-linecap="round"/></svg>
-          Masih ada <b>{{ 100 - $totalBobot }}%</b> bobot yang belum dialokasikan ke kriteria.
+
+      <!-- KANAN: Total Bobot -->
+      <div style="width:48%">
+        <div class="card">
+          <div class="card-hd">
+            <div>
+              <div class="card-title">Total bobot penilaian</div>
+              <div class="card-sub">Harus 100% agar analisis dapat dijalankan</div>
+            </div>
+            <button class="btn btn-pink btn-sm" onclick="openModal('modal-tambah')">
+              <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
+              Tambah Kriteria
+            </button>
+          </div>
+
+          <div style="display:flex;gap:16px;align-items:flex-start">
+            <div style="flex:1">
+              <div class="percentage-big">{{ $totalBobot }}%</div>
+              <div style="color:var(--text-3);margin-top:6px">dari 100%</div>
+              <div class="progress-bar" style="margin-top:12px">
+                <div class="progress-fill" style="width: {{ $totalBobot }}%"></div>
+              </div>
+
+              @php
+                $palette = ['#10b981', '#f59e0b', '#3b82f6', '#ff7ab6', '#7c3aed', '#06b6d4', '#fb923c', '#8b5cf6'];
+              @endphp
+              <div class="segments" style="margin-top:12px">
+                @foreach($kriterias as $k)
+                  @php $color = $palette[$loop->index % count($palette)]; @endphp
+                  <span class="segment" title="{{ $k->nama_kriteria }} ({{ $k->bobot }}%)" style="width:{{ $k->bobot }}%;background:{{ $color }}"></span>
+                @endforeach
+                @if($totalBobot < 100)
+                  <span class="segment" style="width:{{ 100 - $totalBobot }}%;background:#eee"></span>
+                @endif
+              </div>
+
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+                @foreach($kriterias as $k)
+                  @php $color = $palette[$loop->index % count($palette)]; @endphp
+                  <div class="legend-item">
+                    <span style="width:12px;height:8px;display:inline-block;border-radius:3px;background:{{ $color }}"></span>
+                    <span>{{ $k->nama_kriteria }} {{ $k->bobot }}%</span>
+                  </div>
+                @endforeach
+                @if($totalBobot < 100)
+                  <div class="legend-item">
+                    <span style="width:12px;height:8px;display:inline-block;border-radius:3px;background:#e6e6e6"></span>
+                    <span>Belum dialokasikan {{ 100 - $totalBobot }}%</span>
+                  </div>
+                @endif
+              </div>
+
+            </div>
+          </div>
+
+          @if($totalBobot < 100)
+            <div class="info-box info-amber" style="margin-top:12px;margin-bottom:0">
+              <svg viewBox="0 0 16 16"><path d="M8 2L2 14h12L8 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v3M8 11v.5" stroke-linecap="round"/></svg>
+              Masih ada <b>{{ 100 - $totalBobot }}%</b> bobot yang belum dialokasikan ke kriteria.
+            </div>
+          @endif
         </div>
-      @endif
+      </div>
     </div>
 
     <!-- DAFTAR KRITERIA -->
