@@ -143,7 +143,7 @@ tr:hover td { background: var(--pink-light); }
 
 /* ── SIDEBAR ── */
 .sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; box-shadow: 2px 0 12px rgba(232,0,90,.06); }
-.sb-brand { height: 56px; padding: 0 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
+.sb-brand { padding: 22px 18px 16px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
 .sb-logo { display: flex; align-items: center; gap: 10px; }
 .sb-logo-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.2; letter-spacing: -.3px; }
 .sb-logo-sub { font-size: 10px; color: var(--text-3); margin-top: 1px; }
@@ -207,25 +207,31 @@ tr:hover td { background: var(--pink-light); }
       </a>
       <a href="{{ route('perhitungan.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5h3" stroke-linecap="round"/><path d="M6.5 8.5h3" stroke-linecap="round"/><path d="M6.5 10.5h3" stroke-linecap="round"/></svg>
-        Hitung SPK
+       Menghitung Prioritas
       </a>
       <a href="{{ route('perhitungan.riwayat') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
-        Riwayat
+        Riwayat Perhitungan
       </a>
     </div>
 
     <div class="nav-divider"></div>
 
     <div class="nav-section">
-      <div class="nav-label">Analisis Asosiasi</div>
+      <div class="nav-label">Pola & Insight Penjualan</div>
       <a href="{{ route('asosiasi.dashboard') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
-        Dashboard
+        Dashboard Insight
       </a>
       @if(auth()->check() && auth()->user()->role === 'Admin')
       <a href="{{ route('asosiasi.analisis') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="6" cy="6" r="4"/><path d="M10 10l4 4" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16">
+          <circle cx="7" cy="7" r="4"/>
+          <path d="M10 10l3.5 3.5" stroke-linecap="round"/>
+          <path d="M5.5 8.5V6.8" stroke-linecap="round"/>
+          <path d="M7 8.5V5.5" stroke-linecap="round"/>
+          <path d="M8.5 8.5V4.5" stroke-linecap="round"/>
+        </svg>
         Analisis Pola
       </a>
       @endif
@@ -265,11 +271,13 @@ tr:hover td { background: var(--pink-light); }
       <p>Upload data produk melalui file Excel atau tambahkan produk secara manual.</p>
     </div>
 
-    @if(session('success'))
-      <div class="alert alert-success">✓ {{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-      <div class="alert alert-error">✗ {{ session('error') }}</div>
+   {{-- Banner warning: produk tanpa kategori tidak muncul di Input Permintaan --}}
+    @if(($produkBelumBerkategori ?? 0) > 0)
+      <div class="alert alert-error" style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e">
+        ⚠ Ada <strong>{{ $produkBelumBerkategori }}</strong> produk yang belum berkategori.
+        Produk-produk ini <strong>tidak akan muncul</strong> di halaman Input Permintaan.
+        Klik tombol <strong>Edit</strong> pada baris produk yang ditandai 🏷 untuk menetapkan kategori.
+      </div>
     @endif
 
     <!-- UPLOAD EXCEL -->
@@ -357,11 +365,12 @@ tr:hover td { background: var(--pink-light); }
 
       @if($produks->count() > 0)
       <div class="table-wrap">
-        <table id="tabel-produk">
+       <table id="tabel-produk">
           <thead>
             <tr>
               <th>No</th>
               <th>Nama Produk</th>
+              <th>Kategori</th>
               <th>Status Data</th>
               <th>Aksi</th>
             </tr>
@@ -372,6 +381,17 @@ tr:hover td { background: var(--pink-light); }
               <td style="color:var(--text-3);font-size:12px">{{ $i + 1 }}</td>
               <td style="font-weight:600">{{ $produk->nama_produk }}</td>
               <td>
+                @if($produk->kategoriProduk)
+                  <span class="badge" style="background:#fce7f3;color:#9d174d;border:1px solid #fbcfe8">
+                    {{ $produk->kategoriProduk->nama_kategori }}
+                  </span>
+                @else
+                  <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d">
+                    🏷 Belum Berkategori
+                  </span>
+                @endif
+              </td>
+              <td>
                 @if($produk->status_data === 'Lengkap')
                   <span class="badge badge-green">✓ Data Lengkap</span>
                 @else
@@ -380,7 +400,10 @@ tr:hover td { background: var(--pink-light); }
               </td>
               <td>
                 <div style="display:flex;gap:6px">
-                  <button class="btn btn-sm" onclick="openEdit({{ $produk->id_produk }}, '{{ addslashes($produk->nama_produk) }}')">Edit</button>
+                  <button class="btn btn-sm"
+                          onclick="openEdit({{ $produk->id_produk }}, '{{ addslashes($produk->nama_produk) }}', {{ $produk->id_kategori ?? 'null' }})">
+                    Edit
+                  </button>
                   <button class="btn btn-red btn-sm" onclick="openHapus({{ $produk->id_produk }}, '{{ addslashes($produk->nama_produk) }}')">Hapus</button>
                 </div>
               </td>
@@ -408,6 +431,22 @@ tr:hover td { background: var(--pink-light); }
       <div class="form-group">
         <label class="form-label">Nama Produk</label>
         <input class="form-input" name="nama_produk" placeholder="Nama produk" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          Kategori
+          <span style="font-weight:400;color:var(--text-3)">(opsional — kosongkan untuk otomatis)</span>
+        </label>
+        <select class="form-input" name="id_kategori">
+          <option value="">— Otomatis dari nama produk —</option>
+          @foreach($kategoris as $kat)
+            <option value="{{ $kat->id_kategori }}">{{ $kat->nama_kategori }}</option>
+          @endforeach
+        </select>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">
+          Jika dibiarkan kosong, sistem mencoba mendeteksi dari kata kunci nama produk.
+        </div>
       </div>
 
       {{-- Field nilai kriteria Manual -- tampil dinamis sesuai kriteria yang ada --}}
@@ -457,6 +496,18 @@ tr:hover td { background: var(--pink-light); }
         <label class="form-label">Nama Produk</label>
         <input class="form-input" name="nama_produk" id="edit-nama" required>
       </div>
+      <div class="form-group">
+        <label class="form-label">Kategori</label>
+        <select class="form-input" name="id_kategori" id="edit-kategori">
+          <option value="">— Tanpa Kategori —</option>
+          @foreach($kategoris as $kat)
+            <option value="{{ $kat->id_kategori }}">{{ $kat->nama_kategori }}</option>
+          @endforeach
+        </select>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">
+          Produk tanpa kategori tidak akan muncul di halaman Input Permintaan.
+        </div>
+      </div>
       <div class="modal-actions">
         <button type="button" class="btn" onclick="closeModal('modal-edit')">Batal</button>
         <button type="submit" class="btn btn-pink">Simpan</button>
@@ -501,8 +552,11 @@ function highlightRadio(input) {
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-function openEdit(id, nama) {
+function openEdit(id, nama, idKategori) {
   document.getElementById('edit-nama').value = nama;
+  // idKategori bisa null dari Blade -> set ke '' supaya option "Tanpa Kategori" terpilih
+  const selectKat = document.getElementById('edit-kategori');
+  selectKat.value = (idKategori === null || idKategori === undefined) ? '' : String(idKategori);
   document.getElementById('form-edit').action = '/data-produk/' + id;
   openModal('modal-edit');
 }

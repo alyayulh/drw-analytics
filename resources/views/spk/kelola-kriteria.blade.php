@@ -20,7 +20,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 
 /* SIDEBAR */
 .sidebar { width: var(--sidebar-w); min-width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; overflow-y: auto; box-shadow: 2px 0 12px rgba(232,0,90,.06); }
-.sb-brand { height: 56px; padding: 0 18px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
+.sb-brand { padding: 22px 18px 16px; display: flex; align-items: center; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
 .sb-logo { display: flex; align-items: center; gap: 10px; }
 .sb-logo-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.2; letter-spacing: -.3px; }
 .sb-logo-sub { font-size: 10px; color: var(--text-3); margin-top: 1px; }
@@ -167,25 +167,31 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       </a>
       <a href="{{ route('perhitungan.index') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5h3" stroke-linecap="round"/><path d="M6.5 8.5h3" stroke-linecap="round"/><path d="M6.5 10.5h3" stroke-linecap="round"/></svg>
-        Hitung SPK
+        Menghitung Prioritas
       </a>
       <a href="{{ route('perhitungan.riwayat') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l-2 2" stroke-linecap="round"/></svg>
-        Riwayat
+        Riwayat Perhitungan
       </a>
     </div>
 
     <div class="nav-divider"></div>
 
     <div class="nav-section">
-      <div class="nav-label">Analisis Asosiasi</div>
+      <div class="nav-label">Pola & Insight Penjualan</div>
       <a href="{{ route('asosiasi.dashboard') }}" class="nav-item">
         <svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5"/></svg>
-        Dashboard
+        Dashboard Insight
       </a>
       @if(auth()->check() && auth()->user()->role === 'Admin')
       <a href="{{ route('asosiasi.analisis') }}" class="nav-item">
-        <svg viewBox="0 0 16 16"><circle cx="6" cy="6" r="4"/><path d="M10 10l4 4" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 16 16">
+          <circle cx="7" cy="7" r="4"/>
+          <path d="M10 10l3.5 3.5" stroke-linecap="round"/>
+          <path d="M5.5 8.5V6.8" stroke-linecap="round"/>
+          <path d="M7 8.5V5.5" stroke-linecap="round"/>
+          <path d="M8.5 8.5V4.5" stroke-linecap="round"/>
+        </svg>
         Analisis Pola
       </a>
       @endif
@@ -215,7 +221,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
 <!-- MAIN -->
 <div class="main">
   <div class="topbar">
-    <div class="topbar-title">Pengaturan Kriteria Penilaian</div>
+    <div class="topbar-title">Kelola Kriteria</div>
   </div>
 
   <div class="content">
@@ -281,8 +287,8 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
           <thead>
             <tr>
               <th>No</th>
-              <th>Nama Faktor</th>
-              <th>Jenis</th>
+              <th>Nama Kriteria </th>
+              <th>Tipe Kriteria</th>
               <th>Bobot</th>
               <th>Sumber Nilai</th>
               <th>Aksi</th>
@@ -348,14 +354,14 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Tipe Atribut</label>
+          <label class="form-label">Tipe Kriteria</label>
           <select class="form-select" name="tipe_atribut" required>
             <option value="Benefit">Benefit (makin tinggi = makin baik)</option>
             <option value="Cost">Cost (makin rendah = makin baik)</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Sumber Data</label>
+          <label class="form-label">Sumber Nilai</label>
           <select class="form-select" name="sumber_data" id="sumber-tambah" onchange="toggleKolomExcel('tambah', this.value)" required>
             <option value="Excel">Import Excel (otomatis)</option>
             <option value="Manual">Input Manual (di web)</option>
@@ -365,7 +371,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       <div class="form-group" id="kolom-excel-group-tambah">
         <label class="form-label">Nama Kolom Excel <span style="color:var(--pink)">*</span></label>
         <input class="form-input" name="nama_kolom_excel" id="kolom-excel-tambah" placeholder="cth: HARGA JUAL" required>
-        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nama kolom di file Excel. Contoh: STOCK AKHIR, TOTAL PENJUALAN</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nama kolom di file Excel yang berkaitan dengan kriteria ini</div>
       </div>
       <div class="form-group">
         <label class="form-label">Bobot (%)</label>

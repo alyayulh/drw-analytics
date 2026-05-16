@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Seed the application's database
      */
     public function run(): void
     {
@@ -20,6 +20,11 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+        ]);
+
+        // Seed kategori produk (wajib untuk halaman Produk & Input Permintaan)
+        $this->call([
+            KategoriProdukSeeder::class,
         ]);
     }
 }
