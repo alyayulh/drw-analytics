@@ -265,7 +265,7 @@ tr:hover td { background: var(--pink-light); }
       <div class="stat-box">
         <div class="stat-label">Produk Siap Hitung</div>
         <div class="stat-val" style="color:var(--green)">{{ $produkLengkap }}</div>
-        <div class="stat-sub">dari {{ $totalProduk }} produk</div>
+        <div class="stat-sub">terpilih & lengkap</div>
       </div>
       <div class="stat-box">
         <div class="stat-label">Jumlah Kriteria</div>
@@ -348,10 +348,20 @@ tr:hover td { background: var(--pink-light); }
         {{-- Card form periode + submit --}}
         <div class="card">
           <div class="card-body">
+            {{-- STRICT VALIDATION: produk dipilih tapi belum lengkap --}}
+            @if(($produkDipilihBelumLengkap ?? 0) > 0)
+              <div class="info-box info-red" style="margin-bottom:14px;background:#ffe6ec;border-left:3px solid var(--pink);padding:10px 14px;border-radius:6px">
+                <svg viewBox="0 0 16 16" width="14" height="14" style="display:inline;vertical-align:-2px"><path d="M8 2L2 14h12L8 2z" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v3M8 11v.5" stroke="currentColor" stroke-linecap="round"/></svg>
+                <strong>Ada {{ $produkDipilihBelumLengkap }} produk dipilih yang belum dinilai lengkap.</strong>
+                Lengkapi dulu penilaian di menu <b>Input Permintaan</b> sebelum menjalankan perhitungan.
+              </div>
+            @endif
+
             @if($produkLengkap < 2)
               <div class="info-box info-amber" style="margin-bottom:14px">
                 <svg viewBox="0 0 16 16"><path d="M8 2L2 14h12L8 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v3M8 11v.5" stroke-linecap="round"/></svg>
-                Minimal 2 produk dengan data lengkap. Saat ini: <b>{{ $produkLengkap }}</b> produk siap.
+                Minimal 2 produk siap untuk dihitung. Saat ini: <b>{{ $produkLengkap }}</b> produk siap.
+                Pastikan produk sudah dipilih di menu <b>Input Permintaan</b> dan sudah dinilai semua kriterianya.
               </div>
             @endif
 
@@ -360,15 +370,18 @@ tr:hover td { background: var(--pink-light); }
               <div id="hidden-bobots"></div>
               <div style="margin-bottom:12px">
                 <label class="form-label">Nama Periode Promosi</label>
+                {{-- FIX BUG #6: maxlength=100 match dengan kolom DB VARCHAR(100)
+                     dan validator backend max:100. --}}
                 <input class="form-input" name="periode_data"
-                       placeholder="contoh: Ramadhan Sale April 2026"
+                       placeholder="contoh: Promo Lebaran April 2026"
+                       maxlength="100"
                        required
-                       {{ ($totalBobot != 100 || $produkLengkap < 2) ? 'disabled' : '' }}>
-                <div class="form-hint">Nama ini akan ditampilkan pada riwayat perhitungan.</div>
+                       {{ ($totalBobot != 100 || $produkLengkap < 2 || ($produkDipilihBelumLengkap ?? 0) > 0) ? 'disabled' : '' }}>
+                <div class="form-hint">Maks. 100 karakter. Akan tampil di riwayat perhitungan.</div>
               </div>
               <div style="display:flex;justify-content:flex-end">
                 <button type="submit" class="btn btn-pink" id="btn-hitung"
-                        {{ ($totalBobot != 100 || $produkLengkap < 2) ? 'disabled' : '' }}>
+                        {{ ($totalBobot != 100 || $produkLengkap < 2 || ($produkDipilihBelumLengkap ?? 0) > 0) ? 'disabled' : '' }}>
                   <svg viewBox="0 0 16 16" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2" stroke-linecap="round"/></svg>
                   Mulai Perhitungan
                 </button>

@@ -393,9 +393,9 @@ tr:hover td { background: var(--pink-light); }
               </td>
               <td>
                 @if($produk->status_data === 'Lengkap')
-                  <span class="badge badge-green">✓ Data Lengkap</span>
+                  <span class="badge badge-green" title="Produk ini sudah dinilai untuk semua kriteria dan siap masuk perhitungan SPK.">✓ Sudah Dinilai</span>
                 @else
-                  <span class="badge badge-amber">⚠ Data Belum Lengkap</span>
+                  <span class="badge badge-amber" title="Produk ini belum dinilai untuk kriteria manual. Beri nilai di Input Permintaan jika ingin dimasukkan ke perhitungan SPK.">⚠ Belum Dinilai</span>
                 @endif
               </td>
               <td>

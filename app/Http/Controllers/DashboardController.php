@@ -20,14 +20,21 @@ class DashboardController extends Controller
         $produkPrioritasUtama = null;
 
         if ($perhitunganTerakhir) {
+            // FIX: sort konsisten dengan halaman Hasil Perhitungan (4-tingkat).
+            // Sebelumnya cuma orderBy nilai_yi → bisa beda urutan kalau ada Yi tie.
             $top5Rekomendasi = HasilPerhitungan::where('id_perhitungan', $perhitunganTerakhir->id_perhitungan)
-                ->orderBy('nilai_yi', 'desc')
+                ->orderBy('ranking')
+                ->orderByDesc('total_benefit')
+                ->orderBy('total_cost')
+                ->orderBy('nama_produk')
                 ->take(5)
                 ->get();
 
             // Ambil produk prioritas (ranking 1)
             $produkPrioritasUtama = HasilPerhitungan::where('id_perhitungan', $perhitunganTerakhir->id_perhitungan)
                 ->where('ranking', 1)
+                ->orderByDesc('total_benefit')
+                ->orderBy('nama_produk')
                 ->first();
         }
 

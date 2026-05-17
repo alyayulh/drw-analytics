@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Kriteria;
 use App\Models\Produk;
 use App\Models\NilaiProduk;
+use App\Models\InputPermintaan;
 use Illuminate\Http\Request;
 
 class KriteriaController extends Controller
@@ -68,17 +69,36 @@ class KriteriaController extends Controller
             return back()->with('error', 'Total bobot kriteria melebihi 100%.');
         }
 
+        // Simpan sumber_data LAMA sebelum update untuk deteksi perubahan
+        $sumberDataLama = $kriteria->sumber_data;
+        $sumberDataBaru = $request->sumber_data;
+
         $kriteria->update([
             'nama_kriteria'    => $request->nama_kriteria,
             'tipe_atribut'     => $request->tipe_atribut,
             'bobot'            => $request->bobot,
-            'sumber_data'      => $request->sumber_data,
-            'nama_kolom_excel' => $request->sumber_data === 'Excel'
+            'sumber_data'      => $sumberDataBaru,
+            'nama_kolom_excel' => $sumberDataBaru === 'Excel'
                 ? strtoupper(trim($request->nama_kolom_excel))
                 : null,
         ]);
 
-        // FIX BUG #1: Update kriteria (misal ganti nama/tipe) tidak mengubah jumlah nilai_produk,
+        // FIX BUG (data stale saat sumber_data berubah):
+        // Saat sumber_data kriteria diubah (mis. Manual → Excel atau sebaliknya),
+        // data lama di input_permintaan dan nilai_produk harus dibersihkan,
+        // karena:
+        //   - Manual → Excel: input_permintaan untuk kriteria ini tidak relevan lagi
+        //                     (akan ditolak validasi store karena bukan Manual)
+        //   - Excel → Manual: nilai_produk lama dari Excel tidak relevan lagi
+        //                     (akan diganti oleh input manual user)
+        // Tanpa cleanup ini, data stale akan menyebabkan error validasi atau
+        // perhitungan yang tidak konsisten.
+        if ($sumberDataLama !== $sumberDataBaru) {
+            InputPermintaan::where('id_kriteria', $id)->delete();
+            NilaiProduk::where('id_kriteria', $id)->delete();
+        }
+
+        // Update kriteria (misal ganti nama/tipe) tidak mengubah jumlah nilai_produk,
         // tapi tetap perlu recalculate untuk konsistensi (misal sumber_data berubah Excel↔Manual).
         $this->recalculateSemuaProduk();
 
@@ -89,15 +109,21 @@ class KriteriaController extends Controller
     {
         $kriteria = Kriteria::findOrFail($id);
 
-        // FIX BUG #1 & #4: Sebelum hapus kriteria, hapus dulu semua nilai_produk
-        // yang terkait kriteria ini, lalu recalculate status semua produk.
-        // Sebelumnya: kriteria dihapus tapi nilai_produk lama masih ada,
-        // sehingga totalNilai tetap >= totalKriteria dan status tetap 'Lengkap'.
+        // FIX BUG #1 & #4 (+ extension): Sebelum hapus kriteria, hapus dulu
+        // semua data terkait kriteria ini di:
+        //   - nilai_produk      (data perhitungan)
+        //   - input_permintaan  (data input manual dari manajer)
+        // Lalu recalculate status semua produk.
+        //
+        // Sebelumnya: kriteria dihapus tapi data lama masih ada,
+        // menyebabkan totalNilai tetap >= totalKriteria (status palsu 'Lengkap')
+        // dan input_permintaan stale yang menyebabkan error validasi store().
         NilaiProduk::where('id_kriteria', $id)->delete();
+        InputPermintaan::where('id_kriteria', $id)->delete();
 
         $kriteria->delete();
 
-        // Recalculate SETELAH hapus kriteria dan nilai terkaitnya
+        // Recalculate SETELAH hapus kriteria dan semua data terkaitnya
         $this->recalculateSemuaProduk();
 
         return back()->with('success', 'Kriteria berhasil dihapus.');

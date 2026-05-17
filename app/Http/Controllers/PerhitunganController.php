@@ -8,6 +8,7 @@ use App\Models\NilaiProduk;
 use App\Models\Perhitungan;
 use App\Models\HasilPerhitungan;
 use App\Models\DetailPerhitungan;
+use App\Models\InputPermintaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,11 @@ class PerhitunganController extends Controller
     /**
      * Tampilkan halaman form perhitungan SPK.
      * Mengambil kriteria, produk yang siap dihitung, dan riwayat perhitungan terakhir.
+     *
+     * FIX BUG (produk tidak dipilih ikut terhitung):
+     * Produk yang masuk SPK = produk yang status_data='Lengkap' DAN
+     * dipilih di Input Permintaan (punya record di tabel input_permintaan).
+     * Logika ini di-extract ke method queryProdukUntukSPK() agar tidak duplicate.
      */
     public function index()
     {
@@ -29,15 +35,56 @@ class PerhitunganController extends Controller
         $totalProduk   = Produk::count();
         $riwayat       = Perhitungan::orderBy('created_at', 'desc')->take(5)->get();
 
-        $produks       = Produk::with('nilaiProduk')
-            ->where('status_data', 'Lengkap')
+        $produks = $this->queryProdukUntukSPK()
+            ->with('nilaiProduk')
             ->orderBy('nama_produk')
             ->get();
+
         $produkLengkap = $produks->count();
 
+        // STRICT VALIDATION INFO: hitung produk yang dipilih tapi belum lengkap
+        // → tampilkan warning di UI agar user tahu sebelum submit.
+        $produkDipilihBelumLengkap = 0;
+        if (Kriteria::where('sumber_data', 'Manual')->exists()) {
+            $idDipilih = InputPermintaan::distinct()->pluck('id_produk');
+            $produkDipilihBelumLengkap = Produk::whereIn('id_produk', $idDipilih)
+                ->where('status_data', 'Belum Lengkap')
+                ->count();
+        }
+
         return view('spk.hitung-spk', compact(
-            'kriterias', 'totalBobot', 'produkLengkap', 'totalProduk', 'riwayat', 'produks'
+            'kriterias', 'totalBobot', 'produkLengkap', 'totalProduk',
+            'riwayat', 'produks', 'produkDipilihBelumLengkap'
         ));
+    }
+
+    /**
+     * Helper: query produk yang berhak masuk SPK.
+     *
+     * Aturan HYBRID:
+     *   - Kalau ADA kriteria Manual → produk harus status_data='Lengkap'
+     *     DAN dipilih di Input Permintaan (ada record di input_permintaan).
+     *   - Kalau TIDAK ada kriteria Manual → cukup status_data='Lengkap'
+     *     (fallback supaya sistem tidak deadlock saat semua kriteria
+     *     dari Excel).
+     *
+     * Returns: Eloquent query builder (belum di-execute), supaya caller
+     * bisa chain ->with(), ->orderBy(), ->get() sesuai kebutuhan.
+     */
+    private function queryProdukUntukSPK()
+    {
+        $adaKriteriaManual = Kriteria::where('sumber_data', 'Manual')->exists();
+
+        $query = Produk::where('status_data', 'Lengkap');
+
+        if ($adaKriteriaManual) {
+            // Filter: hanya produk yang punya entry di input_permintaan
+            // (artinya dipilih oleh manajer di Step 1 Input Permintaan).
+            $produkDipilih = InputPermintaan::distinct()->pluck('id_produk');
+            $query->whereIn('id_produk', $produkDipilih);
+        }
+
+        return $query;
     }
 
     /**
@@ -46,8 +93,15 @@ class PerhitunganController extends Controller
      */
     public function hitung(Request $request)
     {
+        // FIX BUG #6: max:100 di validator vs VARCHAR(20) di migration.
+        // Sebelumnya: input 21–100 char lolos validasi tapi gagal saat insert
+        // ke DB → error 500 yang tidak jelas untuk user.
+        // Solusi: samakan dengan ukuran kolom DB (20) + pesan error custom.
         $request->validate([
             'periode_data' => 'required|string|max:100',
+        ], [
+            'periode_data.required' => 'Periode data wajib diisi.',
+            'periode_data.max'      => 'Periode data maksimal 20 karakter (contoh: "Mei 2026").',
         ]);
 
         // Ambil semua kriteria
@@ -73,11 +127,47 @@ class PerhitunganController extends Controller
             return back()->with('error', "Total bobot kriteria harus 100%. Saat ini: {$totalBobot}%.");
         }
 
-        // Ambil semua produk yang statusnya Lengkap
-        $produks = Produk::where('status_data', 'Lengkap')->get();
+        // =========================================================
+        // STRICT VALIDATION: semua produk yang dipilih harus lengkap.
+        //
+        // Aturan: kalau ada kriteria Manual, produk yang masuk SPK harus
+        // (a) dipilih di Input Permintaan DAN (b) status_data='Lengkap'.
+        //
+        // Tujuan strict validation: cegah perhitungan diam-diam mengabaikan
+        // produk yang dipilih tapi belum lengkap nilainya. User harus tahu
+        // dan lengkapi dulu, baru boleh hitung.
+        // =========================================================
+        $adaKriteriaManual = Kriteria::where('sumber_data', 'Manual')->exists();
+
+        if ($adaKriteriaManual) {
+            // Semua produk yang DIPILIH (ada di input_permintaan)
+            $idProdukDipilih = InputPermintaan::distinct()->pluck('id_produk');
+            $jumlahDipilih   = $idProdukDipilih->count();
+
+            // Dari yang dipilih, berapa yang lengkap?
+            $jumlahLengkap = Produk::whereIn('id_produk', $idProdukDipilih)
+                ->where('status_data', 'Lengkap')
+                ->count();
+
+            // Strict: kalau ada produk dipilih tapi belum dinilai lengkap → tolak
+            if ($jumlahLengkap < $jumlahDipilih) {
+                $belumLengkap = $jumlahDipilih - $jumlahLengkap;
+                return back()->with('error',
+                    "Tidak bisa hitung: ada {$belumLengkap} produk yang dipilih tapi belum dinilai lengkap. " .
+                    "Lengkapi dulu penilaian di menu Input Permintaan."
+                );
+            }
+        }
+
+        // Ambil semua produk yang berhak masuk SPK (Hybrid logic).
+        // Lihat queryProdukUntukSPK() untuk aturan lengkapnya.
+        $produks = $this->queryProdukUntukSPK()->get();
 
         if ($produks->count() < 2) {
-            return back()->with('error', 'Minimal 2 produk dengan data lengkap untuk menjalankan perhitungan.');
+            return back()->with('error',
+                'Minimal 2 produk dipilih dan datanya lengkap untuk menjalankan perhitungan. ' .
+                'Silakan pilih produk di menu Input Permintaan.'
+            );
         }
 
         // Ambil semua nilai produk sekaligus (1 query)

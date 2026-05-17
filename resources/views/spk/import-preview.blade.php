@@ -124,7 +124,7 @@ tr:hover td { background: var(--pink-light); }
     <span style="font-size:16px">⚠️</span>
     <div>
       <b>{{ count($kolomTidakAda) }} kolom kriteria tidak ditemukan di file Excel.</b>
-      Produk yang diimport tidak akan memiliki nilai untuk kriteria tersebut dan statusnya akan <b>Belum Lengkap</b> — tidak bisa masuk perhitungan MOORA sampai nilai dilengkapi manual.
+      Produk yang diimport tidak akan memiliki nilai untuk kriteria tersebut dan statusnya akan <b>Belum Dinilai</b> — tidak bisa masuk perhitungan MOORA sampai nilai dilengkapi manual di Input Permintaan.
       Jika ini bukan yang dimaksud, batalkan dan periksa nama kolom di file Excel Anda.
     </div>
   </div>
