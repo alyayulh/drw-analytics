@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+//use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Produk extends Model
 {
@@ -12,7 +12,7 @@ class Produk extends Model
     // melainkan ditandai dengan kolom `deleted_at`. Tujuan: menjaga
     // integritas riwayat perhitungan SPK — produk yang pernah masuk
     // ranking tetap bisa di-trace meskipun "dihapus".
-    use SoftDeletes;
+    //use SoftDeletes;
 
     protected $table = 'produk';
     protected $primaryKey = 'id_produk';

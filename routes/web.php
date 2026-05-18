@@ -9,18 +9,49 @@ use App\Http\Controllers\InputPermintaanController;
 use App\Http\Controllers\PerhitunganController;
 use App\Http\Controllers\AsosiasiController;
 
+/*
+|--------------------------------------------------------------------------
+| AUTH ROUTES
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/login', fn() => view('auth.login'))->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+/*
+|--------------------------------------------------------------------------
+| DEFAULT ROUTE
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/', fn() => redirect('/dashboard'));
+
+/*
+|--------------------------------------------------------------------------
+| PROTECTED ROUTES
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware('auth')->group(function () {
 
+    /*
+    |--------------------------------------------------------------------------
+    | DASHBOARD
+    |--------------------------------------------------------------------------
+    */
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Khusus Admin
+
+    /*
+    |--------------------------------------------------------------------------
+    | KHUSUS ADMIN
+    |--------------------------------------------------------------------------
+    */
+
     Route::middleware('role:Admin')->group(function () {
+
         Route::get('/data-produk', [ProdukController::class, 'index'])->name('produk.index');
         Route::post('/data-produk', [ProdukController::class, 'store'])->name('produk.store');
 
@@ -33,7 +64,13 @@ Route::middleware('auth')->group(function () {
         Route::delete('/data-produk/{id}', [ProdukController::class, 'destroy'])->name('produk.destroy');
     });
 
-    // Admin dan Manajer
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN DAN MANAJER
+    |--------------------------------------------------------------------------
+    */
+
     Route::get('/kelola-kriteria', [KriteriaController::class, 'index'])->name('kriteria.index');
     Route::post('/kelola-kriteria', [KriteriaController::class, 'store'])->name('kriteria.store');
     Route::put('/kelola-kriteria/{id}', [KriteriaController::class, 'update'])->name('kriteria.update');
@@ -42,30 +79,44 @@ Route::middleware('auth')->group(function () {
     Route::get('/input-permintaan', [InputPermintaanController::class, 'index'])->name('input.index');
     Route::post('/input-permintaan', [InputPermintaanController::class, 'store'])->name('input.store');
 
-        // FIX BUG #2: Route DELETE /input-permintaan/{idProduk} dihapus.
-    
     Route::get('/hitung-spk', [PerhitunganController::class, 'index'])->name('perhitungan.index');
     Route::post('/hitung-spk', [PerhitunganController::class, 'hitung'])->name('perhitungan.hitung');
     Route::get('/perhitungan/{id}/hasil', [PerhitunganController::class, 'hasil'])->name('perhitungan.hasil');
     Route::get('/riwayat', [PerhitunganController::class, 'riwayat'])->name('perhitungan.riwayat');
     Route::delete('/perhitungan/{id}', [PerhitunganController::class, 'destroy'])->name('perhitungan.destroy');
 
-    // === ROUTES ANALISIS ASOSIASI ===
+
+    /*
+    |--------------------------------------------------------------------------
+    | ANALISIS ASOSIASI
+    |--------------------------------------------------------------------------
+    */
+
     Route::prefix('asosiasi')->name('asosiasi.')->group(function () {
 
+        // Dashboard asosiasi
         Route::get('/dashboard', [AsosiasiController::class, 'dashboard'])->name('dashboard');
 
+        // Riwayat analisis asosiasi
         Route::get('/riwayat', [AsosiasiController::class, 'riwayat'])->name('riwayat');
-
         Route::get('/riwayat/{id}', [AsosiasiController::class, 'detailRiwayat'])->name('riwayat.detail');
 
+        // Khusus Admin untuk proses analisis
         Route::middleware('role:Admin')->group(function () {
+
+            // Halaman upload / form analisis
             Route::get('/analisis', [AsosiasiController::class, 'analisis'])->name('analisis');
 
+            // Proses upload dataset ke API Python
             Route::post('/analisis/proses', [AsosiasiController::class, 'prosesAnalisis'])->name('proses');
 
+            // Alias route tambahan, supaya kalau form memakai asosiasi.prosesAnalisis tetap aman
+            Route::post('/proses-analisis', [AsosiasiController::class, 'prosesAnalisis'])->name('prosesAnalisis');
+
+            // Halaman hasil analisis
             Route::get('/hasil', [AsosiasiController::class, 'hasilAnalisis'])->name('hasil');
 
+            // Download laporan
             Route::get('/download-laporan', [AsosiasiController::class, 'downloadLaporan'])->name('download');
         });
     });

@@ -3,10 +3,329 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Carbon\Carbon;
 
 class AsosiasiController extends Controller
 {
     public function dashboard()
+    {
+        $data = $this->getLatestAnalysisData();
+
+        return view('asosiasi.dashboard', [
+            'summary' => $data['summary'],
+            'rules' => $data['rules'],
+            'dataset' => $data['dataset'],
+            'topProduk' => $data['topProduk'],
+            'distribusiWaktu' => $data['distribusiWaktu'],
+        ]);
+    }
+
+    public function kelolaKriteria()
+    {
+        return view('asosiasi.kelola-kriteria');
+    }
+
+    public function dataProduk()
+    {
+        return view('asosiasi.data-produk');
+    }
+
+    public function inputPermintaan()
+    {
+        return view('asosiasi.input-permintaan');
+    }
+
+    public function menghitungPrioritas()
+    {
+        return view('asosiasi.menghitung-prioritas');
+    }
+
+    public function dashboardInsight()
+    {
+        $data = $this->getLatestAnalysisData();
+
+        return view('asosiasi.dashboard-insight', [
+            'summary' => $data['summary'],
+            'rules' => $data['rules'],
+        ]);
+    }
+
+    public function analisisPola()
+    {
+        return view('asosiasi.analisis-pola');
+    }
+
+    public function analisis()
+    {
+        return view('asosiasi.analisis');
+    }
+
+    public function hasil()
+    {
+        return $this->hasilAnalisis();
+    }
+
+    public function hasilAnalisis()
+    {
+        $data = $this->getLatestAnalysisData();
+
+        return view('asosiasi.hasil', [
+            'summary' => $data['summary'],
+            'rules' => $data['rules'],
+            'dataset' => $data['dataset'],
+            'topProduk' => $data['topProduk'],
+            'distribusiWaktu' => $data['distribusiWaktu'],
+        ]);
+    }
+
+    public function riwayat()
+    {
+        $riwayats = $this->getDummyRiwayat();
+
+        return view('asosiasi.riwayat', compact('riwayats'));
+    }
+
+    public function detailRiwayat($id)
+    {
+        $riwayat = $this->getDummyRiwayat()->firstWhere('id', (int) $id);
+
+        if (!$riwayat) {
+            abort(404);
+        }
+
+        $data = $this->getLatestAnalysisData();
+
+        $riwayat['rule_terbaik'] = $data['summary']['rule_terbaik'] ?? 'Belum ada rule';
+
+        return view('asosiasi.detail-riwayat', [
+            'riwayat' => $riwayat,
+            'rules' => $data['rules'],
+        ]);
+    }
+
+    public function prosesAnalisis(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xls,xlsx',
+            'min_support' => 'nullable|numeric|min:0.0001|max:1',
+            'min_confidence' => 'nullable|numeric|min:0.0001|max:1',
+            'min_lift' => 'nullable|numeric|min:0',
+        ]);
+
+        try {
+            $file = $request->file('file');
+
+            $apiUrl = env('FPGROWTH_API_URL');
+
+            if (!$apiUrl) {
+                return back()->with('error', 'FPGROWTH_API_URL belum diatur di file .env Laravel.');
+            }
+
+            $response = Http::timeout(600)
+                ->attach(
+                    'file',
+                    fopen($file->getRealPath(), 'r'),
+                    $file->getClientOriginalName()
+                )
+                ->post($apiUrl, [
+                    'min_support' => $request->input('min_support', 0.01),
+                    'min_confidence' => $request->input('min_confidence', 0.5),
+                    'min_lift' => $request->input('min_lift', 1.0),
+
+                    // Multivariable association rules: produk + operator + waktu
+                    'include_operator' => 'true',
+                    'include_waktu' => 'true',
+                    'only_product_rules' => 'false',
+
+                    'top_n' => 20,
+                ]);
+
+            if (!$response->successful()) {
+                return back()->with('error', 'API Python gagal merespons. Status: ' . $response->status());
+            }
+
+            $apiResult = $response->json();
+
+            if (($apiResult['status'] ?? null) !== 'success') {
+                return back()->with('error', $apiResult['message'] ?? 'Analisis gagal diproses.');
+            }
+
+            session([
+                'hasil_analisis_api' => $apiResult,
+                'dataset_info_api' => [
+                    'nama_file' => $file->getClientOriginalName(),
+                    'periode_data' => '-',
+                    'tanggal_analisis' => Carbon::now()->translatedFormat('d F Y'),
+                    'tanggal_filter' => Carbon::now()->format('Y-m-d'),
+                    'status' => 'Selesai',
+                ],
+            ]);
+
+            return redirect()
+                ->route('asosiasi.hasil')
+                ->with('success', 'Analisis dataset berhasil diproses.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function downloadLaporan()
+    {
+        return back()->with('error', 'Fitur download laporan belum tersedia.');
+    }
+
+    private function getLatestAnalysisData()
+    {
+        $apiResult = session('hasil_analisis_api');
+
+        if (!$apiResult) {
+            return $this->getDummyAnalysisData();
+        }
+
+        $summaryApi = $apiResult['summary'] ?? [];
+        $datasetInfo = session('dataset_info_api', []);
+
+        $summary = [
+            'total_data_awal' => $summaryApi['total_data_awal'] ?? 0,
+            'setelah_preprocessing' => $summaryApi['setelah_preprocessing'] ?? 0,
+            'total_basket' => $summaryApi['total_basket'] ?? 0,
+            'produk_unik' => $summaryApi['produk_unik'] ?? 0,
+            'total_operator' => $summaryApi['operator_unik'] ?? ($summaryApi['jumlah_operator_unik'] ?? 0),
+            'frequent_itemsets' => $summaryApi['frequent_itemsets'] ?? 0,
+            'association_rules' => $summaryApi['association_rules'] ?? 0,
+            'rule_terbaik' => $summaryApi['rule_terbaik'] ?? 'Belum ada rule',
+        ];
+
+        $dataset = [
+            'nama_file' => $datasetInfo['nama_file'] ?? 'Dataset Upload',
+            'periode_data' => $datasetInfo['periode_data'] ?? '-',
+            'tanggal_analisis' => $datasetInfo['tanggal_analisis'] ?? Carbon::now()->translatedFormat('d F Y'),
+            'jumlah_data_awal' => $summaryApi['total_data_awal'] ?? 0,
+            'data_setelah_preprocessing' => $summaryApi['setelah_preprocessing'] ?? 0,
+            'transaksi_refund_dihapus' => $summaryApi['jumlah_data_dihapus'] ?? 0,
+            'basket_transaksi_terbentuk' => $summaryApi['total_basket'] ?? 0,
+            'status' => $datasetInfo['status'] ?? 'Selesai',
+        ];
+
+        $rules = collect($apiResult['top_rules'] ?? [])->map(function ($rule, $index) {
+            $support = (float) ($rule['support'] ?? 0);
+            $confidence = (float) ($rule['confidence'] ?? 0);
+            $lift = (float) ($rule['lift'] ?? 0);
+
+            return [
+                'no' => $index + 1,
+                'antecedents' => $rule['antecedents_display'] ?? ($rule['antecedents_raw'] ?? '-'),
+                'consequents' => $rule['consequents_display'] ?? ($rule['consequents_raw'] ?? '-'),
+                'support' => $support,
+                'confidence' => $confidence,
+                'lift' => $lift,
+                'operator' => $this->extractOperatorFromRule($rule),
+                'kategori_waktu' => $this->extractWaktuFromRule($rule),
+                'status' => $this->getRuleStatus($support, $confidence, $lift),
+                'interpretasi' => $this->generateInterpretasi($rule, $confidence, $lift),
+                'kategori_rule' => $this->getKategoriRule($rule),
+            ];
+        });
+
+        $topProduk = collect($apiResult['rekap_produk'] ?? [])->map(function ($produk) {
+            return [
+                'nama' => $produk['nama_produk'] ?? '-',
+                'jumlah' => $produk['jumlah_terjual'] ?? 0,
+            ];
+        });
+
+        $distribusiWaktu = collect($apiResult['distribusi_waktu'] ?? [])->map(function ($waktu) {
+            return [
+                'label' => $waktu['kategori_waktu'] ?? '-',
+                'nilai' => round($waktu['persentase'] ?? 0, 2),
+            ];
+        });
+
+        return [
+            'summary' => $summary,
+            'rules' => $rules,
+            'dataset' => $dataset,
+            'topProduk' => $topProduk,
+            'distribusiWaktu' => $distribusiWaktu,
+        ];
+    }
+
+    private function extractOperatorFromRule($rule)
+    {
+        $text = ($rule['antecedents_display'] ?? '') . ' ' . ($rule['consequents_display'] ?? '');
+
+        if (preg_match('/Operator:\s*([^,]+)/i', $text, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return '-';
+    }
+
+    private function extractWaktuFromRule($rule)
+    {
+        $text = ($rule['antecedents_display'] ?? '') . ' ' . ($rule['consequents_display'] ?? '');
+
+        if (preg_match('/Waktu:\s*([^,]+)/i', $text, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return '-';
+    }
+
+    private function getRuleStatus($support, $confidence, $lift)
+    {
+        if ($support < 0.1 && $confidence >= 0.8 && $lift >= 2) {
+            return 'Anomali';
+        }
+
+        return 'Normal';
+    }
+
+    private function generateInterpretasi($rule, $confidence, $lift)
+    {
+        $antecedents = $rule['antecedents_display'] ?? ($rule['antecedents_raw'] ?? '-');
+        $consequents = $rule['consequents_display'] ?? ($rule['consequents_raw'] ?? '-');
+
+        return 'Jika terdapat ' . $antecedents .
+            ', maka cenderung berasosiasi dengan ' . $consequents .
+            ' dengan confidence ' . number_format($confidence * 100, 2) .
+            '% dan lift ' . number_format($lift, 2) . '.';
+    }
+
+    private function getKategoriRule($rule)
+    {
+        $text = strtolower(($rule['antecedents_raw'] ?? '') . ' ' . ($rule['consequents_raw'] ?? ''));
+
+        $hasProduk = str_contains($text, 'produk_');
+        $hasOperator = str_contains($text, 'operator_');
+        $hasWaktu = str_contains($text, 'waktu_');
+
+        if ($hasProduk && $hasOperator && $hasWaktu) {
+            return 'produk_operator_waktu';
+        }
+
+        if ($hasProduk && $hasOperator) {
+            return 'produk_operator';
+        }
+
+        if ($hasProduk && $hasWaktu) {
+            return 'produk_waktu';
+        }
+
+        if ($hasOperator && $hasWaktu) {
+            return 'operator_waktu';
+        }
+
+        if ($hasProduk) {
+            return 'produk_produk';
+        }
+
+        return 'multivariable';
+    }
+
+    private function getDummyAnalysisData()
     {
         $rules = $this->getDummyRules();
         $bestRule = $rules->sortByDesc('lift')->first();
@@ -36,146 +355,27 @@ class AsosiasiController extends Controller
         ];
 
         $topProduk = collect([
-            [
-                'nama' => 'Serum Wajah A',
-                'jumlah' => 120,
-            ],
-            [
-                'nama' => 'Moisturizer B',
-                'jumlah' => 95,
-            ],
-            [
-                'nama' => 'Toner C',
-                'jumlah' => 80,
-            ],
-            [
-                'nama' => 'Sunscreen D',
-                'jumlah' => 72,
-            ],
-            [
-                'nama' => 'Cleanser E',
-                'jumlah' => 60,
-            ],
+            ['nama' => 'Serum Wajah A', 'jumlah' => 120],
+            ['nama' => 'Moisturizer B', 'jumlah' => 95],
+            ['nama' => 'Toner C', 'jumlah' => 80],
+            ['nama' => 'Sunscreen D', 'jumlah' => 72],
+            ['nama' => 'Cleanser E', 'jumlah' => 60],
         ]);
 
         $distribusiWaktu = collect([
-            [
-                'label' => 'Pagi',
-                'nilai' => 320,
-            ],
-            [
-                'label' => 'Siang',
-                'nilai' => 450,
-            ],
-            [
-                'label' => 'Sore',
-                'nilai' => 280,
-            ],
-            [
-                'label' => 'Malam',
-                'nilai' => 170,
-            ],
+            ['label' => 'Pagi', 'nilai' => 320],
+            ['label' => 'Siang', 'nilai' => 450],
+            ['label' => 'Sore', 'nilai' => 280],
+            ['label' => 'Malam', 'nilai' => 170],
         ]);
 
-        return view('asosiasi.dashboard', compact(
-            'summary',
-            'rules',
-            'dataset',
-            'topProduk',
-            'distribusiWaktu'
-        ));
-    }
-
-    public function kelolaKriteria()
-    {
-        return view('asosiasi.kelola-kriteria');
-    }
-
-    public function dataProduk()
-    {
-        return view('asosiasi.data-produk');
-    }
-
-    public function inputPermintaan()
-    {
-        return view('asosiasi.input-permintaan');
-    }
-
-    public function menghitungPrioritas()
-    {
-        return view('asosiasi.menghitung-prioritas');
-    }
-
-    public function dashboardInsight()
-    {
-        $rules = $this->getDummyRules();
-        $bestRule = $rules->sortByDesc('lift')->first();
-
-        $summary = [
-            'total_data_awal' => 1285,
-            'setelah_preprocessing' => 1220,
-            'total_basket' => 1220,
-            'produk_unik' => 156,
-            'total_operator' => 8,
-            'frequent_itemsets' => 456,
-            'association_rules' => 342,
-            'rule_terbaik' => $bestRule
-                ? $bestRule['antecedents'] . ' → ' . $bestRule['consequents']
-                : 'Belum ada rule',
+        return [
+            'summary' => $summary,
+            'rules' => $rules,
+            'dataset' => $dataset,
+            'topProduk' => $topProduk,
+            'distribusiWaktu' => $distribusiWaktu,
         ];
-
-        return view('asosiasi.dashboard-insight', compact('summary', 'rules'));
-    }
-
-    public function analisisPola()
-    {
-        return view('asosiasi.analisis-pola');
-    }
-
-    public function hasil()
-    {
-        $rules = $this->getDummyRules();
-        $bestRule = $rules->sortByDesc('lift')->first();
-
-        $summary = [
-            'total_data_awal' => 1285,
-            'setelah_preprocessing' => 1220,
-            'total_basket' => 1220,
-            'produk_unik' => 156,
-            'total_operator' => 8,
-            'frequent_itemsets' => 456,
-            'association_rules' => 342,
-            'rule_terbaik' => $bestRule
-                ? $bestRule['antecedents'] . ' → ' . $bestRule['consequents']
-                : 'Belum ada rule',
-        ];
-
-        return view('asosiasi.hasil', compact('summary', 'rules'));
-    }
-
-    public function riwayat()
-    {
-        $riwayats = $this->getDummyRiwayat();
-
-        return view('asosiasi.riwayat', compact('riwayats'));
-    }
-
-    public function detailRiwayat($id)
-    {
-        $riwayat = $this->getDummyRiwayat()->firstWhere('id', (int) $id);
-
-        if (!$riwayat) {
-            abort(404);
-        }
-
-        $rules = $this->getDummyRules();
-        $bestRule = $rules->sortByDesc('lift')->first();
-
-        $riwayat['rule_terbaik'] = $bestRule
-            ? $bestRule['antecedents'] . ' → ' . $bestRule['consequents']
-            : 'Belum ada rule';
-
-        return view('asosiasi.detail-riwayat', compact('riwayat', 'rules'));
     }
 
     private function getDummyRiwayat()

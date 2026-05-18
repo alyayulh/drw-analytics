@@ -12,23 +12,50 @@
     </p>
 </div>
 
-<form id="formAnalisis" action="{{ route('asosiasi.proses') }}" method="POST" enctype="multipart/form-data">
+@if(session('error'))
+    <div class="analysis-card" style="border-left: 5px solid #ef4444; color: #991b1b;">
+        {{ session('error') }}
+    </div>
+@endif
+
+@if(session('success'))
+    <div class="analysis-card" style="border-left: 5px solid #22c55e; color: #166534;">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if($errors->any())
+    <div class="analysis-card" style="border-left: 5px solid #ef4444; color: #991b1b;">
+        <ul style="margin: 0; padding-left: 20px;">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+<form id="formAnalisisApi" action="{{ route('asosiasi.proses') }}" method="POST" enctype="multipart/form-data">
     @csrf
+
+    {{-- Parameter dikirim otomatis ke controller --}}
+    <input type="hidden" name="min_support" value="0.01">
+    <input type="hidden" name="min_confidence" value="0.5">
+    <input type="hidden" name="min_lift" value="1.0">
 
     <div class="analysis-card">
         <h2>Dataset Upload</h2>
 
         <div class="upload-box simple-upload">
-    <input type="file" name="file_excel" id="file_excel" accept=".xlsx,.xls,.csv" required hidden>
+            <input type="file" name="file" id="file" accept=".xlsx,.xls" required hidden>
 
-    <label for="file_excel" class="btn-upload">
-        Pilih File Excel
-    </label>
+            <label for="file" class="btn-upload">
+                Pilih File Excel
+            </label>
 
-    <p id="fileName" class="selected-file-name">
-        Belum ada file yang dipilih
-    </p>
-</div>
+            <p id="fileName" class="selected-file-name">
+                Belum ada file yang dipilih
+            </p>
+        </div>
 
         <div class="upload-notes">
             <div>ⓘ Format file yang diterima: .xlsx atau .xls</div>
@@ -119,5 +146,33 @@
         </div>
     </div>
 </div>
+
+<script>
+    const fileInput = document.getElementById('file');
+    const fileName = document.getElementById('fileName');
+    const btnReset = document.getElementById('btnReset');
+    const formAnalisis = document.getElementById('formAnalisisApi');
+    const loadingAnalisis = document.getElementById('loadingAnalisis');
+    const btnProses = document.getElementById('btnProses');
+
+    fileInput.addEventListener('change', function () {
+        if (this.files && this.files.length > 0) {
+            fileName.textContent = this.files[0].name;
+        } else {
+            fileName.textContent = 'Belum ada file yang dipilih';
+        }
+    });
+
+    btnReset.addEventListener('click', function () {
+        fileInput.value = '';
+        fileName.textContent = 'Belum ada file yang dipilih';
+    });
+
+    formAnalisis.addEventListener('submit', function () {
+        loadingAnalisis.classList.remove('hidden');
+        btnProses.disabled = true;
+        btnProses.textContent = 'Memproses...';
+    });
+</script>
 
 @endsection
