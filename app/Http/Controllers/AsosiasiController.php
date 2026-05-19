@@ -8,6 +8,8 @@ use Carbon\Carbon;
 
 class AsosiasiController extends Controller
 {
+    private const API_TOP_N = 100;
+
     public function dashboard()
     {
         $data = $this->getLatestAnalysisData();
@@ -115,7 +117,6 @@ class AsosiasiController extends Controller
 
         try {
             $file = $request->file('file');
-
             $apiUrl = env('FPGROWTH_API_URL');
 
             if (!$apiUrl) {
@@ -129,8 +130,9 @@ class AsosiasiController extends Controller
                     $file->getClientOriginalName()
                 )
                 ->post($apiUrl, [
+                    // Parameter disamakan dengan model.py
                     'min_support' => $request->input('min_support', 0.01),
-                    'min_confidence' => $request->input('min_confidence', 0.5),
+                    'min_confidence' => $request->input('min_confidence', 0.4),
                     'min_lift' => $request->input('min_lift', 1.0),
 
                     // Multivariable association rules: produk + operator + waktu
@@ -138,7 +140,9 @@ class AsosiasiController extends Controller
                     'include_waktu' => 'true',
                     'only_product_rules' => 'false',
 
-                    'top_n' => 20,
+                    // Supaya Laravel menerima lebih dari 20 rules.
+                    // Kalau rules terbentuk 66, maka 66 bisa masuk ke tabel.
+                    'top_n' => self::API_TOP_N,
                 ]);
 
             if (!$response->successful()) {
@@ -151,6 +155,16 @@ class AsosiasiController extends Controller
                 return back()->with('error', $apiResult['message'] ?? 'Analisis gagal diproses.');
             }
 
+            $rulesReturned = is_array($apiResult['top_rules'] ?? null)
+                ? count($apiResult['top_rules'])
+                : 0;
+
+            // Hapus hasil lama agar session tidak tetap memakai data lama 20 rules.
+            session()->forget([
+                'hasil_analisis_api',
+                'dataset_info_api',
+            ]);
+
             session([
                 'hasil_analisis_api' => $apiResult,
                 'dataset_info_api' => [
@@ -159,12 +173,14 @@ class AsosiasiController extends Controller
                     'tanggal_analisis' => Carbon::now()->translatedFormat('d F Y'),
                     'tanggal_filter' => Carbon::now()->format('Y-m-d'),
                     'status' => 'Selesai',
+                    'top_n_request' => self::API_TOP_N,
+                    'rules_returned' => $rulesReturned,
                 ],
             ]);
 
             return redirect()
                 ->route('asosiasi.hasil')
-                ->with('success', 'Analisis dataset berhasil diproses.');
+                ->with('success', 'Analisis dataset berhasil diproses. Rules diterima: ' . $rulesReturned);
 
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -187,6 +203,12 @@ class AsosiasiController extends Controller
         $summaryApi = $apiResult['summary'] ?? [];
         $datasetInfo = session('dataset_info_api', []);
 
+        $topRules = $apiResult['top_rules'] ?? [];
+
+        if (!is_array($topRules)) {
+            $topRules = [];
+        }
+
         $summary = [
             'total_data_awal' => $summaryApi['total_data_awal'] ?? 0,
             'setelah_preprocessing' => $summaryApi['setelah_preprocessing'] ?? 0,
@@ -195,7 +217,12 @@ class AsosiasiController extends Controller
             'total_operator' => $summaryApi['operator_unik'] ?? ($summaryApi['jumlah_operator_unik'] ?? 0),
             'frequent_itemsets' => $summaryApi['frequent_itemsets'] ?? 0,
             'association_rules' => $summaryApi['association_rules'] ?? 0,
+            'jumlah_anomali' => $summaryApi['jumlah_anomali'] ?? 0,
             'rule_terbaik' => $summaryApi['rule_terbaik'] ?? 'Belum ada rule',
+
+            // Tambahan info debug ringan
+            'rules_ditampilkan' => count($topRules),
+            'top_n_request' => $datasetInfo['top_n_request'] ?? self::API_TOP_N,
         ];
 
         $dataset = [
@@ -209,10 +236,14 @@ class AsosiasiController extends Controller
             'status' => $datasetInfo['status'] ?? 'Selesai',
         ];
 
-        $rules = collect($apiResult['top_rules'] ?? [])->map(function ($rule, $index) {
+        $rules = collect($topRules)->map(function ($rule, $index) {
             $support = (float) ($rule['support'] ?? 0);
             $confidence = (float) ($rule['confidence'] ?? 0);
             $lift = (float) ($rule['lift'] ?? 0);
+
+            // Ambil langsung dari model/API Python
+            $kategoriRule = $rule['kategori_rule'] ?? 'Weak Pattern';
+            $isAnomaly = $this->normalizeBoolean($rule['is_anomaly'] ?? false);
 
             return [
                 'no' => $index + 1,
@@ -221,11 +252,23 @@ class AsosiasiController extends Controller
                 'support' => $support,
                 'confidence' => $confidence,
                 'lift' => $lift,
+
+                // Tetap disediakan kalau view lama masih manggil
                 'operator' => $this->extractOperatorFromRule($rule),
                 'kategori_waktu' => $this->extractWaktuFromRule($rule),
-                'status' => $this->getRuleStatus($support, $confidence, $lift),
+
+                // Status utama mengikuti model Python
+                'kategori_rule' => $kategoriRule,
+                'status' => $kategoriRule,
+
+                // Anomali mengikuti model Python
+                'is_anomaly' => $isAnomaly,
+                'status_anomali' => $isAnomaly ? 'Anomali' : 'Normal',
+
                 'interpretasi' => $this->generateInterpretasi($rule, $confidence, $lift),
-                'kategori_rule' => $this->getKategoriRule($rule),
+
+                // Jenis kombinasi rule untuk filter tab
+                'jenis_rule' => $this->getJenisRule($rule),
             ];
         });
 
@@ -252,6 +295,23 @@ class AsosiasiController extends Controller
         ];
     }
 
+    private function normalizeBoolean($value)
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value === 1;
+        }
+
+        if (is_string($value)) {
+            return in_array(strtolower($value), ['true', '1', 'yes', 'ya'], true);
+        }
+
+        return false;
+    }
+
     private function extractOperatorFromRule($rule)
     {
         $text = ($rule['antecedents_display'] ?? '') . ' ' . ($rule['consequents_display'] ?? '');
@@ -274,27 +334,27 @@ class AsosiasiController extends Controller
         return '-';
     }
 
-    private function getRuleStatus($support, $confidence, $lift)
-    {
-        if ($support < 0.1 && $confidence >= 0.8 && $lift >= 2) {
-            return 'Anomali';
-        }
-
-        return 'Normal';
-    }
-
     private function generateInterpretasi($rule, $confidence, $lift)
     {
         $antecedents = $rule['antecedents_display'] ?? ($rule['antecedents_raw'] ?? '-');
         $consequents = $rule['consequents_display'] ?? ($rule['consequents_raw'] ?? '-');
 
+        $kategoriRule = $rule['kategori_rule'] ?? 'Weak Pattern';
+        $isAnomaly = $this->normalizeBoolean($rule['is_anomaly'] ?? false);
+
+        $anomaliText = $isAnomaly
+            ? ' Rule ini terdeteksi sebagai anomali berdasarkan pendekatan IQR pada confidence dan lift.'
+            : ' Rule ini tidak terdeteksi sebagai anomali berdasarkan pendekatan IQR pada confidence dan lift.';
+
         return 'Jika terdapat ' . $antecedents .
             ', maka cenderung berasosiasi dengan ' . $consequents .
             ' dengan confidence ' . number_format($confidence * 100, 2) .
-            '% dan lift ' . number_format($lift, 2) . '.';
+            '% dan lift ' . number_format($lift, 2) .
+            '. Kategori rule: ' . $kategoriRule . '.' .
+            $anomaliText;
     }
 
-    private function getKategoriRule($rule)
+    private function getJenisRule($rule)
     {
         $text = strtolower(($rule['antecedents_raw'] ?? '') . ' ' . ($rule['consequents_raw'] ?? ''));
 
@@ -338,9 +398,12 @@ class AsosiasiController extends Controller
             'total_operator' => 8,
             'frequent_itemsets' => 456,
             'association_rules' => 342,
+            'jumlah_anomali' => $rules->where('is_anomaly', true)->count(),
             'rule_terbaik' => $bestRule
                 ? $bestRule['antecedents'] . ' → ' . $bestRule['consequents']
                 : 'Belum ada rule',
+            'rules_ditampilkan' => $rules->count(),
+            'top_n_request' => self::API_TOP_N,
         ];
 
         $dataset = [
@@ -444,9 +507,12 @@ class AsosiasiController extends Controller
                 'lift' => 2.4,
                 'operator' => 'Siti',
                 'kategori_waktu' => 'Siang',
-                'status' => 'Normal',
-                'interpretasi' => 'Pelanggan yang membeli Serum Wajah A cenderung membeli Moisturizer B',
-                'kategori_rule' => 'produk_produk',
+                'status' => 'Strong Pattern',
+                'kategori_rule' => 'Strong Pattern',
+                'is_anomaly' => false,
+                'status_anomali' => 'Normal',
+                'interpretasi' => 'Jika terdapat Serum Wajah A, maka cenderung berasosiasi dengan Moisturizer B.',
+                'jenis_rule' => 'produk_produk',
             ],
             [
                 'no' => 2,
@@ -457,9 +523,12 @@ class AsosiasiController extends Controller
                 'lift' => 4.2,
                 'operator' => 'Ani',
                 'kategori_waktu' => 'Pagi',
-                'status' => 'Anomali',
-                'interpretasi' => 'Pola tidak biasa: confidence tinggi dengan support sangat rendah',
-                'kategori_rule' => 'produk_operator',
+                'status' => 'Strong Pattern',
+                'kategori_rule' => 'Strong Pattern',
+                'is_anomaly' => true,
+                'status_anomali' => 'Anomali',
+                'interpretasi' => 'Jika terdapat Toner C dan Operator Ani, maka cenderung berasosiasi dengan Serum Wajah A.',
+                'jenis_rule' => 'produk_operator',
             ],
             [
                 'no' => 3,
@@ -470,9 +539,12 @@ class AsosiasiController extends Controller
                 'lift' => 1.9,
                 'operator' => 'Siti',
                 'kategori_waktu' => 'Sore',
-                'status' => 'Normal',
-                'interpretasi' => 'Pola pembelian umum pada waktu sore',
-                'kategori_rule' => 'produk_produk',
+                'status' => 'Strong Pattern',
+                'kategori_rule' => 'Strong Pattern',
+                'is_anomaly' => false,
+                'status_anomali' => 'Normal',
+                'interpretasi' => 'Jika terdapat Sunscreen D, maka cenderung berasosiasi dengan Moisturizer B.',
+                'jenis_rule' => 'produk_produk',
             ],
             [
                 'no' => 4,
@@ -483,9 +555,12 @@ class AsosiasiController extends Controller
                 'lift' => 3.8,
                 'operator' => 'Rina',
                 'kategori_waktu' => 'Malam',
-                'status' => 'Anomali',
-                'interpretasi' => 'Rule memiliki lift tinggi pada kategori waktu tertentu',
-                'kategori_rule' => 'kategori_waktu',
+                'status' => 'Strong Pattern',
+                'kategori_rule' => 'Strong Pattern',
+                'is_anomaly' => true,
+                'status_anomali' => 'Anomali',
+                'interpretasi' => 'Jika terdapat Cleanser E dan Waktu Malam, maka cenderung berasosiasi dengan Face Mask F.',
+                'jenis_rule' => 'produk_waktu',
             ],
             [
                 'no' => 5,
@@ -496,9 +571,12 @@ class AsosiasiController extends Controller
                 'lift' => 1.8,
                 'operator' => 'Dewi',
                 'kategori_waktu' => 'Siang',
-                'status' => 'Normal',
-                'interpretasi' => 'Produk sering muncul sebagai kombinasi pembelian',
-                'kategori_rule' => 'produk_produk',
+                'status' => 'Strong Pattern',
+                'kategori_rule' => 'Strong Pattern',
+                'is_anomaly' => false,
+                'status_anomali' => 'Normal',
+                'interpretasi' => 'Jika terdapat Essence H, maka cenderung berasosiasi dengan Eye Cream G.',
+                'jenis_rule' => 'produk_produk',
             ],
         ]);
     }

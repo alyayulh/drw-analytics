@@ -129,8 +129,6 @@
                         <th>Support</th>
                         <th>Confidence</th>
                         <th>Lift</th>
-                        <th>Operator</th>
-                        <th>Kategori Waktu</th>
                         <th>Status</th>
                         <th>Interpretasi</th>
                     </tr>
@@ -147,8 +145,6 @@
                             <td>{{ $rule['support'] ?? '-' }}</td>
                             <td>{{ $rule['confidence'] ?? '-' }}</td>
                             <td>{{ $rule['lift'] ?? '-' }}</td>
-                            <td>{{ $rule['operator'] ?? '-' }}</td>
-                            <td>{{ $rule['kategori_waktu'] ?? '-' }}</td>
                             <td>
                                 @if(strtolower($rule['status'] ?? '') === 'anomali')
                                     <span class="status-badge status-anomaly">Anomali</span>

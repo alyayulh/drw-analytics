@@ -13,20 +13,20 @@
 </div>
 
 @if(session('error'))
-    <div class="analysis-card" style="border-left: 5px solid #ef4444; color: #991b1b;">
+    <div class="analysis-alert analysis-alert-error">
         {{ session('error') }}
     </div>
 @endif
 
 @if(session('success'))
-    <div class="analysis-card" style="border-left: 5px solid #22c55e; color: #166534;">
+    <div class="analysis-alert analysis-alert-success">
         {{ session('success') }}
     </div>
 @endif
 
 @if($errors->any())
-    <div class="analysis-card" style="border-left: 5px solid #ef4444; color: #991b1b;">
-        <ul style="margin: 0; padding-left: 20px;">
+    <div class="analysis-alert analysis-alert-error">
+        <ul>
             @foreach($errors->all() as $error)
                 <li>{{ $error }}</li>
             @endforeach
@@ -37,9 +37,8 @@
 <form id="formAnalisisApi" action="{{ route('asosiasi.proses') }}" method="POST" enctype="multipart/form-data">
     @csrf
 
-    {{-- Parameter dikirim otomatis ke controller --}}
     <input type="hidden" name="min_support" value="0.01">
-    <input type="hidden" name="min_confidence" value="0.5">
+    <input type="hidden" name="min_confidence" value="0.4">
     <input type="hidden" name="min_lift" value="1.0">
 
     <div class="analysis-card">
@@ -90,7 +89,7 @@
 
             <div class="parameter-item">
                 <span>Minimum Confidence</span>
-                <strong>0.5</strong>
+                <strong>0.4</strong>
             </div>
 
             <div class="parameter-item">
@@ -107,7 +106,14 @@
 </form>
 
 <div id="loadingAnalisis" class="analysis-card process-card hidden">
-    <h2>Proses Analisis</h2>
+    <div class="loading-header">
+        <div class="loading-spinner"></div>
+
+        <div class="loading-header-text">
+            <h2>Proses Analisis</h2>
+            <p>Mohon tunggu, sistem sedang memproses dataset menggunakan algoritma FP-Growth.</p>
+        </div>
+    </div>
 
     <div class="process-list">
         <div class="process-step" data-step="0">
@@ -148,30 +154,111 @@
 </div>
 
 <script>
-    const fileInput = document.getElementById('file');
-    const fileName = document.getElementById('fileName');
-    const btnReset = document.getElementById('btnReset');
-    const formAnalisis = document.getElementById('formAnalisisApi');
-    const loadingAnalisis = document.getElementById('loadingAnalisis');
-    const btnProses = document.getElementById('btnProses');
+    document.addEventListener('DOMContentLoaded', function () {
+        const fileInput = document.getElementById('file');
+        const fileName = document.getElementById('fileName');
+        const btnReset = document.getElementById('btnReset');
+        const formAnalisis = document.getElementById('formAnalisisApi');
+        const loadingAnalisis = document.getElementById('loadingAnalisis');
+        const btnProses = document.getElementById('btnProses');
+        const processSteps = document.querySelectorAll('.process-step');
 
-    fileInput.addEventListener('change', function () {
-        if (this.files && this.files.length > 0) {
-            fileName.textContent = this.files[0].name;
-        } else {
-            fileName.textContent = 'Belum ada file yang dipilih';
+        let stepInterval = null;
+
+        function resetProcessSteps() {
+            processSteps.forEach(function (step) {
+                step.classList.remove('active', 'done');
+            });
         }
-    });
 
-    btnReset.addEventListener('click', function () {
-        fileInput.value = '';
-        fileName.textContent = 'Belum ada file yang dipilih';
-    });
+        function startProcessAnimation() {
+            resetProcessSteps();
 
-    formAnalisis.addEventListener('submit', function () {
-        loadingAnalisis.classList.remove('hidden');
-        btnProses.disabled = true;
-        btnProses.textContent = 'Memproses...';
+            let currentStep = 0;
+
+            if (processSteps.length > 0) {
+                processSteps[0].classList.add('active');
+            }
+
+            stepInterval = setInterval(function () {
+                if (currentStep < processSteps.length) {
+                    processSteps[currentStep].classList.remove('active');
+                    processSteps[currentStep].classList.add('done');
+                }
+
+                currentStep++;
+
+                if (currentStep < processSteps.length) {
+                    processSteps[currentStep].classList.add('active');
+                } else {
+                    clearInterval(stepInterval);
+                }
+            }, 900);
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function () {
+                if (this.files && this.files.length > 0) {
+                    fileName.textContent = this.files[0].name;
+                } else {
+                    fileName.textContent = 'Belum ada file yang dipilih';
+                }
+            });
+        }
+
+        if (btnReset) {
+            btnReset.addEventListener('click', function () {
+                fileInput.value = '';
+                fileName.textContent = 'Belum ada file yang dipilih';
+
+                if (loadingAnalisis) {
+                    loadingAnalisis.classList.add('hidden');
+                }
+
+                resetProcessSteps();
+
+                if (stepInterval) {
+                    clearInterval(stepInterval);
+                }
+            });
+        }
+
+        if (formAnalisis) {
+            formAnalisis.addEventListener('submit', function (event) {
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    event.preventDefault();
+                    alert('Silakan pilih file Excel terlebih dahulu.');
+                    return;
+                }
+
+                if (loadingAnalisis) {
+                    loadingAnalisis.classList.remove('hidden');
+
+                    setTimeout(function () {
+                        loadingAnalisis.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }, 100);
+                }
+
+                if (btnProses) {
+                    btnProses.disabled = true;
+                    btnProses.innerHTML = `
+                        <span class="btn-loading-content">
+                            <span class="btn-mini-spinner"></span>
+                            Memproses...
+                        </span>
+                    `;
+                }
+
+                if (btnReset) {
+                    btnReset.disabled = true;
+                }
+
+                startProcessAnimation();
+            });
+        }
     });
 </script>
 

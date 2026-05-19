@@ -37,12 +37,11 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | DASHBOARD
+    | DASHBOARD UTAMA
     |--------------------------------------------------------------------------
     */
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -64,7 +63,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/data-produk/{id}', [ProdukController::class, 'destroy'])->name('produk.destroy');
     });
 
-
     /*
     |--------------------------------------------------------------------------
     | ADMIN DAN MANAJER
@@ -85,7 +83,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/riwayat', [PerhitunganController::class, 'riwayat'])->name('perhitungan.riwayat');
     Route::delete('/perhitungan/{id}', [PerhitunganController::class, 'destroy'])->name('perhitungan.destroy');
 
-
     /*
     |--------------------------------------------------------------------------
     | ANALISIS ASOSIASI
@@ -94,30 +91,37 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('asosiasi')->name('asosiasi.')->group(function () {
 
-        // Dashboard asosiasi
+        /*
+        |--------------------------------------------------------------------------
+        | Halaman umum asosiasi
+        |--------------------------------------------------------------------------
+        | Route di sini bisa dipakai oleh user yang sudah login.
+        | Download laporan juga diletakkan di sini supaya bisa dipakai
+        | dari dashboard asosiasi maupun halaman hasil analisis.
+        */
+
         Route::get('/dashboard', [AsosiasiController::class, 'dashboard'])->name('dashboard');
 
-        // Riwayat analisis asosiasi
         Route::get('/riwayat', [AsosiasiController::class, 'riwayat'])->name('riwayat');
         Route::get('/riwayat/{id}', [AsosiasiController::class, 'detailRiwayat'])->name('riwayat.detail');
 
-        // Khusus Admin untuk proses analisis
+        Route::get('/download-laporan', [AsosiasiController::class, 'downloadLaporan'])->name('download');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Khusus Admin untuk proses analisis
+        |--------------------------------------------------------------------------
+        */
+
         Route::middleware('role:Admin')->group(function () {
 
-            // Halaman upload / form analisis
             Route::get('/analisis', [AsosiasiController::class, 'analisis'])->name('analisis');
 
-            // Proses upload dataset ke API Python
             Route::post('/analisis/proses', [AsosiasiController::class, 'prosesAnalisis'])->name('proses');
 
-            // Alias route tambahan, supaya kalau form memakai asosiasi.prosesAnalisis tetap aman
             Route::post('/proses-analisis', [AsosiasiController::class, 'prosesAnalisis'])->name('prosesAnalisis');
 
-            // Halaman hasil analisis
             Route::get('/hasil', [AsosiasiController::class, 'hasilAnalisis'])->name('hasil');
-
-            // Download laporan
-            Route::get('/download-laporan', [AsosiasiController::class, 'downloadLaporan'])->name('download');
         });
     });
 });
