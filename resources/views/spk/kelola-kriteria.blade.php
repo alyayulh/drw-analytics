@@ -84,7 +84,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 /* Make cards equal height and improve readability */
 .cards-row > div > .card { display:flex; flex-direction:column; height:100%; }
 .card .card-hd { flex:0 0 auto; }
-.card .segments, .card > .table-wrap, .card .legenda-tipe, .card .empty-state { flex:0 0 auto; }
+.card .segments, .card > .table-wrap, .card .empty-state { flex:0 0 auto; }
 .card { font-size:14px; }
 .card-title { font-size:14px; }
 .card-sub { font-size:12px; color:var(--text-3); }
@@ -104,11 +104,6 @@ th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; co
 td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--pink-light); }
-
-/* LEGENDA TIPE */
-.legenda-tipe { display: flex; gap: 16px; margin-top: 14px; padding: 10px 14px; background: var(--bg); border-radius: 9px; border: 1px solid var(--border); flex-wrap: wrap; }
-.legenda-item { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; color: var(--text-2); line-height: 1.5; }
-.legenda-badge { flex-shrink: 0; margin-top: 1px; }
 
 /* FORM */
 .form-input, .form-select { width: 100%; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--surface); outline: none; transition: border .15s; }
@@ -328,7 +323,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
                     <svg viewBox="0 0 16 16"><path d="M3 11L8 5l5 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>
                   <span class="guide-panel-name">Benefit</span>
-                  <span class="guide-panel-badge">Nilai tertinggi = terbaik</span>
+                  <span class="guide-panel-badge">gitNilai tertinggi = terbaik</span>
                 </div>
 
                 <div class="guide-question">
@@ -528,19 +523,6 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
           </tbody>
         </table>
       </div>
-
-      <!-- LEGENDA -->
-      <div class="legenda-tipe">
-        <div class="legenda-item">
-          <span class="badge badge-green legenda-badge">↑ Benefit</span>
-          <span>semakin tinggi nilainya, semakin baik untuk dipromosikan.<br><em>Contoh: Penjualan tinggi, stok banyak, rating positif.</em></span>
-        </div>
-        <div class="legenda-item">
-          <span class="badge badge-amber legenda-badge">↓ Cost</span>
-          <span>semakin rendah nilainya, semakin baik untuk dipromosikan.<br><em>Contoh: Harga terjangkau, biaya produksi rendah, risiko kecil.</em></span>
-        </div>
-      </div>
-
       @else
       <div class="empty-state">
         <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="3"/><path d="M20 6v4M20 30v4M6 20h4M30 20h4M10 10l2.8 2.8M27.2 27.2l2.8 2.8M10 30l2.8-2.8M27.2 12.8l2.8-2.8" stroke-linecap="round"/></svg>

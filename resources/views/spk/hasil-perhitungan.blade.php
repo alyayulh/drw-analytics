@@ -640,7 +640,7 @@ tr:hover td { background: var(--pink-light); }
         {{-- KATEGORI 2: PERLU PERTIMBANGAN --}}
         @if($pertimbang->count() > 0)
           <div class="section-title-awam">
-            🤔 Perlu Pertimbangan
+            ⚖️ Perlu Pertimbangan
             <span class="section-count-pill">{{ $pertimbang->count() }} produk</span>
           </div>
           @foreach($pertimbang as $h)
@@ -657,7 +657,7 @@ tr:hover td { background: var(--pink-light); }
         {{-- KATEGORI 3: SEBAIKNYA DITUNDA (collapse default) --}}
         @if($tunda->count() > 0)
           <div class="section-title-awam" style="cursor:pointer" onclick="toggleTunda()">
-            ⏸ Sebaiknya Ditunda
+            ⏳ Sebaiknya Ditunda
             <span class="section-count-pill">{{ $tunda->count() }} produk</span>
             <span style="margin-left:auto;font-size:11px;color:var(--text-3);font-weight:600" id="tunda-toggle-label">Klik untuk lihat ▾</span>
           </div>

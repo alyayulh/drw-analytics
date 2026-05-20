@@ -20,9 +20,21 @@ class InputPermintaanController extends Controller
         // Sebelumnya: ->groupBy(fn($p) => $p->kategori ?: 'Tanpa Kategori')
         //   → $p->kategori memanggil relasi Eloquent dan mengembalikan object/null, bukan string!
         //   → Sehingga semua produk masuk 'Tanpa Kategori'.
-        $produkByKategori = Produk::with('kategoriProduk')->get()
-            ->groupBy(fn($p) => $p->kategoriProduk?->nama_kategori ?? 'Tanpa Kategori')
-            ->sortKeys();
+        $grouped = Produk::with('kategoriProduk')->get()
+            ->groupBy(fn($p) => $p->kategoriProduk?->nama_kategori ?? 'Tanpa Kategori');
+
+        // Pisahkan "Tanpa Kategori" agar bisa ditaruh di paling bawah.
+        // sortKeys() sebelumnya mengurutkan alfabet biasa, sehingga "Tanpa Kategori"
+        // muncul di tengah daftar (di antara huruf S dan T).
+        $tanpaKategori = $grouped->pull('Tanpa Kategori');
+
+        // Sort kategori normal alfabetis
+        $produkByKategori = $grouped->sortKeys();
+
+        // Tambahkan "Tanpa Kategori" di akhir (hanya jika ada produknya)
+        if ($tanpaKategori) {
+            $produkByKategori->put('Tanpa Kategori', $tanpaKategori);
+        }
 
         // Ambil semua inputs, filter max 5 per kategori
         $allInputs = InputPermintaan::all()->groupBy('id_produk');
