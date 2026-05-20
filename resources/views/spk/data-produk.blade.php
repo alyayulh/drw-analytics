@@ -275,7 +275,6 @@ tr:hover td { background: var(--pink-light); }
     @if(($produkBelumBerkategori ?? 0) > 0)
       <div class="alert alert-error" style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e">
         ⚠ Ada <strong>{{ $produkBelumBerkategori }}</strong> produk yang belum berkategori.
-        Produk-produk ini <strong>tidak akan muncul</strong> di halaman Input Permintaan.
         Klik tombol <strong>Edit</strong> pada baris produk yang ditandai 🏷 untuk menetapkan kategori.
       </div>
     @endif
