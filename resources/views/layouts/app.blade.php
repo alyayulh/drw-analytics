@@ -32,7 +32,7 @@
             </div>
 
             <div>
-                <div class="brand-title">DRW BANJARMASIN</div>
+                <div class="brand-title">DRW SKINCARE</div>
                 <div class="brand-subtitle">Analisis penjualan & produk</div>
             </div>
         </div>

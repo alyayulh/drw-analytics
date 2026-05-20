@@ -342,7 +342,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
              style="width:36px; height:36px; object-fit:contain;">
       </div>
       <div>
-        <div class="sb-logo-name">DRW BANJARMASIN</div>
+        <div class="sb-logo-name">DRW SKINCARE</div>
         <div class="sb-logo-sub">Analisis penjualan & produk</div>
       </div>
     </div>

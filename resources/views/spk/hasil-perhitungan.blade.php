@@ -278,7 +278,7 @@ tr:hover td { background: var(--pink-light); }
         <img src="https://pos.drwskincare.com/logo_drw.svg" alt="DRW" style="width:36px;height:36px;object-fit:contain;">
       </div>
       <div>
-        <div class="sb-logo-name">DRW BANJARMASIN</div>
+        <div class="sb-logo-name">DRW SKINCARE</div>
         <div class="sb-logo-sub">Analisis penjualan &amp; produk</div>
       </div>
     </div>

@@ -101,7 +101,7 @@ class PerhitunganController extends Controller
             'periode_data' => 'required|string|max:100',
         ], [
             'periode_data.required' => 'Periode data wajib diisi.',
-            'periode_data.max'      => 'Periode data maksimal 20 karakter (contoh: "Mei 2026").',
+            'periode_data.max'      => 'Periode data maksimal 100 karakter (contoh: "Mei 2026").',
         ]);
 
         // Ambil semua kriteria
@@ -301,7 +301,7 @@ class PerhitunganController extends Controller
         //   Q1 (25th percentile) = batas bawah
         //
         // Kategori prioritas:
-        //   Yi >= Q3  → Utama         (25% produk terbaik)
+        //   Yi >= Q3  → Utama         (75% produk terbaik)
         //   Yi >= Q1  → Pertimbangkan (50% produk menengah)
         //   Yi <  Q1  → Tunda         (25% produk terbawah)
         // =============================================
