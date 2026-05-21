@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\DashboardLaporanExport;
 use App\Models\AturanAsosiasi;
 use App\Models\ProsesAnalisis;
-use App\Exports\DashboardLaporanExport;
-use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AsosiasiController extends Controller
 {
@@ -201,6 +201,14 @@ class AsosiasiController extends Controller
                 $createData['total_operator'] = 0;
             }
 
+            if ($this->prosesAnalisisHasColumn('rekap_produk')) {
+                $createData['rekap_produk'] = [];
+            }
+
+            if ($this->prosesAnalisisHasColumn('distribusi_waktu')) {
+                $createData['distribusi_waktu'] = [];
+            }
+
             $proses = ProsesAnalisis::create($createData);
 
             $stream = fopen($file->getRealPath(), 'r');
@@ -258,7 +266,7 @@ class AsosiasiController extends Controller
             $summaryApi = $apiResult['summary'] ?? [];
             $rulesReturned = count($topRules);
 
-            DB::transaction(function () use ($proses, $summaryApi, $topRules, $rulesReturned) {
+            DB::transaction(function () use ($proses, $summaryApi, $topRules, $rulesReturned, $apiResult) {
                 $totalOperator = $this->getSummaryInt($summaryApi, [
                     'operator_unik',
                     'jumlah_operator_unik',
@@ -278,6 +286,14 @@ class AsosiasiController extends Controller
 
                 if ($this->prosesAnalisisHasColumn('total_operator')) {
                     $updateData['total_operator'] = $totalOperator;
+                }
+
+                if ($this->prosesAnalisisHasColumn('rekap_produk')) {
+                    $updateData['rekap_produk'] = $apiResult['rekap_produk'] ?? [];
+                }
+
+                if ($this->prosesAnalisisHasColumn('distribusi_waktu')) {
+                    $updateData['distribusi_waktu'] = $apiResult['distribusi_waktu'] ?? [];
                 }
 
                 $proses->update($updateData);
@@ -349,13 +365,13 @@ class AsosiasiController extends Controller
     }
 
     public function downloadLaporan()
-{
-    $data = $this->getLatestAnalysisData();
+    {
+        $data = $this->getLatestAnalysisData();
 
-    $fileName = 'laporan_dashboard_analisis_' . now()->format('Ymd_His') . '.xlsx';
+        $fileName = 'laporan_dashboard_analisis_' . now()->format('Ymd_His') . '.xlsx';
 
-    return Excel::download(new DashboardLaporanExport($data), $fileName);
-}
+        return Excel::download(new DashboardLaporanExport($data), $fileName);
+    }
 
     private function getLatestAnalysisData()
     {
@@ -459,19 +475,25 @@ class AsosiasiController extends Controller
             ];
         });
 
-        $topProduk = collect($apiResult['rekap_produk'] ?? [])->map(function ($produk) {
-            return [
-                'nama' => $produk['nama_produk'] ?? '-',
-                'jumlah' => $produk['jumlah_terjual'] ?? 0,
-            ];
-        });
+        $topProduk = collect($apiResult['rekap_produk'] ?? [])
+            ->map(function ($produk) {
+                return [
+                    'nama' => $produk['nama'] ?? $produk['nama_produk'] ?? '-',
+                    'jumlah' => (int) ($produk['jumlah'] ?? $produk['jumlah_terjual'] ?? 0),
+                ];
+            })
+            ->sortByDesc('jumlah')
+            ->take(10)
+            ->values();
 
-        $distribusiWaktu = collect($apiResult['distribusi_waktu'] ?? [])->map(function ($waktu) {
-            return [
-                'label' => $waktu['kategori_waktu'] ?? '-',
-                'nilai' => round($waktu['persentase'] ?? 0, 2),
-            ];
-        });
+        $distribusiWaktu = collect($apiResult['distribusi_waktu'] ?? [])
+            ->map(function ($waktu) {
+                return [
+                    'label' => $waktu['label'] ?? $waktu['kategori_waktu'] ?? '-',
+                    'nilai' => round((float) ($waktu['nilai'] ?? $waktu['persentase'] ?? 0), 2),
+                ];
+            })
+            ->values();
 
         return [
             'summary' => $summary,
@@ -570,12 +592,43 @@ class AsosiasiController extends Controller
             ];
         });
 
+        $rekapProdukRaw = $proses->rekap_produk ?? [];
+        $distribusiWaktuRaw = $proses->distribusi_waktu ?? [];
+
+        if (is_string($rekapProdukRaw)) {
+            $rekapProdukRaw = json_decode($rekapProdukRaw, true) ?? [];
+        }
+
+        if (is_string($distribusiWaktuRaw)) {
+            $distribusiWaktuRaw = json_decode($distribusiWaktuRaw, true) ?? [];
+        }
+
+        $topProduk = collect($rekapProdukRaw)
+            ->map(function ($produk) {
+                return [
+                    'nama' => $produk['nama'] ?? $produk['nama_produk'] ?? '-',
+                    'jumlah' => (int) ($produk['jumlah'] ?? $produk['jumlah_terjual'] ?? 0),
+                ];
+            })
+            ->sortByDesc('jumlah')
+            ->take(10)
+            ->values();
+
+        $distribusiWaktu = collect($distribusiWaktuRaw)
+            ->map(function ($waktu) {
+                return [
+                    'label' => $waktu['label'] ?? $waktu['kategori_waktu'] ?? '-',
+                    'nilai' => round((float) ($waktu['nilai'] ?? $waktu['persentase'] ?? 0), 2),
+                ];
+            })
+            ->values();
+
         return [
             'summary' => $summary,
             'rules' => $rules,
             'dataset' => $dataset,
-            'topProduk' => collect(),
-            'distribusiWaktu' => collect(),
+            'topProduk' => $topProduk,
+            'distribusiWaktu' => $distribusiWaktu,
         ];
     }
 
