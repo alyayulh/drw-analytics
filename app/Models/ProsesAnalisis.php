@@ -7,14 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 class ProsesAnalisis extends Model
 {
     protected $table = 'proses_analisis';
+
     protected $primaryKey = 'id_proses_analisis';
+
     public $timestamps = false;
 
-    protected $fillable = [
-        'nama_proses',
-        'tanggal_proses',
-        'min_support',
-        'min_confidence',
-        'min_lift',
+    protected $guarded = [];
+
+    protected $casts = [
+        'tanggal_proses' => 'datetime',
     ];
+
+    public function aturanAsosiasi()
+    {
+        return $this->hasMany(
+            AturanAsosiasi::class,
+            'id_proses_analisis',
+            'id_proses_analisis'
+        );
+    }
 }

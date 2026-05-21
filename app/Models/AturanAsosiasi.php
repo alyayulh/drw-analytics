@@ -7,14 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 class AturanAsosiasi extends Model
 {
     protected $table = 'aturan_asosiasi';
+
     protected $primaryKey = 'id_aturan_asosiasi';
+
     public $timestamps = false;
 
-    protected $fillable = [
-        'id_proses_analisis',
-        'nilai_support',
-        'nilai_confidence',
-        'nilai_lift',
-        'rule_asosiasi',
+    protected $guarded = [];
+
+    protected $casts = [
+        'is_anomaly' => 'boolean',
     ];
+
+    public function prosesAnalisis()
+    {
+        return $this->belongsTo(
+            ProsesAnalisis::class,
+            'id_proses_analisis',
+            'id_proses_analisis'
+        );
+    }
 }
