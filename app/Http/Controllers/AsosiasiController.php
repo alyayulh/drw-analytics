@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AturanAsosiasi;
 use App\Models\ProsesAnalisis;
+use App\Exports\DashboardLaporanExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -347,9 +349,13 @@ class AsosiasiController extends Controller
     }
 
     public function downloadLaporan()
-    {
-        return back()->with('error', 'Fitur download laporan belum tersedia.');
-    }
+{
+    $data = $this->getLatestAnalysisData();
+
+    $fileName = 'laporan_dashboard_analisis_' . now()->format('Ymd_His') . '.xlsx';
+
+    return Excel::download(new DashboardLaporanExport($data), $fileName);
+}
 
     private function getLatestAnalysisData()
     {
