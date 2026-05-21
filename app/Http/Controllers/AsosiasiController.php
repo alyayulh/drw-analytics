@@ -27,6 +27,8 @@ class AsosiasiController extends Controller
             'dataset' => $data['dataset'],
             'topProduk' => $data['topProduk'],
             'distribusiWaktu' => $data['distribusiWaktu'],
+            'heatmapData' => $data['heatmapData'],
+            'heatmap' => $data['heatmap'],
         ]);
     }
 
@@ -57,6 +59,8 @@ class AsosiasiController extends Controller
         return view('asosiasi.dashboard-insight', [
             'summary' => $data['summary'],
             'rules' => $data['rules'],
+            'heatmapData' => $data['heatmapData'],
+            'heatmap' => $data['heatmap'],
         ]);
     }
 
@@ -85,6 +89,8 @@ class AsosiasiController extends Controller
             'dataset' => $data['dataset'],
             'topProduk' => $data['topProduk'],
             'distribusiWaktu' => $data['distribusiWaktu'],
+            'heatmapData' => $data['heatmapData'],
+            'heatmap' => $data['heatmap'],
         ]);
     }
 
@@ -118,6 +124,10 @@ class AsosiasiController extends Controller
             'rules' => $data['rules'],
             'summary' => $data['summary'],
             'dataset' => $data['dataset'],
+            'topProduk' => $data['topProduk'],
+            'distribusiWaktu' => $data['distribusiWaktu'],
+            'heatmapData' => $data['heatmapData'],
+            'heatmap' => $data['heatmap'],
         ]);
     }
 
@@ -475,6 +485,9 @@ class AsosiasiController extends Controller
             ];
         });
 
+        $rules = $this->applyHeatmapColorsToRules($rules);
+        $heatmapData = $this->buildHeatmapData($rules);
+
         $topProduk = collect($apiResult['rekap_produk'] ?? [])
             ->map(function ($produk) {
                 return [
@@ -501,6 +514,8 @@ class AsosiasiController extends Controller
             'dataset' => $dataset,
             'topProduk' => $topProduk,
             'distribusiWaktu' => $distribusiWaktu,
+            'heatmapData' => $heatmapData,
+            'heatmap' => $heatmapData,
         ];
     }
 
@@ -592,6 +607,9 @@ class AsosiasiController extends Controller
             ];
         });
 
+        $rules = $this->applyHeatmapColorsToRules($rules);
+        $heatmapData = $this->buildHeatmapData($rules);
+
         $rekapProdukRaw = $proses->rekap_produk ?? [];
         $distribusiWaktuRaw = $proses->distribusi_waktu ?? [];
 
@@ -629,6 +647,8 @@ class AsosiasiController extends Controller
             'dataset' => $dataset,
             'topProduk' => $topProduk,
             'distribusiWaktu' => $distribusiWaktu,
+            'heatmapData' => $heatmapData,
+            'heatmap' => $heatmapData,
         ];
     }
 
@@ -993,6 +1013,209 @@ class AsosiasiController extends Controller
             in_array($item, ['pagi', 'siang', 'sore', 'malam'], true);
     }
 
+    private function applyHeatmapColorsToRules($rules)
+    {
+        $rules = collect($rules)->values();
+
+        $liftValues = $rules
+            ->pluck('lift')
+            ->filter(function ($lift) {
+                return is_numeric($lift) && (float) $lift > 0;
+            })
+            ->map(function ($lift) {
+                return (float) $lift;
+            })
+            ->values();
+
+        $minLift = $liftValues->min();
+        $maxLift = $liftValues->max();
+
+        $minLift = $minLift !== null ? (float) $minLift : 0;
+        $maxLift = $maxLift !== null ? (float) $maxLift : 0;
+
+        return $rules->map(function ($rule) use ($minLift, $maxLift) {
+            $lift = (float) ($rule['lift'] ?? 0);
+            $style = $this->getHeatmapStyleByLift($lift, $minLift, $maxLift);
+
+            $rule['heatmap_bg_color'] = $style['bg_color'];
+            $rule['heatmap_color'] = $style['bg_color'];
+            $rule['heatmap_border_color'] = $style['border_color'];
+            $rule['heatmap_text_color'] = $style['text_color'];
+            $rule['heatmap_opacity'] = $style['opacity'];
+            $rule['heatmap_intensity'] = $style['intensity'];
+            $rule['heatmap_min_lift'] = $minLift;
+            $rule['heatmap_max_lift'] = $maxLift;
+
+            return $rule;
+        })->values();
+    }
+
+    private function buildHeatmapData($rules)
+    {
+        $rules = collect($rules)->values();
+
+        $validRules = $rules
+            ->filter(function ($rule) {
+                return !empty($rule['antecedents'])
+                    && !empty($rule['consequents'])
+                    && is_numeric($rule['lift'] ?? null)
+                    && (float) ($rule['lift'] ?? 0) > 0;
+            })
+            ->sortByDesc(function ($rule) {
+                return (float) ($rule['lift'] ?? 0);
+            })
+            ->values();
+
+        $liftValues = $validRules
+            ->pluck('lift')
+            ->map(function ($lift) {
+                return (float) $lift;
+            });
+
+        $minLift = $liftValues->min();
+        $maxLift = $liftValues->max();
+
+        $minLift = $minLift !== null ? (float) $minLift : 0;
+        $maxLift = $maxLift !== null ? (float) $maxLift : 0;
+
+        $antecedents = $validRules
+            ->pluck('antecedents')
+            ->unique()
+            ->take(5)
+            ->values();
+
+        $consequents = $validRules
+            ->pluck('consequents')
+            ->unique()
+            ->take(5)
+            ->values();
+
+        $columns = $consequents->map(function ($consequent, $index) {
+            return [
+                'key' => $consequent,
+                'code' => 'C' . ($index + 1),
+                'label' => 'C' . ($index + 1),
+                'name' => $consequent,
+            ];
+        })->values();
+
+        $rows = $antecedents->map(function ($antecedent, $rowIndex) use ($columns, $validRules, $minLift, $maxLift) {
+            $cells = $columns->map(function ($column) use ($antecedent, $validRules, $minLift, $maxLift) {
+                $matchedRule = $validRules
+                    ->filter(function ($rule) use ($antecedent, $column) {
+                        return ($rule['antecedents'] ?? '') === $antecedent
+                            && ($rule['consequents'] ?? '') === $column['key'];
+                    })
+                    ->sortByDesc(function ($rule) {
+                        return (float) ($rule['lift'] ?? 0);
+                    })
+                    ->first();
+
+                if (!$matchedRule) {
+                    return [
+                        'exists' => false,
+                        'lift' => null,
+                        'support' => null,
+                        'confidence' => null,
+                        'bg_color' => '#f9fafb',
+                        'border_color' => '#e5e7eb',
+                        'text_color' => '#111827',
+                        'opacity' => 0,
+                        'intensity' => 0,
+                        'title' => '',
+                        'rule' => null,
+                    ];
+                }
+
+                $lift = (float) ($matchedRule['lift'] ?? 0);
+                $style = $this->getHeatmapStyleByLift($lift, $minLift, $maxLift);
+
+                return [
+                    'exists' => true,
+                    'lift' => $lift,
+                    'support' => (float) ($matchedRule['support'] ?? 0),
+                    'confidence' => (float) ($matchedRule['confidence'] ?? 0),
+                    'bg_color' => $style['bg_color'],
+                    'border_color' => $style['border_color'],
+                    'text_color' => $style['text_color'],
+                    'opacity' => $style['opacity'],
+                    'intensity' => $style['intensity'],
+                    'title' => 'Lift: ' . number_format($lift, 2),
+                    'rule' => $matchedRule,
+                ];
+            })->values();
+
+            return [
+                'key' => $antecedent,
+                'code' => 'A' . ($rowIndex + 1),
+                'label' => 'A' . ($rowIndex + 1),
+                'name' => $antecedent,
+                'cells' => $cells,
+            ];
+        })->values();
+
+        $legendAntecedents = $rows->map(function ($row) {
+            return $row['code'] . ' = ' . $row['name'];
+        });
+
+        $legendConsequents = $columns->map(function ($column) {
+            return $column['code'] . ' = ' . $column['name'];
+        });
+
+        return [
+            'rows' => $rows,
+            'columns' => $columns,
+            'legend' => $legendAntecedents->merge($legendConsequents)->values(),
+            'min_lift' => $minLift,
+            'max_lift' => $maxLift,
+            'base_color' => 'rgba(220, 38, 38, opacity)',
+            'empty_color' => '#f9fafb',
+        ];
+    }
+
+    private function getHeatmapStyleByLift($lift, $minLift, $maxLift)
+{
+    $lift = (float) $lift;
+    $minLift = (float) $minLift;
+    $maxLift = (float) $maxLift;
+
+    if ($lift <= 0 || $maxLift <= 0) {
+        return [
+            'bg_color' => '#f9fafb',
+            'border_color' => '#e5e7eb',
+            'text_color' => '#111827',
+            'opacity' => 0,
+            'intensity' => 0,
+        ];
+    }
+
+    if ($maxLift == $minLift) {
+        $normalized = 1;
+    } else {
+        $normalized = ($lift - $minLift) / ($maxLift - $minLift);
+    }
+
+    $normalized = max(0, min(1, $normalized));
+
+    /*
+     * Dibikin lebih kontras:
+     * - lift kecil dibuat jauh lebih pudar
+     * - lift besar dibuat lebih pekat
+     */
+    $contrast = pow($normalized, 1.65);
+
+    $opacity = round(0.08 + ($contrast * 0.92), 2);
+    $borderOpacity = round(min(1, $opacity + 0.22), 2);
+
+    return [
+        'bg_color' => 'rgba(185, 28, 28, ' . $opacity . ')',
+        'border_color' => 'rgba(185, 28, 28, ' . $borderOpacity . ')',
+        'text_color' => $opacity >= 0.50 ? '#ffffff' : '#7f1d1d',
+        'opacity' => $opacity,
+        'intensity' => round($normalized, 4),
+    ];
+}
+
     private function getSummaryInt(array $summary, array $keys, $default = 0)
     {
         foreach ($keys as $key) {
@@ -1051,6 +1274,16 @@ class AsosiasiController extends Controller
 
     private function getEmptyAnalysisData()
     {
+        $heatmapData = [
+            'rows' => collect(),
+            'columns' => collect(),
+            'legend' => collect(),
+            'min_lift' => 0,
+            'max_lift' => 0,
+            'base_color' => 'rgba(220, 38, 38, opacity)',
+            'empty_color' => '#f9fafb',
+        ];
+
         return [
             'summary' => [
                 'total_data_awal' => 0,
@@ -1078,6 +1311,8 @@ class AsosiasiController extends Controller
             ],
             'topProduk' => collect(),
             'distribusiWaktu' => collect(),
+            'heatmapData' => $heatmapData,
+            'heatmap' => $heatmapData,
         ];
     }
 }

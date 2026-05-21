@@ -41,28 +41,198 @@
             return $isRuleAnomaly($rule);
         })->count();
 
-    $heatmapRules = $rulesCollection
-        ->sortByDesc(function ($rule) {
-            return (float) ($rule['lift'] ?? 0);
-        })
-        ->take(10)
-        ->values()
-        ->map(function ($rule) use ($isRuleAnomaly) {
+    $normalRulesForComposition = $rulesCollection->filter(function ($rule) use ($isRuleAnomaly) {
+        return !$isRuleAnomaly($rule);
+    });
+
+    $strongPatternCount = $normalRulesForComposition->filter(function ($rule) {
+        $kategori = strtolower((string) ($rule['kategori_rule'] ?? ($rule['status'] ?? '')));
+        return str_contains($kategori, 'strong');
+    })->count();
+
+    $moderatePatternCount = $normalRulesForComposition->filter(function ($rule) {
+        $kategori = strtolower((string) ($rule['kategori_rule'] ?? ($rule['status'] ?? '')));
+        return str_contains($kategori, 'moderate');
+    })->count();
+
+    $weakPatternCount = $normalRulesForComposition->filter(function ($rule) {
+        $kategori = strtolower((string) ($rule['kategori_rule'] ?? ($rule['status'] ?? '')));
+        return str_contains($kategori, 'weak');
+    })->count();
+
+    $anomalyPatternCount = $rulesCollection->filter(function ($rule) use ($isRuleAnomaly) {
+        return $isRuleAnomaly($rule);
+    })->count();
+
+    $ruleComposition = collect([
+        [
+            'label' => 'Strong Pattern',
+            'value' => $strongPatternCount,
+        ],
+        [
+            'label' => 'Moderate Pattern',
+            'value' => $moderatePatternCount,
+        ],
+        [
+            'label' => 'Weak Pattern',
+            'value' => $weakPatternCount,
+        ],
+        [
+            'label' => 'Anomali',
+            'value' => $anomalyPatternCount,
+        ],
+    ])->values();
+
+    $getHeatmapStyle = function ($lift, $minLift, $maxLift) {
+        $lift = (float) $lift;
+        $minLift = (float) $minLift;
+        $maxLift = (float) $maxLift;
+
+        if ($lift <= 0 || $maxLift <= 0) {
             return [
-                'antecedents' => $rule['antecedents'] ?? '-',
-                'consequents' => $rule['consequents'] ?? '-',
-                'lift' => round((float) ($rule['lift'] ?? 0), 4),
-                'confidence' => round((float) ($rule['confidence'] ?? 0), 4),
-                'is_anomaly' => $isRuleAnomaly($rule),
+                'bg_color' => '#f9fafb',
+                'border_color' => '#e5e7eb',
+                'text_color' => '#111827',
+                'opacity' => 0,
             ];
-        });
+        }
 
-    $heatmapAntecedents = $heatmapRules->pluck('antecedents')->unique()->values();
-    $heatmapConsequents = $heatmapRules->pluck('consequents')->unique()->values();
+        if ($maxLift == $minLift) {
+            $normalized = 1;
+        } else {
+            $normalized = ($lift - $minLift) / ($maxLift - $minLift);
+        }
 
-    $heatmapMinLift = (float) ($heatmapRules->min('lift') ?? 0);
-    $heatmapMaxLift = (float) ($heatmapRules->max('lift') ?? 0);
-    $heatmapRangeLift = $heatmapMaxLift - $heatmapMinLift;
+        $normalized = max(0, min(1, $normalized));
+
+        $contrast = pow($normalized, 1.65);
+
+        $opacity = round(0.08 + ($contrast * 0.92), 2);
+        $borderOpacity = round(min(1, $opacity + 0.22), 2);
+
+        return [
+            'bg_color' => 'rgba(185, 28, 28, ' . $opacity . ')',
+            'border_color' => 'rgba(185, 28, 28, ' . $borderOpacity . ')',
+            'text_color' => $opacity >= 0.50 ? '#ffffff' : '#7f1d1d',
+            'opacity' => $opacity,
+        ];
+    };
+
+    $heatmapSource = $heatmapData ?? ($heatmap ?? null);
+
+    $heatmapRows = collect();
+    $heatmapColumns = collect();
+    $heatmapLegend = collect();
+    $heatmapMinLift = 0;
+    $heatmapMaxLift = 0;
+
+    if (is_array($heatmapSource) || $heatmapSource instanceof \Illuminate\Support\Collection) {
+        $heatmapSourceCollection = collect($heatmapSource);
+
+        $heatmapRows = collect($heatmapSourceCollection->get('rows', []));
+        $heatmapColumns = collect($heatmapSourceCollection->get('columns', []));
+        $heatmapLegend = collect($heatmapSourceCollection->get('legend', []));
+        $heatmapMinLift = (float) ($heatmapSourceCollection->get('min_lift', 0) ?? 0);
+        $heatmapMaxLift = (float) ($heatmapSourceCollection->get('max_lift', 0) ?? 0);
+    }
+
+    if ($heatmapRows->isEmpty() || $heatmapColumns->isEmpty()) {
+        $heatmapRules = $rulesCollection
+            ->sortByDesc(function ($rule) {
+                return (float) ($rule['lift'] ?? 0);
+            })
+            ->take(10)
+            ->values()
+            ->map(function ($rule) use ($isRuleAnomaly) {
+                return [
+                    'antecedents' => $rule['antecedents'] ?? '-',
+                    'consequents' => $rule['consequents'] ?? '-',
+                    'lift' => round((float) ($rule['lift'] ?? 0), 4),
+                    'confidence' => round((float) ($rule['confidence'] ?? 0), 4),
+                    'is_anomaly' => $isRuleAnomaly($rule),
+                ];
+            });
+
+        $heatmapAntecedents = $heatmapRules->pluck('antecedents')->unique()->values();
+        $heatmapConsequents = $heatmapRules->pluck('consequents')->unique()->values();
+
+        $heatmapMinLift = (float) ($heatmapRules->min('lift') ?? 0);
+        $heatmapMaxLift = (float) ($heatmapRules->max('lift') ?? 0);
+
+        $heatmapColumns = $heatmapConsequents
+            ->map(function ($consequent, $index) {
+                return [
+                    'key' => $consequent,
+                    'code' => 'C' . ($index + 1),
+                    'label' => 'C' . ($index + 1),
+                    'name' => $consequent,
+                ];
+            })
+            ->values();
+
+        $heatmapRows = $heatmapAntecedents
+            ->map(function ($antecedent, $rowIndex) use ($heatmapColumns, $heatmapRules, $heatmapMinLift, $heatmapMaxLift, $getHeatmapStyle) {
+                $cells = $heatmapColumns
+                    ->map(function ($column) use ($antecedent, $heatmapRules, $heatmapMinLift, $heatmapMaxLift, $getHeatmapStyle) {
+                        $matchedRule = $heatmapRules->first(function ($item) use ($antecedent, $column) {
+                            return ($item['antecedents'] ?? '') === $antecedent
+                                && ($item['consequents'] ?? '') === ($column['key'] ?? '');
+                        });
+
+                        if (!$matchedRule) {
+                            return [
+                                'exists' => false,
+                                'lift' => null,
+                                'support' => null,
+                                'confidence' => null,
+                                'bg_color' => '#f9fafb',
+                                'border_color' => '#e5e7eb',
+                                'text_color' => '#111827',
+                                'opacity' => 0,
+                                'rule' => null,
+                            ];
+                        }
+
+                        $lift = (float) ($matchedRule['lift'] ?? 0);
+                        $style = $getHeatmapStyle($lift, $heatmapMinLift, $heatmapMaxLift);
+
+                        return [
+                            'exists' => true,
+                            'lift' => $lift,
+                            'support' => null,
+                            'confidence' => (float) ($matchedRule['confidence'] ?? 0),
+                            'bg_color' => $style['bg_color'],
+                            'border_color' => $style['border_color'],
+                            'text_color' => $style['text_color'],
+                            'opacity' => $style['opacity'],
+                            'rule' => $matchedRule,
+                        ];
+                    })
+                    ->values();
+
+                return [
+                    'key' => $antecedent,
+                    'code' => 'A' . ($rowIndex + 1),
+                    'label' => 'A' . ($rowIndex + 1),
+                    'name' => $antecedent,
+                    'cells' => $cells,
+                ];
+            })
+            ->values();
+
+        $heatmapLegend = $heatmapRows
+            ->map(function ($row) {
+                return ($row['code'] ?? '-') . ' = ' . ($row['name'] ?? '-');
+            })
+            ->merge(
+                $heatmapColumns->map(function ($column) {
+                    return ($column['code'] ?? '-') . ' = ' . ($column['name'] ?? '-');
+                })
+            )
+            ->values();
+    }
+
+    $hasHeatmapData = $heatmapRows->count() > 0 && $heatmapColumns->count() > 0;
 @endphp
 
 <div class="hasil-page">
@@ -241,77 +411,139 @@
     </div>
 
     <div class="chart-grid">
-        <div class="hasil-card chart-card">
-            <h2>Bar Chart Top 5 Rules Non-Anomali Berdasarkan Lift</h2>
+        <div class="hasil-card chart-card chart-card-left">
+            <h2>Bar Chart Top 5 Rules</h2>
 
             @if($chartRules->count() > 0)
-                <canvas id="liftChart" height="130"></canvas>
+                <div class="bar-chart-wrapper">
+                    <canvas id="liftChart"></canvas>
+                </div>
             @else
                 <div class="heatmap-placeholder">
                     <p>Tidak ada rule non-anomali yang dapat ditampilkan pada chart.</p>
                 </div>
             @endif
+
+            <div class="composition-section">
+                <div class="composition-header">
+                    <h3>Komposisi Kategori Rule</h3>
+                    <p>Menampilkan perbandingan jumlah rule berdasarkan kategori hasil analisis.</p>
+                </div>
+
+                <div class="composition-content">
+                    <div class="composition-chart-box">
+                        <canvas id="compositionChart"></canvas>
+                    </div>
+
+                    <div class="composition-legend">
+                        @foreach($ruleComposition as $item)
+                            <div class="composition-legend-item">
+                                <span class="composition-dot composition-dot-{{ $loop->iteration }}"></span>
+                                <span class="composition-label">{{ $item['label'] }}</span>
+                                <strong>{{ number_format($item['value']) }}</strong>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="hasil-card chart-card">
             <h2>Heatmap Asosiasi</h2>
 
-            @if($heatmapRules->count() > 0)
+            @if($hasHeatmapData)
                 <p class="heatmap-note">
                     Heatmap menampilkan kekuatan asosiasi berdasarkan nilai lift.
-                    Semakin tegas warna cell, semakin tinggi nilai lift rule tersebut.
+                    Semakin pekat warna merah pada cell, semakin tinggi nilai lift rule tersebut.
                 </p>
 
                 <div class="heatmap-wrapper">
                     <div
                         class="association-heatmap"
-                        style="grid-template-columns: 165px repeat({{ max($heatmapConsequents->count(), 1) }}, 54px);"
+                        style="grid-template-columns: 190px repeat({{ max($heatmapColumns->count(), 1) }}, minmax(78px, 1fr));"
                     >
                         <div class="heatmap-corner">A ↓ / C →</div>
 
-                        @foreach($heatmapConsequents as $index => $consequent)
-                            <div class="heatmap-axis heatmap-axis-x" title="{{ $consequent }}">
-                                C{{ $index + 1 }}
+                        @foreach($heatmapColumns as $column)
+                            @php
+                                $columnCode = $column['code'] ?? $column['label'] ?? ('C' . $loop->iteration);
+                                $columnName = $column['name'] ?? $column['key'] ?? '-';
+                            @endphp
+
+                            <div class="heatmap-axis heatmap-axis-x" title="{{ $columnName }}">
+                                {{ $columnCode }}
                             </div>
                         @endforeach
 
-                        @foreach($heatmapAntecedents as $rowIndex => $antecedent)
-                            <div class="heatmap-axis heatmap-axis-y" title="{{ $antecedent }}">
-                                A{{ $rowIndex + 1 }}
+                        @foreach($heatmapRows as $row)
+                            @php
+                                $rowCode = $row['code'] ?? $row['label'] ?? ('A' . $loop->iteration);
+                                $rowName = $row['name'] ?? $row['key'] ?? '-';
+                                $rowCells = collect($row['cells'] ?? []);
+                            @endphp
+
+                            <div class="heatmap-axis heatmap-axis-y" title="{{ $rowName }}">
+                                {{ $rowCode }}
                             </div>
 
-                            @foreach($heatmapConsequents as $consequent)
+                            @foreach($rowCells as $cell)
                                 @php
-                                    $cellRule = $heatmapRules->first(function ($item) use ($antecedent, $consequent) {
-                                        return $item['antecedents'] === $antecedent
-                                            && $item['consequents'] === $consequent;
-                                    });
+                                    $cellExists = (bool) ($cell['exists'] ?? false);
+                                    $cellLift = $cell['lift'] ?? null;
+                                    $cellConfidence = $cell['confidence'] ?? null;
+                                    $cellSupport = $cell['support'] ?? null;
 
-                                    $cellLift = $cellRule['lift'] ?? 0;
-                                    $cellConfidence = $cellRule['confidence'] ?? 0;
-                                    $cellIsAnomaly = $cellRule['is_anomaly'] ?? false;
+                                    $cellBg = $cell['bg_color'] ?? $cell['heatmap_bg_color'] ?? null;
+                                    $cellBorder = $cell['border_color'] ?? $cell['heatmap_border_color'] ?? null;
+                                    $cellText = $cell['text_color'] ?? $cell['heatmap_text_color'] ?? null;
 
-                                    if ($cellRule) {
-                                        if ($heatmapRangeLift > 0) {
-                                            $intensity = 0.12 + ((($cellLift - $heatmapMinLift) / $heatmapRangeLift) * 0.88);
-                                        } else {
-                                            $intensity = 0.65;
-                                        }
+                                    if ($cellExists && (!$cellBg || !$cellBorder || !$cellText)) {
+                                        $style = $getHeatmapStyle((float) ($cellLift ?? 0), $heatmapMinLift, $heatmapMaxLift);
 
-                                        $intensity = max(0.12, min(1, $intensity));
-                                    } else {
-                                        $intensity = 0;
+                                        $cellBg = $cellBg ?: $style['bg_color'];
+                                        $cellBorder = $cellBorder ?: $style['border_color'];
+                                        $cellText = $cellText ?: $style['text_color'];
                                     }
+
+                                    $cellBg = $cellBg ?: '#f9fafb';
+                                    $cellBorder = $cellBorder ?: '#e5e7eb';
+                                    $cellText = $cellText ?: '#111827';
+
+                                    $cellTitleParts = [];
+
+                                    if ($cellLift !== null) {
+                                        $cellTitleParts[] = 'Lift: ' . number_format((float) $cellLift, 4);
+                                    }
+
+                                    if ($cellConfidence !== null) {
+                                        $cellTitleParts[] = 'Confidence: ' . number_format((float) $cellConfidence, 4);
+                                    }
+
+                                    if ($cellSupport !== null) {
+                                        $cellTitleParts[] = 'Support: ' . number_format((float) $cellSupport, 4);
+                                    }
+
+                                    $cellTitle = implode(' | ', $cellTitleParts);
                                 @endphp
 
-                                @if($cellRule)
+                                @if($cellExists)
                                     <div
-                                        class="heatmap-cell has-value {{ $cellIsAnomaly ? 'heatmap-anomaly-cell' : '' }}"
-                                        style="--heatmap-intensity: {{ $intensity }};"
-                                        title="Lift: {{ number_format($cellLift, 4) }} | Confidence: {{ number_format($cellConfidence, 4) }}{{ $cellIsAnomaly ? ' | Anomali' : '' }}"
+                                        class="heatmap-cell has-value"
+                                        style="
+                                            background: {{ $cellBg }} !important;
+                                            border-color: {{ $cellBorder }} !important;
+                                            color: {{ $cellText }} !important;
+                                        "
+                                        title="{{ $cellTitle }}"
                                     ></div>
                                 @else
-                                    <div class="heatmap-cell empty"></div>
+                                    <div
+                                        class="heatmap-cell empty"
+                                        style="
+                                            background: #f9fafb !important;
+                                            border-color: #e5e7eb !important;
+                                        "
+                                    ></div>
                                 @endif
                             @endforeach
                         @endforeach
@@ -319,17 +551,43 @@
                 </div>
 
                 <div class="heatmap-legend-text">
-                    <strong>Keterangan:</strong>
+                    <div class="heatmap-legend-columns">
+                        <div class="heatmap-legend-column">
+                            <h4>A: Kondisi Transaksi</h4>
 
-                    @foreach($heatmapAntecedents as $index => $antecedent)
-                        A{{ $index + 1 }} = {{ $antecedent }}@if(!$loop->last), @endif
-                    @endforeach
+                            @foreach($heatmapRows as $row)
+                                <div class="heatmap-legend-row">
+                                    <span class="heatmap-legend-code">
+                                        {{ $row['code'] ?? $row['label'] ?? ('A' . $loop->iteration) }}
+                                    </span>
 
-                    <br>
+                                    <span class="heatmap-legend-equal">=</span>
 
-                    @foreach($heatmapConsequents as $index => $consequent)
-                        C{{ $index + 1 }} = {{ $consequent }}@if(!$loop->last), @endif
-                    @endforeach
+                                    <span class="heatmap-legend-name">
+                                        {{ $row['name'] ?? $row['key'] ?? '-' }}
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="heatmap-legend-column">
+                            <h4>C: Pola yang Berkaitan</h4>
+
+                            @foreach($heatmapColumns as $column)
+                                <div class="heatmap-legend-row">
+                                    <span class="heatmap-legend-code">
+                                        {{ $column['code'] ?? $column['label'] ?? ('C' . $loop->iteration) }}
+                                    </span>
+
+                                    <span class="heatmap-legend-equal">=</span>
+
+                                    <span class="heatmap-legend-name">
+                                        {{ $column['name'] ?? $column['key'] ?? '-' }}
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
             @else
                 <div class="heatmap-placeholder">
@@ -410,6 +668,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const chartRules = @json($chartRules);
+    const ruleComposition = @json($ruleComposition);
 
     const ctx = document.getElementById('liftChart');
 
@@ -428,6 +687,7 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         display: false
@@ -458,6 +718,57 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         });
+    }
+
+    const compositionCtx = document.getElementById('compositionChart');
+
+    if (compositionCtx && ruleComposition.length > 0) {
+        const compositionTotal = ruleComposition.reduce((total, item) => {
+            return total + Number(item.value || 0);
+        }, 0);
+
+        if (compositionTotal > 0) {
+            new Chart(compositionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ruleComposition.map(item => item.label),
+                    datasets: [{
+                        data: ruleComposition.map(item => item.value),
+                        backgroundColor: [
+                            '#be185d',
+                            '#f59e0b',
+                            '#0284c7',
+                            '#dc2626'
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const value = Number(context.raw || 0);
+                                    const percentage = compositionTotal > 0
+                                        ? ((value / compositionTotal) * 100).toFixed(1)
+                                        : 0;
+
+                                    return context.label + ': ' + value + ' rule (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     }
 
     const searchInput = document.getElementById('searchRules');
