@@ -78,10 +78,6 @@
                 <h4>{{ $riwayat['nama_file'] ?? ($datasetData['nama_file'] ?? '-') }}</h4>
             </div>
 
-            <div class="info-box">
-                <p>Periode Data</p>
-                <h4>{{ $riwayat['periode_data'] ?? ($datasetData['periode_data'] ?? '-') }}</h4>
-            </div>
         </div>
     </div>
 

@@ -55,10 +55,21 @@
     color: #e8007a;
 }
 
-.summary-icon.pink { background: #fce7f3; }
-.summary-icon.blue { background: #eef6ff; }
-.summary-icon.green { background: #eafaf0; }
-.summary-icon.yellow { background: #fffbea; }
+.summary-icon.pink {
+    background: #fce7f3;
+}
+
+.summary-icon.blue {
+    background: #eef6ff;
+}
+
+.summary-icon.green {
+    background: #eafaf0;
+}
+
+.summary-icon.yellow {
+    background: #fffbea;
+}
 
 .filter-card {
     margin-top: 36px;
@@ -134,6 +145,7 @@
 
 .table-card table {
     width: 100%;
+    min-width: 1100px;
     border-collapse: collapse;
     table-layout: auto;
 }
@@ -168,6 +180,11 @@
     min-width: 140px;
 }
 
+.table-card td:last-child,
+.table-card th:last-child {
+    min-width: 110px;
+}
+
 .rules-badge {
     background: #fde2f1;
     color: #e8007a;
@@ -197,31 +214,60 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
+    gap: 14px;
 }
 
 .detail-icon,
-.download-icon {
+.download-icon,
+.delete-icon {
     width: 22px;
     height: 22px;
     color: #e8007a;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
     transition: 0.3s;
 }
 
+.detail-icon,
+.download-icon {
+    cursor: pointer;
+}
+
+.delete-form {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+.delete-icon {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
 .detail-icon svg,
-.download-icon svg {
+.download-icon svg,
+.delete-icon svg {
     width: 18px;
     height: 18px;
 }
 
 .detail-icon:hover,
-.download-icon:hover {
+.download-icon:hover,
+.delete-icon:hover {
     color: #c40067;
     transform: scale(1.1);
+}
+
+.delete-icon:hover {
+    color: #b42318;
 }
 
 /* DETAIL RIWAYAT */
@@ -254,7 +300,7 @@
 
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
 
@@ -491,5 +537,9 @@
     .anomaly-card {
         align-items: flex-start;
         gap: 18px;
+    }
+
+    .action-icons {
+        gap: 12px;
     }
 }

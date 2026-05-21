@@ -21,6 +21,42 @@
     }
 @endphp
 
+<style>
+    .action-icons {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .delete-form {
+        display: inline-flex;
+        align-items: center;
+        margin: 0;
+        padding: 0;
+    }
+
+    .delete-icon {
+        border: none;
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        color: #ff1493;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .delete-icon svg {
+        width: 17px;
+        height: 17px;
+    }
+
+    .delete-icon:hover {
+        color: #c4004f;
+    }
+</style>
+
 <div class="riwayat-page">
 
     <div class="page-header">
@@ -113,7 +149,6 @@
                     <th>No</th>
                     <th>Tanggal<br>Analisis</th>
                     <th>Nama File</th>
-                    <th>Periode Data</th>
                     <th>Data<br>Awal</th>
                     <th>Data<br>Bersih</th>
                     <th>Transaksi<br>Diproses</th>
@@ -130,7 +165,6 @@
                         $tanggalAnalisis = data_get($item, 'tanggal_analisis', '-');
                         $tanggalFilter = data_get($item, 'tanggal_filter', '');
                         $namaFile = data_get($item, 'nama_file', '-');
-                        $periodeData = data_get($item, 'periode_data', '-');
                         $dataAwal = data_get($item, 'total_data_awal', 0);
                         $dataBersih = data_get($item, 'setelah_preprocessing', 0);
                         $totalBasket = data_get($item, 'total_basket', 0);
@@ -145,7 +179,6 @@
                         <td class="row-number">{{ $index + 1 }}</td>
                         <td>{{ $tanggalAnalisis }}</td>
                         <td>{{ $namaFile }}</td>
-                        <td>{!! nl2br(e($periodeData)) !!}</td>
                         <td>{{ number_format((int) $dataAwal, 0, ',', '.') }}</td>
                         <td>{{ number_format((int) $dataBersih, 0, ',', '.') }}</td>
                         <td>{{ number_format((int) $totalBasket, 0, ',', '.') }}</td>
@@ -205,12 +238,38 @@
                                         <line x1="12" y1="15" x2="12" y2="3"/>
                                     </svg>
                                 </a>
+
+                                @if ($id)
+                                    <form action="{{ route('asosiasi.riwayat.destroy', $id) }}"
+                                          method="POST"
+                                          class="delete-form"
+                                          onsubmit="return confirm('Yakin ingin menghapus riwayat analisis ini? Data yang sudah dihapus tidak bisa dikembalikan.');">
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button type="submit" class="delete-icon" title="Hapus Riwayat">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 viewBox="0 0 24 24"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 stroke-width="2"
+                                                 stroke-linecap="round"
+                                                 stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                                <path d="M10 11v6"></path>
+                                                <path d="M14 11v6"></path>
+                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
                 @empty
                     <tr id="emptyRiwayatRow">
-                        <td colspan="10" style="text-align: center; padding: 32px;">
+                        <td colspan="9" style="text-align: center; padding: 32px;">
                             Belum ada riwayat analisis.
                         </td>
                     </tr>
@@ -218,7 +277,7 @@
 
                 @if ($riwayats->isNotEmpty())
                     <tr id="noFilterResultRow" style="display: none;">
-                        <td colspan="10" style="text-align: center; padding: 32px;">
+                        <td colspan="9" style="text-align: center; padding: 32px;">
                             Data riwayat tidak ditemukan.
                         </td>
                     </tr>

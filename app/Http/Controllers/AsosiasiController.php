@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class AsosiasiController extends Controller
 {
@@ -116,6 +117,38 @@ class AsosiasiController extends Controller
             'summary' => $data['summary'],
             'dataset' => $data['dataset'],
         ]);
+    }
+
+    public function destroyRiwayat($id)
+    {
+        try {
+            $proses = ProsesAnalisis::where('id_proses_analisis', $id)->firstOrFail();
+
+            $pathFile = $proses->path_file;
+
+            DB::transaction(function () use ($proses) {
+                AturanAsosiasi::where('id_proses_analisis', $proses->id_proses_analisis)->delete();
+
+                $proses->delete();
+            });
+
+            if ($pathFile && Storage::disk('public')->exists($pathFile)) {
+                Storage::disk('public')->delete($pathFile);
+            }
+
+            session()->forget([
+                'hasil_analisis_api',
+                'dataset_info_api',
+            ]);
+
+            return redirect()
+                ->route('asosiasi.riwayat')
+                ->with('success', 'Riwayat analisis berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('asosiasi.riwayat')
+                ->with('error', 'Gagal menghapus riwayat analisis: ' . $e->getMessage());
+        }
     }
 
     public function prosesAnalisis(Request $request)

@@ -95,9 +95,6 @@ Route::middleware('auth')->group(function () {
         |--------------------------------------------------------------------------
         | Halaman umum asosiasi
         |--------------------------------------------------------------------------
-        | Route di sini bisa dipakai oleh user yang sudah login.
-        | Download laporan juga diletakkan di sini supaya bisa dipakai
-        | dari dashboard asosiasi maupun halaman hasil analisis.
         */
 
         Route::get('/dashboard', [AsosiasiController::class, 'dashboard'])->name('dashboard');
@@ -122,6 +119,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/proses-analisis', [AsosiasiController::class, 'prosesAnalisis'])->name('prosesAnalisis');
 
             Route::get('/hasil', [AsosiasiController::class, 'hasilAnalisis'])->name('hasil');
+
+            Route::delete('/riwayat/{id}', [AsosiasiController::class, 'destroyRiwayat'])->name('riwayat.destroy');
         });
     });
 });
