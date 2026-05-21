@@ -598,7 +598,7 @@
     </div>
 
     <div class="hasil-action-row">
-        <a href="{{ route('asosiasi.download') }}" class="btn-primary-action btn-with-icon">
+        <a href="{{ route('asosiasi.hasil.download') }}" class="btn-primary-action btn-with-icon">
             <span class="action-icon">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M12 3v11m0 0 4-4m-4 4-4-4"

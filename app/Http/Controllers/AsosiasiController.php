@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\DashboardLaporanExport;
+use App\Exports\HasilAnalisisExport;
 use App\Models\AturanAsosiasi;
 use App\Models\ProsesAnalisis;
 use Carbon\Carbon;
@@ -382,6 +383,15 @@ class AsosiasiController extends Controller
 
         return Excel::download(new DashboardLaporanExport($data), $fileName);
     }
+
+    public function downloadHasil()
+{
+    $data = $this->getLatestAnalysisData();
+
+    $fileName = 'hasil_analisis_asosiasi_' . now()->format('Ymd_His') . '.xlsx';
+
+    return Excel::download(new HasilAnalisisExport($data), $fileName);
+}
 
     private function getLatestAnalysisData()
     {

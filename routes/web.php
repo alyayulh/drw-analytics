@@ -102,6 +102,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/riwayat', [AsosiasiController::class, 'riwayat'])->name('riwayat');
         Route::get('/riwayat/{id}', [AsosiasiController::class, 'detailRiwayat'])->name('riwayat.detail');
 
+        /*
+        |--------------------------------------------------------------------------
+        | Download laporan dashboard asosiasi
+        |--------------------------------------------------------------------------
+        */
+
         Route::get('/download-laporan', [AsosiasiController::class, 'downloadLaporan'])->name('download');
 
         /*
@@ -119,6 +125,14 @@ Route::middleware('auth')->group(function () {
             Route::post('/proses-analisis', [AsosiasiController::class, 'prosesAnalisis'])->name('prosesAnalisis');
 
             Route::get('/hasil', [AsosiasiController::class, 'hasilAnalisis'])->name('hasil');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Download hasil analisis halaman hasil
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get('/hasil/download', [AsosiasiController::class, 'downloadHasil'])->name('hasil.download');
 
             Route::delete('/riwayat/{id}', [AsosiasiController::class, 'destroyRiwayat'])->name('riwayat.destroy');
         });
