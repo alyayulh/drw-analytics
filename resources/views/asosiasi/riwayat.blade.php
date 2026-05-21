@@ -173,9 +173,10 @@
                     @endphp
 
                     <tr class="riwayat-row"
-                        data-file="{{ strtolower($namaFile) }}"
-                        data-date="{{ $tanggalFilter }}"
-                        data-index="{{ $index }}">
+    data-file="{{ strtolower($namaFile) }}"
+    data-date="{{ $tanggalFilter }}"
+    data-id="{{ $id ?? 0 }}"
+    data-index="{{ $index }}">
                         <td class="row-number">{{ $index + 1 }}</td>
                         <td>{{ $tanggalAnalisis }}</td>
                         <td>{{ $namaFile }}</td>
@@ -305,28 +306,43 @@
         }
 
         function applySort() {
-            const rows = getRows();
-            const sortValue = sortSelect ? sortSelect.value : 'terbaru';
+    const rows = getRows();
+    const sortValue = sortSelect ? sortSelect.value : 'terbaru';
 
-            rows.sort(function (a, b) {
-                const dateA = a.dataset.date || '';
-                const dateB = b.dataset.date || '';
+    rows.sort(function (a, b) {
+        const dateA = a.dataset.date || '';
+        const dateB = b.dataset.date || '';
 
-                if (sortValue === 'terlama') {
-                    return dateA.localeCompare(dateB);
-                }
+        const idA = parseInt(a.dataset.id || '0', 10);
+        const idB = parseInt(b.dataset.id || '0', 10);
 
-                return dateB.localeCompare(dateA);
-            });
+        if (sortValue === 'terlama') {
+            const dateCompare = dateA.localeCompare(dateB);
 
-            rows.forEach(function (row) {
-                tbody.appendChild(row);
-            });
-
-            if (noFilterResultRow) {
-                tbody.appendChild(noFilterResultRow);
+            if (dateCompare !== 0) {
+                return dateCompare;
             }
+
+            return idA - idB;
         }
+
+        const dateCompare = dateB.localeCompare(dateA);
+
+        if (dateCompare !== 0) {
+            return dateCompare;
+        }
+
+        return idB - idA;
+    });
+
+    rows.forEach(function (row) {
+        tbody.appendChild(row);
+    });
+
+    if (noFilterResultRow) {
+        tbody.appendChild(noFilterResultRow);
+    }
+}
 
         function applyFilter() {
             const keyword = searchInput ? searchInput.value.toLowerCase().trim() : '';
