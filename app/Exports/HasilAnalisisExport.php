@@ -89,17 +89,16 @@ class RingkasanHasilSheet implements FromArray, WithTitle, ShouldAutoSize, WithS
             ['Setelah Dibersihkan', $summary['setelah_preprocessing'] ?? 0],
             ['Total Transaksi Akhir', $summary['total_basket'] ?? 0],
             ['Produk Unik', $summary['produk_unik'] ?? 0],
-            ['Total Operator', $summary['total_operator'] ?? 0],
-            ['Frequent Itemsets', $summary['frequent_itemsets'] ?? 0],
-            ['Association Rules', $summary['association_rules'] ?? 0],
+            ['Jumlah Operator', $summary['total_operator'] ?? 0],
+            ['Pola yang Sering Muncul', $summary['frequent_itemsets'] ?? 0],
+            ['Pola Hubungan Ditemukan', $summary['association_rules'] ?? 0],
             ['Jumlah Anomali', $summary['jumlah_anomali'] ?? $anomali],
-            ['Rule Terbaik', $summary['rule_terbaik'] ?? 'Belum ada rule'],
+            ['Pola Terkuat', $summary['rule_terbaik'] ?? 'Belum ada pola'],
 
-            ['Komposisi Kategori Rule'],
-            ['Strong Pattern', $strong],
-            ['Moderate Pattern', $moderate],
-            ['Weak Pattern', $weak],
-            ['Anomali', $anomali],
+            ['Komposisi Kategori Pola'],
+            ['Pola Kuat', $strong],
+            ['Pola Sedang', $moderate],
+            ['Pola Lemah', $weak],
         ];
     }
 
@@ -112,7 +111,7 @@ class RingkasanHasilSheet implements FromArray, WithTitle, ShouldAutoSize, WithS
         $sheet->mergeCells('A6:B6');
         $sheet->mergeCells('A16:B16');
 
-        $sheet->getColumnDimension('A')->setWidth(28);
+        $sheet->getColumnDimension('A')->setWidth(30);
         $sheet->getColumnDimension('B')->setWidth(95);
 
         $sheet->getRowDimension(1)->setRowHeight(26);
@@ -156,14 +155,14 @@ class RingkasanHasilSheet implements FromArray, WithTitle, ShouldAutoSize, WithS
             ],
         ];
 
-        $sheet->getStyle('A2:B20')->applyFromArray($borderStyle);
+        $sheet->getStyle('A2:B' . $highestRow)->applyFromArray($borderStyle);
 
         $sheet->getStyle('A3:A5')->getFont()->setBold(true);
         $sheet->getStyle('A7:A15')->getFont()->setBold(true);
-        $sheet->getStyle('A17:A20')->getFont()->setBold(true);
+        $sheet->getStyle('A17:A19')->getFont()->setBold(true);
 
         $sheet->getStyle('B7:B14')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->getStyle('B17:B20')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('B17:B19')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
         $sheet->getStyle('A15:B15')->applyFromArray([
             'fill' => [
@@ -211,14 +210,14 @@ class AssociationRulesSheet implements FromArray, WithTitle, ShouldAutoSize, Wit
         $rows = [
             [
                 'No',
-                'Antecedents',
-                'Consequents',
-                'Support',
-                'Confidence',
-                'Lift',
-                'Kategori Rule',
-                'Deteksi Anomali',
-                'Interpretasi',
+                'Kondisi Transaksi',
+                'Pola yang Berkaitan',
+                'Tingkat Kemunculan',
+                'Tingkat Kepercayaan',
+                'Kekuatan Hubungan',
+                'Kategori Pola',
+                'Status Anomali',
+                'Penjelasan',
             ],
         ];
 
@@ -282,9 +281,9 @@ class AssociationRulesSheet implements FromArray, WithTitle, ShouldAutoSize, Wit
         $sheet->getColumnDimension('A')->setWidth(8);
         $sheet->getColumnDimension('B')->setWidth(38);
         $sheet->getColumnDimension('C')->setWidth(38);
-        $sheet->getColumnDimension('D')->setWidth(14);
-        $sheet->getColumnDimension('E')->setWidth(14);
-        $sheet->getColumnDimension('F')->setWidth(14);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(20);
+        $sheet->getColumnDimension('F')->setWidth(20);
         $sheet->getColumnDimension('G')->setWidth(20);
         $sheet->getColumnDimension('H')->setWidth(18);
         $sheet->getColumnDimension('I')->setWidth(65);
@@ -391,9 +390,6 @@ class HeatmapSheet implements FromArray, WithTitle, ShouldAutoSize, WithStyles
         $matrixEndRow = 2 + $rowCount;
 
         $legendTitleRow = $matrixEndRow + 1;
-        $legendARow = $legendTitleRow + 1;
-        $legendCRow = $legendTitleRow + 2;
-
         $aTitleRow = $legendTitleRow + 3;
         $aEndRow = $aTitleRow + $rowCount;
 

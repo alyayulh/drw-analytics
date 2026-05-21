@@ -101,6 +101,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/riwayat', [AsosiasiController::class, 'riwayat'])->name('riwayat');
         Route::get('/riwayat/{id}', [AsosiasiController::class, 'detailRiwayat'])->name('riwayat.detail');
+        Route::get('/riwayat/{id}/download', [AsosiasiController::class, 'downloadHasilRiwayat'])->name('riwayat.download');
 
         /*
         |--------------------------------------------------------------------------

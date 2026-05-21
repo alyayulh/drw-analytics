@@ -210,6 +210,7 @@
     color: #e8007a;
 }
 
+/* ACTION ICONS */
 .action-icons {
     display: flex;
     align-items: center;
@@ -219,7 +220,8 @@
 
 .detail-icon,
 .download-icon,
-.delete-icon {
+.delete-icon,
+.disabled-download-icon {
     width: 22px;
     height: 22px;
     color: #e8007a;
@@ -243,18 +245,29 @@
     padding: 0;
 }
 
-.delete-icon {
+.delete-icon,
+.disabled-download-icon {
     border: none;
     background: transparent;
     padding: 0;
     margin: 0;
-    cursor: pointer;
     font-family: inherit;
+}
+
+.delete-icon {
+    cursor: pointer;
+}
+
+.disabled-download-icon {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .detail-icon svg,
 .download-icon svg,
-.delete-icon svg {
+.delete-icon svg,
+.disabled-download-icon svg {
     width: 18px;
     height: 18px;
 }

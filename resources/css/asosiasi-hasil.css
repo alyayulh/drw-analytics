@@ -250,26 +250,85 @@
 
 .rules-table {
     width: 100%;
+    min-width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     font-size: 11px;
-    min-width: 1050px;
 }
 
 .rules-table th {
-    text-align: left;
+    text-align: center;
     color: #374151;
     font-weight: 800;
-    padding: 10px 12px;
+    padding: 14px 7px;
     border-bottom: 1px solid #e5e7eb;
-    white-space: nowrap;
+    white-space: normal;
     background: #ffffff;
+    line-height: 1.35;
+    vertical-align: middle;
 }
 
 .rules-table td {
-    padding: 10px 12px;
+    padding: 14px 7px;
     border-bottom: 1px solid #f3f4f6;
     color: #111827;
     vertical-align: middle;
+    text-align: center;
+    line-height: 1.55;
+    white-space: normal;
+}
+
+/* 1. Kondisi Transaksi */
+.rules-table th:nth-child(1),
+.rules-table td:nth-child(1) {
+    width: 14%;
+}
+
+/* 2. Pola yang Berkaitan */
+.rules-table th:nth-child(2),
+.rules-table td:nth-child(2) {
+    width: 12%;
+}
+
+/* 3. Tingkat Kemunculan */
+.rules-table th:nth-child(3),
+.rules-table td:nth-child(3) {
+    width: 7%;
+}
+
+/* 4. Tingkat Kepercayaan */
+.rules-table th:nth-child(4),
+.rules-table td:nth-child(4) {
+    width: 8%;
+}
+
+/* 5. Kekuatan Hubungan */
+.rules-table th:nth-child(5),
+.rules-table td:nth-child(5) {
+    width: 8%;
+}
+
+/* 6. Kategori Pola */
+.rules-table th:nth-child(6),
+.rules-table td:nth-child(6) {
+    width: 10%;
+}
+
+/* 7. Status Pola */
+.rules-table th:nth-child(7),
+.rules-table td:nth-child(7) {
+    width: 8%;
+}
+
+/* 8. Penjelasan */
+.rules-table th:nth-child(8),
+.rules-table td:nth-child(8) {
+    width: 33%;
+    text-align: center;
+    line-height: 1.65;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
 }
 
 .rules-table tbody tr:nth-child(odd) {

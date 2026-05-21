@@ -393,6 +393,30 @@ class AsosiasiController extends Controller
     return Excel::download(new HasilAnalisisExport($data), $fileName);
 }
 
+public function downloadHasilRiwayat($id)
+{
+    $proses = ProsesAnalisis::with('aturanAsosiasi')
+        ->where('id_proses_analisis', $id)
+        ->firstOrFail();
+
+    if ($proses->status !== 'berhasil') {
+        return back()->with('error', 'Hasil analisis tidak dapat diunduh karena proses analisis gagal.');
+    }
+
+    $data = $this->getAnalysisDataFromDatabase($proses);
+
+    $namaFile = pathinfo($proses->nama_file ?? 'hasil_analisis', PATHINFO_FILENAME);
+    $namaFile = preg_replace('/[^A-Za-z0-9_\-]/', '_', $namaFile);
+
+    $fileName = 'hasil_analisis_riwayat_' .
+        $proses->id_proses_analisis . '_' .
+        $namaFile . '_' .
+        now()->format('Ymd_His') .
+        '.xlsx';
+
+    return Excel::download(new HasilAnalisisExport($data), $fileName);
+}
+
     private function getLatestAnalysisData()
     {
         $apiResult = session('hasil_analisis_api');

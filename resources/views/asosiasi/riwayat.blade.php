@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Riwayat Analisis - DRW Skincare Analytics')
+
 @section('content')
 
 @php
@@ -20,42 +22,6 @@
         $analisisTerakhirText = '-';
     }
 @endphp
-
-<style>
-    .action-icons {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-    }
-
-    .delete-form {
-        display: inline-flex;
-        align-items: center;
-        margin: 0;
-        padding: 0;
-    }
-
-    .delete-icon {
-        border: none;
-        background: transparent;
-        padding: 0;
-        margin: 0;
-        cursor: pointer;
-        color: #ff1493;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .delete-icon svg {
-        width: 17px;
-        height: 17px;
-    }
-
-    .delete-icon:hover {
-        color: #c4004f;
-    }
-</style>
 
 <div class="riwayat-page">
 
@@ -170,46 +136,46 @@
                         $totalBasket = data_get($item, 'total_basket', 0);
                         $jumlahRules = data_get($item, 'association_rules', 0);
                         $status = data_get($item, 'status', '-');
+
+                        $statusLower = strtolower(trim((string) $status));
+                        $canDownload = $id && in_array($statusLower, ['selesai', 'berhasil', 'success'], true);
                     @endphp
 
                     <tr class="riwayat-row"
-    data-file="{{ strtolower($namaFile) }}"
-    data-date="{{ $tanggalFilter }}"
-    data-id="{{ $id ?? 0 }}"
-    data-index="{{ $index }}">
+                        data-file="{{ strtolower($namaFile) }}"
+                        data-date="{{ $tanggalFilter }}"
+                        data-id="{{ $id ?? 0 }}"
+                        data-index="{{ $index }}">
                         <td class="row-number">{{ $index + 1 }}</td>
+
                         <td>{{ $tanggalAnalisis }}</td>
+
                         <td>{{ $namaFile }}</td>
+
                         <td>{{ number_format((int) $dataAwal, 0, ',', '.') }}</td>
+
                         <td>{{ number_format((int) $dataBersih, 0, ',', '.') }}</td>
+
                         <td>{{ number_format((int) $totalBasket, 0, ',', '.') }}</td>
+
                         <td>
                             <span class="rules-badge">
                                 {{ number_format((int) $jumlahRules, 0, ',', '.') }}
                             </span>
                         </td>
+
                         <td>
-                            <span class="status-badge">
+                            <span class="status-badge {{ $canDownload ? 'status-normal' : 'status-anomaly' }}">
                                 {{ $status }}
                             </span>
                         </td>
+
                         <td>
                             <div class="action-icons">
                                 @if ($id)
-                                    <a href="{{ route('asosiasi.riwayat.detail', $id) }}" class="detail-icon" title="Lihat Detail">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             viewBox="0 0 24 24"
-                                             fill="none"
-                                             stroke="currentColor"
-                                             stroke-width="2"
-                                             stroke-linecap="round"
-                                             stroke-linejoin="round">
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
-                                            <circle cx="12" cy="12" r="3"/>
-                                        </svg>
-                                    </a>
-                                @else
-                                    <a href="#" class="detail-icon" title="Detail tidak tersedia">
+                                    <a href="{{ route('asosiasi.riwayat.detail', $id) }}"
+                                       class="detail-icon"
+                                       title="Lihat Detail">
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                              viewBox="0 0 24 24"
                                              fill="none"
@@ -223,22 +189,40 @@
                                     </a>
                                 @endif
 
-                                <a href="#"
-                                   class="download-icon"
-                                   title="Unduh"
-                                   onclick="event.preventDefault(); alert('Fitur unduh laporan belum tersedia.');">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         viewBox="0 0 24 24"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         stroke-width="2"
-                                         stroke-linecap="round"
-                                         stroke-linejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                        <polyline points="7 10 12 15 17 10"/>
-                                        <line x1="12" y1="15" x2="12" y2="3"/>
-                                    </svg>
-                                </a>
+                                @if ($canDownload)
+                                    <a href="{{ route('asosiasi.riwayat.download', $id) }}"
+                                       class="download-icon"
+                                       title="Unduh hasil analisis">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             viewBox="0 0 24 24"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             stroke-width="2"
+                                             stroke-linecap="round"
+                                             stroke-linejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                            <polyline points="7 10 12 15 17 10"/>
+                                            <line x1="12" y1="15" x2="12" y2="3"/>
+                                        </svg>
+                                    </a>
+                                @else
+                                    <button type="button"
+                                            class="disabled-download-icon"
+                                            title="Hasil tidak dapat diunduh karena analisis belum berhasil"
+                                            disabled>
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             viewBox="0 0 24 24"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             stroke-width="2"
+                                             stroke-linecap="round"
+                                             stroke-linejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                            <polyline points="7 10 12 15 17 10"/>
+                                            <line x1="12" y1="15" x2="12" y2="3"/>
+                                        </svg>
+                                    </button>
+                                @endif
 
                                 @if ($id)
                                     <form action="{{ route('asosiasi.riwayat.destroy', $id) }}"
@@ -248,7 +232,9 @@
                                         @csrf
                                         @method('DELETE')
 
-                                        <button type="submit" class="delete-icon" title="Hapus Riwayat">
+                                        <button type="submit"
+                                                class="delete-icon"
+                                                title="Hapus Riwayat">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                  viewBox="0 0 24 24"
                                                  fill="none"
@@ -306,43 +292,43 @@
         }
 
         function applySort() {
-    const rows = getRows();
-    const sortValue = sortSelect ? sortSelect.value : 'terbaru';
+            const rows = getRows();
+            const sortValue = sortSelect ? sortSelect.value : 'terbaru';
 
-    rows.sort(function (a, b) {
-        const dateA = a.dataset.date || '';
-        const dateB = b.dataset.date || '';
+            rows.sort(function (a, b) {
+                const dateA = a.dataset.date || '';
+                const dateB = b.dataset.date || '';
 
-        const idA = parseInt(a.dataset.id || '0', 10);
-        const idB = parseInt(b.dataset.id || '0', 10);
+                const idA = parseInt(a.dataset.id || '0', 10);
+                const idB = parseInt(b.dataset.id || '0', 10);
 
-        if (sortValue === 'terlama') {
-            const dateCompare = dateA.localeCompare(dateB);
+                if (sortValue === 'terlama') {
+                    const dateCompare = dateA.localeCompare(dateB);
 
-            if (dateCompare !== 0) {
-                return dateCompare;
+                    if (dateCompare !== 0) {
+                        return dateCompare;
+                    }
+
+                    return idA - idB;
+                }
+
+                const dateCompare = dateB.localeCompare(dateA);
+
+                if (dateCompare !== 0) {
+                    return dateCompare;
+                }
+
+                return idB - idA;
+            });
+
+            rows.forEach(function (row) {
+                tbody.appendChild(row);
+            });
+
+            if (noFilterResultRow) {
+                tbody.appendChild(noFilterResultRow);
             }
-
-            return idA - idB;
         }
-
-        const dateCompare = dateB.localeCompare(dateA);
-
-        if (dateCompare !== 0) {
-            return dateCompare;
-        }
-
-        return idB - idA;
-    });
-
-    rows.forEach(function (row) {
-        tbody.appendChild(row);
-    });
-
-    if (noFilterResultRow) {
-        tbody.appendChild(noFilterResultRow);
-    }
-}
 
         function applyFilter() {
             const keyword = searchInput ? searchInput.value.toLowerCase().trim() : '';
