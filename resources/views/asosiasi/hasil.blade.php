@@ -267,12 +267,12 @@
             </div>
 
             <div class="summary-item">
-                <span>Frequent Itemsets</span>
+                <span>Pola Sering Muncul</span>
                 <strong>{{ number_format($summary['frequent_itemsets'] ?? 0) }}</strong>
             </div>
 
             <div class="summary-item">
-                <span>Association Rules</span>
+                <span>Pola Hubungan</span>
                 <strong>{{ number_format($summary['association_rules'] ?? 0) }}</strong>
             </div>
 
@@ -282,7 +282,7 @@
             </div>
 
             <div class="summary-item best-rule">
-                <span>Rule Terbaik</span>
+                <span>Pola Terbaik</span>
                 <strong>{{ $summary['rule_terbaik'] ?? 'Belum ada rule' }}</strong>
             </div>
         </div>
@@ -321,18 +321,18 @@
         <div class="table-wrapper">
             <table class="rules-table" id="rulesTable">
                 <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Antecedents</th>
-                        <th>Consequents</th>
-                        <th>Support</th>
-                        <th>Confidence</th>
-                        <th>Lift</th>
-                        <th>Kategori Rule</th>
-                        <th>Deteksi Anomali</th>
-                        <th>Interpretasi</th>
-                    </tr>
-                </thead>
+    <tr>
+        <th>No</th>
+        <th>Kondisi Transaksi</th>
+        <th>Pola yang Berkaitan</th>
+        <th>Tingkat Kemunculan</th>
+        <th>Tingkat Kepercayaan</th>
+        <th>Kekuatan Hubungan</th>
+        <th>Kategori Pola</th>
+        <th>Status Pola</th>
+        <th>Penjelasan</th>
+    </tr>
+</thead>
 
                 <tbody>
                     @forelse ($rulesCollection as $rule)

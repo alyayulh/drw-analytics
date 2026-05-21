@@ -82,8 +82,8 @@
 <div class="association-dashboard">
 
     <div class="dashboard-header">
-        <h1>Dashboard Analisis Transaksi Penjualan</h1>
-        <p>Menampilkan insight transaksi penjualan berdasarkan pola data historis</p>
+        <h1>Analisis Transaksi Penjualan</h1>
+        <p>Sistem ini membantu menganalisis pola hubungan pada transaksi penjualan berdasarkan produk, operator, dan waktu pembelian.</p>
     </div>
 
     <div class="metric-grid">
@@ -113,7 +113,7 @@
 
         <div class="metric-card">
             <div>
-                <span>Total Pola Pembelian</span>
+                <span>Total Pola Hubungan</span>
                 <strong>{{ number_format($summary['association_rules'] ?? 0) }}</strong>
             </div>
             <div class="metric-icon green">↗</div>
@@ -156,7 +156,7 @@
             </div>
 
             <div class="dataset-item">
-                <span>Transaksi Refund Dihapus</span>
+                <span>Transaksi Refund yang Dihapus</span>
                 <strong>{{ number_format((int) ($dataset['transaksi_refund_dihapus'] ?? 0), 0, ',', '.') }}</strong>
             </div>
 
@@ -194,9 +194,9 @@
                     <tr>
                         <th>Kondisi Transaksi</th>
                         <th>Pola yang Berkaitan</th>
-                        <th>Frekuensi Kemunculan</th>
-                        <th>Tingkat Kecenderungan</th>
-                        <th>Kekuatan Pola</th>
+                        <th>Tingkat Kemunculan</th>
+                        <th>Tingkat Kepercayaan</th>
+                        <th>Kekuatan Hubungan</th>
                     </tr>
                 </thead>
 
@@ -234,7 +234,7 @@
                     <strong>Pola Pembelian Terkuat:</strong>
                     Data menunjukkan bahwa transaksi dengan <strong>{{ $antecedentUtama }}</strong>
                     paling sering berkaitan dengan <strong>{{ $consequentUtama }}</strong>.
-                    Pola ini memiliki tingkat kecenderungan sebesar <strong>{{ $confidenceUtamaPersen }}%</strong>.
+                    Pola ini memiliki tingkat kepercayaan sebesar <strong>{{ $confidenceUtamaPersen }}%</strong>.
                 </li>
             @else
                 <li>

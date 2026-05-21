@@ -875,29 +875,18 @@ class AsosiasiController extends Controller
     }
 
     private function generateInterpretasi($rule, $confidence, $lift)
-    {
-        $antecedents = $this->normalizeRulePart(
-            $rule['antecedents_display'] ?? ($rule['antecedents_raw'] ?? ($rule['antecedents'] ?? '-'))
-        );
+{
+    $antecedents = $this->normalizeRulePart(
+        $rule['antecedents_display'] ?? ($rule['antecedents_raw'] ?? ($rule['antecedents'] ?? '-'))
+    );
 
-        $consequents = $this->normalizeRulePart(
-            $rule['consequents_display'] ?? ($rule['consequents_raw'] ?? ($rule['consequents'] ?? '-'))
-        );
+    $consequents = $this->normalizeRulePart(
+        $rule['consequents_display'] ?? ($rule['consequents_raw'] ?? ($rule['consequents'] ?? '-'))
+    );
 
-        $kategoriRule = $rule['kategori_rule'] ?? $this->getKategoriRule($confidence, $lift);
-        $isAnomaly = $this->normalizeBoolean($rule['is_anomaly'] ?? false);
-
-        $anomaliText = $isAnomaly
-            ? ' Rule ini terdeteksi sebagai anomali berdasarkan pendekatan IQR pada confidence dan lift.'
-            : ' Rule ini tidak terdeteksi sebagai anomali berdasarkan pendekatan IQR pada confidence dan lift.';
-
-        return 'Jika terdapat ' . $antecedents .
-            ', maka cenderung berasosiasi dengan ' . $consequents .
-            ' dengan confidence ' . number_format($confidence * 100, 2) .
-            '% dan lift ' . number_format($lift, 2) .
-            '. Kategori rule: ' . $kategoriRule . '.' .
-            $anomaliText;
-    }
+    return 'Jika terdapat ' . $antecedents .
+    ', maka cenderung berkaitan dengan ' . $consequents . '.';
+}
 
     private function getJenisRule($rule)
     {
