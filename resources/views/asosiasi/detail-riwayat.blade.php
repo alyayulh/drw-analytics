@@ -15,23 +15,20 @@
         $ruleTerbaik = ($bestRule['antecedents'] ?? '-') . ' → ' . ($bestRule['consequents'] ?? '-');
     }
 
+    $isRuleAnomaly = function ($rule) {
+        $statusAnomali = strtolower((string) ($rule['status_anomali'] ?? ''));
+        $isAnomaly = $rule['is_anomaly'] ?? false;
+
+        return $statusAnomali === 'anomali'
+            || $isAnomaly === true
+            || $isAnomaly === 1
+            || $isAnomaly === '1'
+            || strtolower((string) $isAnomaly) === 'true';
+    };
+
     $jumlahAnomali = $summaryData['jumlah_anomali']
-        ?? $rulesCollection->filter(function ($rule) {
-            $value = $rule['is_anomaly'] ?? false;
-
-            if (is_bool($value)) {
-                return $value;
-            }
-
-            if (is_numeric($value)) {
-                return (int) $value === 1;
-            }
-
-            if (is_string($value)) {
-                return in_array(strtolower($value), ['1', 'true', 'yes', 'ya', 'anomali'], true);
-            }
-
-            return false;
+        ?? $rulesCollection->filter(function ($rule) use ($isRuleAnomaly) {
+            return $isRuleAnomaly($rule);
         })->count();
 
     $normalizeJenisRule = function ($jenisRule) {
@@ -61,7 +58,7 @@
 
     <div class="page-header">
         <h1>Detail Riwayat Analisis #{{ $riwayat['id'] ?? '-' }}</h1>
-        <p>Hasil analisis asosiasi yang telah disimpan</p>
+        <p>Detail hasil analisis pola hubungan dari data transaksi yang telah disimpan</p>
     </div>
 
     <div class="detail-card">
@@ -77,7 +74,6 @@
                 <p>Nama File</p>
                 <h4>{{ $riwayat['nama_file'] ?? ($datasetData['nama_file'] ?? '-') }}</h4>
             </div>
-
         </div>
     </div>
 
@@ -121,14 +117,14 @@
             </div>
 
             <div class="summary-box">
-                <p>Frequent Itemsets</p>
+                <p>Pola Sering Muncul</p>
                 <h4>
                     {{ number_format($summaryData['frequent_itemsets'] ?? ($riwayat['frequent_itemsets'] ?? 0), 0, ',', '.') }}
                 </h4>
             </div>
 
             <div class="summary-box">
-                <p>Association Rules</p>
+                <p>Pola Hubungan</p>
                 <h4>
                     {{ number_format($summaryData['association_rules'] ?? ($riwayat['association_rules'] ?? $rulesCollection->count()), 0, ',', '.') }}
                 </h4>
@@ -142,7 +138,7 @@
             </div>
 
             <div class="summary-box highlight">
-                <p>Rule Terbaik</p>
+                <p>Pola Terbaik</p>
                 <h4>{{ $ruleTerbaik ?? 'Belum ada rule' }}</h4>
             </div>
         </div>
@@ -201,17 +197,29 @@
         <h3>Tabel Hasil Association Rules</h3>
 
         <div class="table-wrapper">
-            <table>
+            <table class="detail-rules-table">
+                <colgroup>
+                    <col class="col-no">
+                    <col class="col-kondisi">
+                    <col class="col-pola">
+                    <col class="col-support">
+                    <col class="col-confidence">
+                    <col class="col-lift">
+                    <col class="col-kategori">
+                    <col class="col-status">
+                    <col class="col-interpretasi">
+                </colgroup>
+
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Antecedents</th>
-                        <th>Consequents</th>
-                        <th>Support</th>
-                        <th>Confidence</th>
-                        <th>Lift</th>
-                        <th>Kategori Rule</th>
-                        <th>Deteksi Anomali</th>
+                        <th>Kondisi<br>Transaksi</th>
+                        <th>Pola yang<br>Berkaitan</th>
+                        <th>Tingkat<br>Kemunculan</th>
+                        <th>Tingkat<br>Kepercayaan</th>
+                        <th>Kekuatan<br>Hubungan</th>
+                        <th>Kategori<br>Pola</th>
+                        <th>Status<br>Pola</th>
                         <th>Interpretasi</th>
                     </tr>
                 </thead>
@@ -227,27 +235,24 @@
                             $lift = $rule['lift'] ?? 0;
 
                             $kategoriRule = $rule['kategori_rule'] ?? ($rule['status'] ?? 'Weak Pattern');
+                            $kategoriLower = strtolower((string) $kategoriRule);
+
+                            if (str_contains($kategoriLower, 'strong')) {
+                                $kategoriClass = 'status-strong';
+                            } elseif (str_contains($kategoriLower, 'moderate')) {
+                                $kategoriClass = 'status-moderate';
+                            } else {
+                                $kategoriClass = 'status-weak';
+                            }
 
                             $jenisRule = $normalizeJenisRule($rule['jenis_rule'] ?? 'produk_operator_waktu');
 
-                            $isAnomaly = $rule['is_anomaly'] ?? false;
-
-                            if (is_string($isAnomaly)) {
-                                $isAnomaly = in_array(strtolower($isAnomaly), ['1', 'true', 'yes', 'ya', 'anomali'], true);
-                            } elseif (is_numeric($isAnomaly)) {
-                                $isAnomaly = (int) $isAnomaly === 1;
-                            } else {
-                                $isAnomaly = (bool) $isAnomaly;
-                            }
-
+                            $isAnomaly = $isRuleAnomaly($rule);
                             $statusAnomali = $isAnomaly ? 'Anomali' : 'Normal';
 
                             $interpretasi = $rule['interpretasi'] ?? (
                                 'Jika terdapat ' . $antecedents .
-                                ', maka cenderung berasosiasi dengan ' . $consequents .
-                                ' dengan confidence ' . number_format((float) $confidence * 100, 2) .
-                                '% dan lift ' . number_format((float) $lift, 2) .
-                                '. Kategori rule: ' . $kategoriRule . '.'
+                                ', maka cenderung berkaitan dengan ' . $consequents . '.'
                             );
 
                             $searchText = strtolower(
@@ -259,10 +264,12 @@
                             );
                         @endphp
 
-                        <tr class="rule-row {{ $isAnomaly ? 'row-anomaly' : 'row-normal' }}"
+                        <tr
+                            class="rule-row {{ $isAnomaly ? 'row-anomaly' : 'row-normal' }}"
                             data-jenis="{{ $jenisRule }}"
                             data-anomali="{{ $isAnomaly ? 'anomali' : 'normal' }}"
-                            data-search="{{ e($searchText) }}">
+                            data-search="{{ e($searchText) }}"
+                        >
                             <td class="row-number">{{ $loop->iteration }}</td>
 
                             <td>{{ $antecedents }}</td>
@@ -282,7 +289,7 @@
                             </td>
 
                             <td>
-                                <span class="rule-category">
+                                <span class="rule-category {{ $kategoriClass }}">
                                     {{ $kategoriRule }}
                                 </span>
                             </td>
@@ -315,6 +322,22 @@
                 </tbody>
             </table>
         </div>
+
+        @if ($rulesCollection->isNotEmpty())
+            <div class="riwayat-pagination" id="detailRulesPagination">
+                <button type="button" id="prevRulesPage" class="riwayat-pagination-btn">
+                    ‹ Sebelumnya
+                </button>
+
+                <span id="rulesPageInfo" class="riwayat-pagination-info">
+                    1-10 dari {{ $rulesCollection->count() }}
+                </span>
+
+                <button type="button" id="nextRulesPage" class="riwayat-pagination-btn">
+                    Berikutnya ›
+                </button>
+            </div>
+        @endif
     </div>
 
 </div>
@@ -327,19 +350,24 @@
         const rows = Array.from(document.querySelectorAll('.rule-row'));
         const noResultRow = document.getElementById('noResultRow');
 
+        const prevPageBtn = document.getElementById('prevRulesPage');
+        const nextPageBtn = document.getElementById('nextRulesPage');
+        const pageInfo = document.getElementById('rulesPageInfo');
+
         let activeFilter = 'semua';
+        let currentPage = 1;
+        const rowsPerPage = 10;
+        let filteredRows = [];
 
         function normalizeText(value) {
             return (value || '').toString().toLowerCase().trim();
         }
 
-        function applyFilter() {
+        function getFilteredRows() {
             const keyword = normalizeText(searchInput ? searchInput.value : '');
             const anomalyOnly = toggleAnomali ? toggleAnomali.checked : false;
 
-            let visibleCount = 0;
-
-            rows.forEach(function (row) {
+            return rows.filter(function (row) {
                 const rowJenis = row.dataset.jenis || '';
                 const rowAnomali = row.dataset.anomali || 'normal';
                 const rowSearch = row.dataset.search || '';
@@ -348,31 +376,68 @@
                 const matchSearch = keyword === '' || rowSearch.includes(keyword);
                 const matchAnomali = !anomalyOnly || rowAnomali === 'anomali';
 
-                if (matchFilter && matchSearch && matchAnomali) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
+                return matchFilter && matchSearch && matchAnomali;
             });
+        }
 
-            let number = 1;
-
+        function hideAllRows() {
             rows.forEach(function (row) {
-                if (row.style.display !== 'none') {
-                    const numberCell = row.querySelector('.row-number');
+                row.style.display = 'none';
+            });
+        }
 
-                    if (numberCell) {
-                        numberCell.textContent = number;
-                    }
+        function renderPage() {
+            hideAllRows();
 
-                    number++;
+            const totalRows = filteredRows.length;
+            const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const rowsToShow = filteredRows.slice(startIndex, endIndex);
+
+            rowsToShow.forEach(function (row, index) {
+                row.style.display = '';
+
+                const numberCell = row.querySelector('.row-number');
+
+                if (numberCell) {
+                    numberCell.textContent = startIndex + index + 1;
                 }
             });
 
             if (noResultRow) {
-                noResultRow.style.display = visibleCount === 0 ? '' : 'none';
+                noResultRow.style.display = totalRows === 0 ? '' : 'none';
             }
+
+            if (pageInfo) {
+                if (totalRows === 0) {
+                    pageInfo.textContent = 'Tidak ada data';
+                } else {
+                    pageInfo.textContent = `${startIndex + 1}-${Math.min(endIndex, totalRows)} dari ${totalRows}`;
+                }
+            }
+
+            if (prevPageBtn) {
+                prevPageBtn.disabled = currentPage <= 1 || totalRows === 0;
+            }
+
+            if (nextPageBtn) {
+                nextPageBtn.disabled = currentPage >= totalPages || totalRows === 0;
+            }
+        }
+
+        function applyFilter(resetPage = true) {
+            if (resetPage) {
+                currentPage = 1;
+            }
+
+            filteredRows = getFilteredRows();
+            renderPage();
         }
 
         filterButtons.forEach(function (button) {
@@ -384,19 +449,43 @@
                 button.classList.add('active');
                 activeFilter = button.dataset.filter || 'semua';
 
-                applyFilter();
+                applyFilter(true);
             });
         });
 
         if (searchInput) {
-            searchInput.addEventListener('input', applyFilter);
+            searchInput.addEventListener('input', function () {
+                applyFilter(true);
+            });
         }
 
         if (toggleAnomali) {
-            toggleAnomali.addEventListener('change', applyFilter);
+            toggleAnomali.addEventListener('change', function () {
+                applyFilter(true);
+            });
         }
 
-        applyFilter();
+        if (prevPageBtn) {
+            prevPageBtn.addEventListener('click', function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderPage();
+                }
+            });
+        }
+
+        if (nextPageBtn) {
+            nextPageBtn.addEventListener('click', function () {
+                const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderPage();
+                }
+            });
+        }
+
+        applyFilter(true);
     });
 </script>
 

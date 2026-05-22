@@ -27,7 +27,7 @@
 
     <div class="page-header">
         <h1>Riwayat Analisis</h1>
-        <p>Lihat dan kelola riwayat analisis asosiasi yang telah dilakukan</p>
+        <p>Lihat dan kelola riwayat analisis pola hubungan dari data transaksi yang telah dilakukan</p>
     </div>
 
     @if (session('success'))
@@ -273,7 +273,80 @@
         </table>
     </div>
 
+    @if ($riwayats->isNotEmpty())
+        <div class="riwayat-pagination" id="riwayatPagination">
+            <button type="button" id="prevRiwayatPage" class="riwayat-pagination-btn">
+                ‹ Sebelumnya
+            </button>
+
+            <span id="riwayatPageInfo" class="riwayat-pagination-info">
+                1-10 dari {{ $riwayats->count() }}
+            </span>
+
+            <button type="button" id="nextRiwayatPage" class="riwayat-pagination-btn">
+                Berikutnya ›
+            </button>
+        </div>
+    @endif
+
 </div>
+
+<style>
+    .riwayat-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 16px;
+        margin-bottom: 8px;
+    }
+
+    .riwayat-pagination-btn {
+        height: 36px;
+        padding: 0 15px;
+        border-radius: 9px;
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #344054;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: 0.2s ease;
+    }
+
+    .riwayat-pagination-btn:hover:not(:disabled) {
+        background: #fdf2f8;
+        border-color: #f9a8d4;
+        color: #e8007a;
+    }
+
+    .riwayat-pagination-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .riwayat-pagination-info {
+        font-size: 13px;
+        font-weight: 800;
+        color: #344054;
+    }
+
+    @media (max-width: 768px) {
+        .riwayat-pagination {
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .riwayat-pagination-btn {
+            width: 100%;
+        }
+
+        .riwayat-pagination-info {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -282,6 +355,14 @@
         const sortSelect = document.getElementById('sortRiwayat');
         const tbody = document.getElementById('riwayatTableBody');
         const noFilterResultRow = document.getElementById('noFilterResultRow');
+
+        const prevPageBtn = document.getElementById('prevRiwayatPage');
+        const nextPageBtn = document.getElementById('nextRiwayatPage');
+        const pageInfo = document.getElementById('riwayatPageInfo');
+
+        const rowsPerPage = 10;
+        let currentPage = 1;
+        let filteredRows = [];
 
         if (!tbody) {
             return;
@@ -330,65 +411,123 @@
             }
         }
 
-        function applyFilter() {
+        function getFilteredRows() {
             const keyword = searchInput ? searchInput.value.toLowerCase().trim() : '';
             const selectedDate = dateInput ? dateInput.value : '';
             const rows = getRows();
 
-            let visibleCount = 0;
-
-            rows.forEach(function (row) {
+            return rows.filter(function (row) {
                 const fileName = row.dataset.file || '';
                 const rowDate = row.dataset.date || '';
 
                 const matchKeyword = keyword === '' || fileName.includes(keyword);
                 const matchDate = selectedDate === '' || rowDate === selectedDate;
 
-                if (matchKeyword && matchDate) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
+                return matchKeyword && matchDate;
             });
+        }
 
-            let number = 1;
+        function hideAllRows() {
+            getRows().forEach(function (row) {
+                row.style.display = 'none';
+            });
+        }
 
-            rows.forEach(function (row) {
-                if (row.style.display !== 'none') {
-                    const numberCell = row.querySelector('.row-number');
+        function renderTablePage() {
+            hideAllRows();
 
-                    if (numberCell) {
-                        numberCell.textContent = number;
-                    }
+            const totalRows = filteredRows.length;
+            const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
 
-                    number++;
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const rowsToShow = filteredRows.slice(startIndex, endIndex);
+
+            rowsToShow.forEach(function (row, index) {
+                row.style.display = '';
+
+                const numberCell = row.querySelector('.row-number');
+
+                if (numberCell) {
+                    numberCell.textContent = startIndex + index + 1;
                 }
             });
 
             if (noFilterResultRow) {
-                noFilterResultRow.style.display = visibleCount === 0 ? '' : 'none';
+                noFilterResultRow.style.display = totalRows === 0 ? '' : 'none';
+            }
+
+            if (pageInfo) {
+                if (totalRows === 0) {
+                    pageInfo.textContent = 'Tidak ada data';
+                } else {
+                    pageInfo.textContent = `${startIndex + 1}-${Math.min(endIndex, totalRows)} dari ${totalRows}`;
+                }
+            }
+
+            if (prevPageBtn) {
+                prevPageBtn.disabled = currentPage <= 1 || totalRows === 0;
+            }
+
+            if (nextPageBtn) {
+                nextPageBtn.disabled = currentPage >= totalPages || totalRows === 0;
             }
         }
 
-        function refreshTable() {
+        function refreshTable(resetPage = true) {
             applySort();
-            applyFilter();
+
+            if (resetPage) {
+                currentPage = 1;
+            }
+
+            filteredRows = getFilteredRows();
+            renderTablePage();
         }
 
         if (searchInput) {
-            searchInput.addEventListener('input', refreshTable);
+            searchInput.addEventListener('input', function () {
+                refreshTable(true);
+            });
         }
 
         if (dateInput) {
-            dateInput.addEventListener('change', refreshTable);
+            dateInput.addEventListener('change', function () {
+                refreshTable(true);
+            });
         }
 
         if (sortSelect) {
-            sortSelect.addEventListener('change', refreshTable);
+            sortSelect.addEventListener('change', function () {
+                refreshTable(true);
+            });
         }
 
-        refreshTable();
+        if (prevPageBtn) {
+            prevPageBtn.addEventListener('click', function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTablePage();
+                }
+            });
+        }
+
+        if (nextPageBtn) {
+            nextPageBtn.addEventListener('click', function () {
+                const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTablePage();
+                }
+            });
+        }
+
+        refreshTable(true);
     });
 </script>
 

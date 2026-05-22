@@ -319,18 +319,30 @@
         <h2>Tabel Hasil Association Rules</h2>
 
         <div class="table-wrapper">
-            <table class="rules-table" id="rulesTable">
+            <table class="rules-table" id="rulesTable" style="width: 100%; table-layout: fixed;">
+                <colgroup>
+                    <col style="width: 4%;">
+                    <col style="width: 11%;">
+                    <col style="width: 13%;">
+                    <col style="width: 7%;">
+                    <col style="width: 8%;">
+                    <col style="width: 8%;">
+                    <col style="width: 10%;">
+                    <col style="width: 7%;">
+                    <col style="width: 32%;">
+                </colgroup>
+
                 <thead>
     <tr>
         <th>No</th>
-        <th>Kondisi Transaksi</th>
-        <th>Pola yang Berkaitan</th>
-        <th>Tingkat Kemunculan</th>
-        <th>Tingkat Kepercayaan</th>
-        <th>Kekuatan Hubungan</th>
-        <th>Kategori Pola</th>
-        <th>Status Pola</th>
-        <th>Penjelasan</th>
+        <th>Kondisi<br>Transaksi</th>
+        <th>Pola yang<br>Berkaitan</th>
+        <th>Tingkat<br>Kemunculan</th>
+        <th>Tingkat<br>Kepercayaan</th>
+        <th>Kekuatan<br>Hubungan</th>
+        <th>Kategori<br>Pola</th>
+        <th>Status<br>Pola</th>
+        <th>Interpretasi</th>
     </tr>
 </thead>
 
@@ -382,7 +394,9 @@
                                 @endif
                             </td>
 
-                            <td>{{ $rule['interpretasi'] ?? '-' }}</td>
+                            <td class="interpretasi-cell" style="white-space: normal; word-break: normal; overflow-wrap: break-word;">
+                                {{ $rule['interpretasi'] ?? '-' }}
+                            </td>
                         </tr>
                     @empty
                         <tr>
@@ -630,7 +644,6 @@
                     <path d="M3 17v-6h6"
                           stroke="currentColor"
                           stroke-width="2"
-                          stroke-linecap="round"
                           stroke-linejoin="round" />
                 </svg>
             </span>
