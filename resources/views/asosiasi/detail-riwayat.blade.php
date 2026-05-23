@@ -307,7 +307,7 @@
                     @empty
                         <tr id="emptyRulesRow">
                             <td colspan="9" style="text-align: center; padding: 32px;">
-                                Data rules tidak ditemukan.
+                                Data pola hubungan tidak ditemukan.
                             </td>
                         </tr>
                     @endforelse
@@ -315,7 +315,7 @@
                     @if ($rulesCollection->isNotEmpty())
                         <tr id="noResultRow" style="display: none;">
                             <td colspan="9" style="text-align: center; padding: 32px;">
-                                Data rules tidak ditemukan.
+                                Data pola hubungan tidak ditemukan.
                             </td>
                         </tr>
                     @endif

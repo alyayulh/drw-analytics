@@ -156,9 +156,9 @@
             </div>
 
             <div class="dataset-item">
-                <span>Transaksi Refund yang Dihapus</span>
-                <strong>{{ number_format((int) ($dataset['transaksi_refund_dihapus'] ?? 0), 0, ',', '.') }}</strong>
-            </div>
+    <span>Produk Unik</span>
+    <strong>{{ number_format((int) ($summary['produk_unik'] ?? 0), 0, ',', '.') }}</strong>
+</div>
 
             <div class="dataset-item">
                 <span>Transaksi yang Akan Diproses</span>
