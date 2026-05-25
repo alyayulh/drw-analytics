@@ -5,6 +5,18 @@
 @section('content')
 
 @php
+    $user = auth()->user();
+
+    $userRole = strtolower(
+        $user->role
+        ?? $user->level
+        ?? $user->tipe_user
+        ?? $user->akses
+        ?? ''
+    );
+
+    $isManajer = in_array($userRole, ['manajer', 'manager']);
+
     $topProdukChart = collect($topProduk ?? [])
         ->map(function ($item) {
             return [
@@ -120,15 +132,15 @@
         </div>
 
         <div class="metric-card rule-best-card">
-    <div class="rule-best-content">
-        <span>Pola Terkuat</span>
-        <strong class="rule-best-text">
-            {{ $summary['rule_terbaik'] ?? 'Belum ada rule' }}
-        </strong>
-    </div>
+            <div class="rule-best-content">
+                <span>Pola Terkuat</span>
+                <strong class="rule-best-text">
+                    {{ $summary['rule_terbaik'] ?? 'Belum ada rule' }}
+                </strong>
+            </div>
 
-    <div class="metric-icon yellow">🎖</div>
-</div>
+            <div class="metric-icon yellow">🎖</div>
+        </div>
     </div>
 
     <div class="dashboard-card">
@@ -156,9 +168,9 @@
             </div>
 
             <div class="dataset-item">
-    <span>Produk Unik</span>
-    <strong>{{ number_format((int) ($summary['produk_unik'] ?? 0), 0, ',', '.') }}</strong>
-</div>
+                <span>Produk Unik</span>
+                <strong>{{ number_format((int) ($summary['produk_unik'] ?? 0), 0, ',', '.') }}</strong>
+            </div>
 
             <div class="dataset-item">
                 <span>Transaksi yang Akan Diproses</span>
@@ -267,17 +279,19 @@
     </div>
 
     <div class="dashboard-actions">
-        <a href="{{ route('asosiasi.analisis') }}" class="btn-action primary">
-            <span class="btn-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 19h16"></path>
-                    <path d="M7 16V8"></path>
-                    <path d="M12 16V5"></path>
-                    <path d="M17 16v-4"></path>
-                </svg>
-            </span>
-            <span>Mulai Analisis Data</span>
-        </a>
+        @if (!$isManajer)
+            <a href="{{ route('asosiasi.analisis') }}" class="btn-action primary">
+                <span class="btn-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19h16"></path>
+                        <path d="M7 16V8"></path>
+                        <path d="M12 16V5"></path>
+                        <path d="M17 16v-4"></path>
+                    </svg>
+                </span>
+                <span>Mulai Analisis Data</span>
+            </a>
+        @endif
 
         <a href="{{ route('asosiasi.riwayat') }}" class="btn-action secondary">
             <span class="btn-icon">

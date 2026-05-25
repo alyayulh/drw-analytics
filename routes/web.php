@@ -121,6 +121,20 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/analisis', [AsosiasiController::class, 'analisis'])->name('analisis');
 
+            /*
+            |--------------------------------------------------------------------------
+            | Validasi format dataset sebelum loading proses berjalan
+            |--------------------------------------------------------------------------
+            */
+
+            Route::post('/validasi-format', [AsosiasiController::class, 'validasiFormat'])->name('validasiFormat');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Proses analisis dataset
+            |--------------------------------------------------------------------------
+            */
+
             Route::post('/analisis/proses', [AsosiasiController::class, 'prosesAnalisis'])->name('proses');
 
             Route::post('/proses-analisis', [AsosiasiController::class, 'prosesAnalisis'])->name('prosesAnalisis');

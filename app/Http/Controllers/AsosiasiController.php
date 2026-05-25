@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AsosiasiController extends Controller
@@ -164,6 +165,40 @@ class AsosiasiController extends Controller
         }
     }
 
+
+    public function validasiFormat(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|file|mimes:xls,xlsx',
+        ], [
+            'file.required' => 'File dataset wajib diunggah.',
+            'file.file' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
+            'file.mimes' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'valid' => false,
+                'message' => $validator->errors()->first('file'),
+            ], 422);
+        }
+
+        $validasiFormatDataset = $this->validateDatasetColumns($request->file('file'));
+
+        if (!$validasiFormatDataset['valid']) {
+            return response()->json([
+                'valid' => false,
+                'message' => $validasiFormatDataset['message']
+                    ?? $this->getDatasetFormatErrorMessage($validasiFormatDataset['missing_groups'] ?? []),
+            ], 422);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'message' => 'Format dataset sesuai.',
+        ]);
+    }
+
     public function prosesAnalisis(Request $request)
     {
         $request->validate([
@@ -171,9 +206,23 @@ class AsosiasiController extends Controller
             'min_support' => 'nullable|numeric|min:0.0001|max:1',
             'min_confidence' => 'nullable|numeric|min:0.0001|max:1',
             'min_lift' => 'nullable|numeric|min:0',
+        ], [
+            'file.required' => 'File dataset wajib diunggah.',
+            'file.file' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
+            'file.mimes' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
         ]);
 
         $file = $request->file('file');
+
+        $validasiFormatDataset = $this->validateDatasetColumns($file);
+
+        if (!$validasiFormatDataset['valid']) {
+            return back()->with(
+                'error',
+                $validasiFormatDataset['message'] ?? $this->getDatasetFormatErrorMessage($validasiFormatDataset['missing_groups'] ?? [])
+            );
+        }
+
         $apiUrl = env('FPGROWTH_API_URL');
 
         if (!$apiUrl) {
@@ -244,6 +293,10 @@ class AsosiasiController extends Controller
             if (!$response->successful()) {
                 $message = 'API Python gagal merespons. Status: ' . $response->status();
 
+                if ($this->isFormatColumnError($response->body())) {
+                    $message = $this->getDatasetFormatErrorMessage();
+                }
+
                 $proses->update([
                     'status' => 'gagal',
                     'pesan_error' => $message,
@@ -256,6 +309,10 @@ class AsosiasiController extends Controller
 
             if (($apiResult['status'] ?? null) !== 'success') {
                 $message = $apiResult['message'] ?? 'Analisis gagal diproses.';
+
+                if ($this->isFormatColumnError($message)) {
+                    $message = $this->getDatasetFormatErrorMessage();
+                }
 
                 $proses->update([
                     'status' => 'gagal',
@@ -364,14 +421,28 @@ class AsosiasiController extends Controller
                 fclose($stream);
             }
 
+            $message = $e->getMessage();
+
+            if ($this->isFormatColumnError($message)) {
+                $message = $this->getDatasetFormatErrorMessage();
+            } elseif (
+                str_contains(strtolower($message), 'curl error 7') ||
+                str_contains(strtolower($message), 'connection refused') ||
+                str_contains(strtolower($message), 'failed to connect')
+            ) {
+                $message = 'API Python tidak terhubung. Pastikan server FastAPI di port 8001 sudah berjalan.';
+            } else {
+                $message = 'Terjadi kesalahan: ' . $message;
+            }
+
             if ($proses) {
                 $proses->update([
                     'status' => 'gagal',
-                    'pesan_error' => $e->getMessage(),
+                    'pesan_error' => $message,
                 ]);
             }
 
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return back()->with('error', $message);
         }
     }
 
@@ -416,6 +487,298 @@ public function downloadHasilRiwayat($id)
 
     return Excel::download(new HasilAnalisisExport($data), $fileName);
 }
+
+    private function getDatasetFormatErrorMessage(array $missingGroups = [])
+    {
+        $baseMessage = 'Format dataset tidak sesuai. File Excel harus memiliki kolom wajib: nomor transaksi, produk, operator, dan waktu/tanggal transaksi.';
+
+        if (empty($missingGroups)) {
+            return $baseMessage;
+        }
+
+        $missingLabels = collect($missingGroups)
+            ->map(function ($groupName) {
+                return $this->getReadableDatasetColumnName($groupName);
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->implode(', ');
+
+        if ($missingLabels === '') {
+            return $baseMessage;
+        }
+
+        return 'Format dataset tidak sesuai. Kolom wajib yang belum ditemukan: ' . $missingLabels . '. Pastikan file Excel memiliki kolom wajib: nomor transaksi, produk, operator, dan waktu/tanggal transaksi.';
+    }
+
+    private function getReadableDatasetColumnName($groupName)
+    {
+        $labels = [
+            'nomor_transaksi' => 'nomor transaksi',
+            'produk' => 'produk',
+            'operator' => 'operator',
+            'waktu_transaksi' => 'waktu/tanggal transaksi',
+        ];
+
+        return $labels[$groupName] ?? str_replace('_', ' ', (string) $groupName);
+    }
+
+    private function validateDatasetColumns($file)
+    {
+        try {
+            $sheets = Excel::toArray([], $file);
+        } catch (\Throwable $e) {
+            return [
+                'valid' => false,
+                'message' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
+            ];
+        }
+
+        $sheet = $sheets[0] ?? [];
+
+        if (!is_array($sheet) || count($sheet) < 2) {
+            return [
+                'valid' => false,
+                'message' => $this->getDatasetFormatErrorMessage(),
+            ];
+        }
+
+        $requiredColumnGroups = $this->getRequiredDatasetColumnGroups();
+        $maxRowsToScan = min(count($sheet), 20);
+        $bestMatchedCount = 0;
+        $bestMissingGroups = array_keys($requiredColumnGroups);
+        $bestHeaderRowIndex = null;
+
+        for ($rowIndex = 0; $rowIndex < $maxRowsToScan; $rowIndex++) {
+            $row = $sheet[$rowIndex] ?? [];
+
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $headers = collect($row)
+                ->map(function ($value) {
+                    return $this->normalizeHeaderName($value);
+                })
+                ->filter(function ($value) {
+                    return $value !== '';
+                })
+                ->values()
+                ->all();
+
+            if (empty($headers)) {
+                continue;
+            }
+
+            $missingGroups = [];
+            $matchedCount = 0;
+
+            foreach ($requiredColumnGroups as $groupName => $aliases) {
+                if ($this->hasMatchingHeader($headers, $aliases)) {
+                    $matchedCount++;
+                } else {
+                    $missingGroups[] = $groupName;
+                }
+            }
+
+            if ($matchedCount > $bestMatchedCount) {
+                $bestMatchedCount = $matchedCount;
+                $bestMissingGroups = $missingGroups;
+                $bestHeaderRowIndex = $rowIndex;
+            }
+
+            if (empty($missingGroups)) {
+                $hasDataRow = false;
+
+                for ($dataRowIndex = $rowIndex + 1; $dataRowIndex < count($sheet); $dataRowIndex++) {
+                    $dataRow = $sheet[$dataRowIndex] ?? [];
+
+                    if (!is_array($dataRow)) {
+                        continue;
+                    }
+
+                    $filledColumns = collect($dataRow)
+                        ->filter(function ($value) {
+                            return trim((string) $value) !== '';
+                        })
+                        ->count();
+
+                    if ($filledColumns >= 2) {
+                        $hasDataRow = true;
+                        break;
+                    }
+                }
+
+                if (!$hasDataRow) {
+                    return [
+                        'valid' => false,
+                        'message' => 'Format dataset tidak sesuai. File Excel harus memiliki baris data setelah header kolom.',
+                    ];
+                }
+
+                return [
+                    'valid' => true,
+                    'message' => 'Format file sesuai',
+                    'header_row_index' => $rowIndex,
+                ];
+            }
+        }
+
+        return [
+            'valid' => false,
+            'message' => $this->getDatasetFormatErrorMessage($bestMissingGroups),
+            'missing_groups' => $bestMissingGroups,
+            'header_row_index' => $bestHeaderRowIndex,
+        ];
+    }
+
+    private function getRequiredDatasetColumnGroups()
+    {
+        return [
+            'nomor_transaksi' => [
+                'no transaksi',
+                'nomor transaksi',
+                'kode transaksi',
+                'id transaksi',
+                'transaction id',
+                'transaction number',
+                'transaction no',
+                'order id',
+                'order number',
+                'invoice',
+                'invoice no',
+                'invoice number',
+                'no invoice',
+                'nomor invoice',
+                'bill no',
+                'bill number',
+                'receipt no',
+                'nomor struk',
+                'no struk',
+                'sales id',
+            ],
+            'produk' => [
+                'produk',
+                'nama produk',
+                'product',
+                'product name',
+                'item',
+                'item name',
+                'nama item',
+                'sku name',
+                'product sku',
+                'service',
+                'treatment',
+                'description',
+                'item description',
+            ],
+            'operator' => [
+                'operator',
+                'nama operator',
+                'kasir',
+                'cashier',
+                'cashier name',
+                'staff',
+                'staff name',
+                'employee',
+                'employee name',
+                'user',
+                'username',
+                'created by',
+                'served by',
+                'handled by',
+                'beautician',
+                'therapist',
+                'admin',
+                'sales',
+                'sales name',
+            ],
+            'waktu_transaksi' => [
+                'tanggal',
+                'waktu',
+                'jam',
+                'tanggal transaksi',
+                'waktu transaksi',
+                'jam transaksi',
+                'tanggal pembelian',
+                'waktu pembelian',
+                'transaction date',
+                'transaction time',
+                'transaction datetime',
+                'date',
+                'time',
+                'datetime',
+                'created at',
+                'paid at',
+                'order date',
+                'sales date',
+                'purchase date',
+                'payment date',
+            ],
+        ];
+    }
+
+    private function normalizeHeaderName($value)
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $value = preg_replace('/^\xEF\xBB\xBF/', '', $value);
+        $value = strtolower($value);
+        $value = str_replace(['_', '-', '/', '\\', '.', ':', ';', '(', ')', '[', ']'], ' ', $value);
+        $value = preg_replace('/[^a-z0-9\s]+/', ' ', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+
+        return trim($value);
+    }
+
+    private function hasMatchingHeader(array $headers, array $aliases)
+    {
+        $normalizedAliases = collect($aliases)
+            ->map(function ($alias) {
+                return $this->normalizeHeaderName($alias);
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        foreach ($headers as $header) {
+            foreach ($normalizedAliases as $alias) {
+                if ($header === $alias) {
+                    return true;
+                }
+
+                if (strlen($alias) >= 5 && str_contains($header, $alias)) {
+                    return true;
+                }
+
+                if (strlen($header) >= 5 && str_contains($alias, $header)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function isFormatColumnError($message)
+    {
+        $message = strtolower((string) $message);
+
+        return str_contains($message, 'format file tidak sesuai') ||
+            str_contains($message, 'kolom') ||
+            str_contains($message, 'column') ||
+            str_contains($message, 'columns') ||
+            str_contains($message, 'required') ||
+            str_contains($message, 'missing') ||
+            str_contains($message, 'tidak ditemukan') ||
+            str_contains($message, 'tidak sesuai') ||
+            str_contains($message, 'dataset tidak valid');
+    }
 
     private function getLatestAnalysisData()
     {
