@@ -194,7 +194,7 @@
     </div>
 
     <div class="hasil-card table-card">
-        <h3>Tabel Hasil Association Rules</h3>
+        <h3>Tabel Hasil Analisis Pola Transaksi</h3>
 
         <div class="table-wrapper">
             <table class="detail-rules-table">

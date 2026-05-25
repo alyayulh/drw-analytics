@@ -316,7 +316,7 @@
     </div>
 
     <div class="hasil-card table-card">
-        <h2>Tabel Hasil Association Rules</h2>
+        <h2>Tabel Hasil Analisis Pola Transaksi</h2>
 
         <div class="table-wrapper">
             <table class="rules-table" id="rulesTable" style="width: 100%; table-layout: fixed;">
@@ -426,7 +426,7 @@
 
     <div class="chart-grid">
         <div class="hasil-card chart-card chart-card-left">
-            <h2>Bar Chart Top 5 Rules</h2>
+            <h2>Grafik 5 Pola Hubungan Teratas</h2>
 
             @if($chartRules->count() > 0)
                 <div class="bar-chart-wrapper">
@@ -440,7 +440,7 @@
 
             <div class="composition-section">
                 <div class="composition-header">
-                    <h3>Komposisi Kategori Rule</h3>
+                    <h3>Komposisi Kategori Pola</h3>
                     <p>Menampilkan perbandingan jumlah rule berdasarkan kategori hasil analisis.</p>
                 </div>
 
@@ -463,11 +463,11 @@
         </div>
 
         <div class="hasil-card chart-card">
-            <h2>Heatmap Asosiasi</h2>
+            <h2>Peta Kekuatan Pola Hubungan</h2>
 
             @if($hasHeatmapData)
                 <p class="heatmap-note">
-                    Heatmap menampilkan kekuatan asosiasi berdasarkan nilai lift.
+                    Peta ini menampilkan kekuatan asosiasi berdasarkan nilai lift.
                     Semakin pekat warna merah pada cell, semakin tinggi nilai lift rule tersebut.
                 </p>
 
