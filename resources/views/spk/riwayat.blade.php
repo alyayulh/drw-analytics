@@ -50,6 +50,11 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 .btn-pink { background: linear-gradient(135deg, var(--pink), var(--pink-mid)); color: #fff; border: none; box-shadow: 0 2px 8px rgba(232,0,90,.25); }
 .btn-red { background: var(--red-light); color: var(--red); border-color: #fca5a5; }
 .btn-sm { padding: 6px 12px; font-size: 11px; }
+
+/* Rapikan kolom aksi: tombol tetap sejajar dan teks tidak turun */
+.action-col { width: 180px; min-width: 180px; }
+.action-buttons { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; white-space: nowrap; }
+.action-buttons .btn { white-space: nowrap; flex-shrink: 0; }
 .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
 table { width: 100%; border-collapse: collapse; }
 thead { background: var(--pink-light); }
@@ -211,9 +216,9 @@ tr:hover td { background: var(--pink-light); }
               <th>No</th>
               <th>Tanggal Hitung</th>
               <th>Nama Periode Promosi</th>
-              <th>JumlahProduk Dihitung</th>
+              <th>Jumlah Produk Dihitung</th>
               <th>Produk Terbaik</th>
-              <th>Aksi</th>
+              <th class="action-col">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -222,10 +227,10 @@ tr:hover td { background: var(--pink-light); }
               <td style="color:var(--text-3);font-size:12px">{{ $i + 1 }}</td>
               <td style="color:var(--text-3);font-size:12px">{{ \Carbon\Carbon::parse($r->created_at)->format('d M Y H:i') }}</td>
               <td style="font-weight:700">{{ $r->periode_data }}</td>
-              <td style="font-family:'DM Mono',monospace;font-size:12px">{{ $r->jumlah_produk }} produk</td>
+              <td style="font-size:12px;color:var(--text-2);font-family:inherit">{{ $r->jumlah_produk }} produk</td>
               <td style="color:var(--pink);font-weight:600">🏆 {{ $r->produk_prioritas }}</td>
-              <td>
-                <div style="display:flex;gap:6px">
+              <td class="action-col">
+                <div class="action-buttons">
                   <a href="{{ route('perhitungan.hasil', $r->id_perhitungan) }}" class="btn btn-sm">Lihat Hasil</a>
                   <button class="btn btn-red btn-sm" onclick="openHapus({{ $r->id_perhitungan }}, '{{ addslashes($r->periode_data) }}')">Hapus</button>
                 </div>
