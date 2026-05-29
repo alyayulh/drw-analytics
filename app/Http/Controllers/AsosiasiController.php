@@ -168,12 +168,17 @@ class AsosiasiController extends Controller
 
     public function validasiFormat(Request $request)
     {
+        /*
+         * Jangan pakai rule mimes:xls,xlsx di sini.
+         * Pada beberapa laptop/browser, file .xlsx bisa terbaca sebagai application/zip,
+         * sehingga Laravel menolak file walaupun ekstensi file sudah benar.
+         */
         $validator = Validator::make($request->all(), [
-            'file' => 'required|file|mimes:xls,xlsx',
+            'file' => 'required|file|max:20480',
         ], [
             'file.required' => 'File dataset wajib diunggah.',
             'file.file' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
-            'file.mimes' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
+            'file.max' => 'Ukuran file terlalu besar. Maksimal ukuran file adalah 20 MB.',
         ]);
 
         if ($validator->fails()) {
@@ -183,7 +188,16 @@ class AsosiasiController extends Controller
             ], 422);
         }
 
-        $validasiFormatDataset = $this->validateDatasetColumns($request->file('file'));
+        $file = $request->file('file');
+
+        if (!$this->isAllowedExcelFile($file)) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
+            ], 422);
+        }
+
+        $validasiFormatDataset = $this->validateDatasetColumns($file);
 
         if (!$validasiFormatDataset['valid']) {
             return response()->json([
@@ -201,18 +215,26 @@ class AsosiasiController extends Controller
 
     public function prosesAnalisis(Request $request)
     {
+        /*
+         * Validasi file dibuat fleksibel: cek required/file/size lewat Laravel,
+         * lalu cek ekstensi .xlsx/.xls secara manual.
+         */
         $request->validate([
-            'file' => 'required|file|mimes:xls,xlsx',
+            'file' => 'required|file|max:20480',
             'min_support' => 'nullable|numeric|min:0.0001|max:1',
             'min_confidence' => 'nullable|numeric|min:0.0001|max:1',
             'min_lift' => 'nullable|numeric|min:0',
         ], [
             'file.required' => 'File dataset wajib diunggah.',
             'file.file' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
-            'file.mimes' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
+            'file.max' => 'Ukuran file terlalu besar. Maksimal ukuran file adalah 20 MB.',
         ]);
 
         $file = $request->file('file');
+
+        if (!$this->isAllowedExcelFile($file)) {
+            return back()->with('error', 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.');
+        }
 
         $validasiFormatDataset = $this->validateDatasetColumns($file);
 
@@ -237,7 +259,9 @@ class AsosiasiController extends Controller
         $stream = null;
 
         try {
-            $path = $file->store('datasets', 'public');
+            $storedDataset = $this->storeUploadedDatasetFile($file);
+            $path = $storedDataset['relative_path'];
+            $filePath = $storedDataset['absolute_path'];
 
             $createData = [
                 'nama_proses' => 'Analisis ' . $file->getClientOriginalName(),
@@ -271,7 +295,11 @@ class AsosiasiController extends Controller
 
             $proses = ProsesAnalisis::create($createData);
 
-            $stream = fopen($file->getRealPath(), 'r');
+            if (!$filePath || !is_file($filePath)) {
+                throw new \Exception('File upload tidak ditemukan setelah disimpan ke storage. Silakan pilih ulang file Excel, lalu tekan Proses Analisis lagi.');
+            }
+
+            $stream = fopen($filePath, 'r');
 
             $response = Http::timeout(600)
                 ->attach('file', $stream, $file->getClientOriginalName())
@@ -524,18 +552,112 @@ public function downloadHasilRiwayat($id)
         return $labels[$groupName] ?? str_replace('_', ' ', (string) $groupName);
     }
 
+    private function isAllowedExcelFile($file)
+    {
+        if (!$file || !$file->isValid()) {
+            return false;
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        return in_array($extension, ['xls', 'xlsx'], true);
+    }
+
+    private function storeUploadedDatasetFile($file)
+    {
+        if (!$file || !$file->isValid()) {
+            throw new \Exception('File upload tidak valid atau gagal diterima oleh server. Silakan pilih ulang file Excel.');
+        }
+
+        $sourcePath = $file->getPathname();
+
+        if (!$sourcePath || !is_file($sourcePath)) {
+            $sourcePath = $file->getRealPath();
+        }
+
+        if (!$sourcePath || !is_file($sourcePath)) {
+            throw new \Exception('File upload tidak ditemukan oleh sistem. Silakan pilih ulang file Excel, lalu tekan Proses Analisis lagi.');
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension() ?: pathinfo($file->getClientOriginalName(), PATHINFO_EXTENSION));
+
+        if (!in_array($extension, ['xlsx', 'xls'], true)) {
+            throw new \Exception('Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.');
+        }
+
+        $storageDirectory = storage_path('app/public/datasets');
+
+        if (!is_dir($storageDirectory)) {
+            mkdir($storageDirectory, 0775, true);
+        }
+
+        $safeOriginalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeOriginalName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $safeOriginalName) ?: 'dataset';
+
+        $storedFileName = now()->format('Ymd_His') . '_' . uniqid() . '_' . $safeOriginalName . '.' . $extension;
+        $absolutePath = $storageDirectory . DIRECTORY_SEPARATOR . $storedFileName;
+
+        if (!copy($sourcePath, $absolutePath)) {
+            throw new \Exception('File upload gagal disimpan ke storage. Pastikan folder storage/app/public/datasets bisa ditulis.');
+        }
+
+        return [
+            'relative_path' => 'datasets/' . $storedFileName,
+            'absolute_path' => $absolutePath,
+        ];
+    }
+
     private function validateDatasetColumns($file)
     {
         try {
-            $sheets = Excel::toArray([], $file);
+            /*
+             * Pakai PhpSpreadsheet langsung supaya pembacaan Excel lebih stabil
+             * dan tidak terlalu bergantung pada MIME type yang kadang berbeda antar laptop.
+             */
+            $filePath = $file->getPathname();
+
+            if (!$filePath || !is_file($filePath)) {
+                return [
+                    'valid' => false,
+                    'message' => 'File upload tidak ditemukan oleh sistem. Silakan pilih ulang file Excel, lalu tekan Proses Analisis lagi.',
+                ];
+            }
+
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReaderForFile($filePath);
+            $reader->setReadDataOnly(true);
+
+            $spreadsheet = $reader->load($filePath);
+            $sheet = [];
+
+            foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
+                $rows = $worksheet->toArray(null, true, true, false);
+
+                $hasFilledCell = collect($rows)->flatten()->contains(function ($value) {
+                    return trim((string) $value) !== '';
+                });
+
+                if ($hasFilledCell) {
+                    $sheet = $rows;
+                    break;
+                }
+            }
+
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
         } catch (\Throwable $e) {
+            \Log::error('Excel read error: ' . $e->getMessage(), [
+                'file' => $file ? $file->getClientOriginalName() : null,
+                'extension' => $file ? $file->getClientOriginalExtension() : null,
+                'mime' => $file ? $file->getMimeType() : null,
+                'client_mime' => $file ? $file->getClientMimeType() : null,
+                'pathname' => $file ? $file->getPathname() : null,
+            ]);
+
             return [
                 'valid' => false,
-                'message' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
+                'message' => 'File Excel gagal dibaca. Pastikan file bukan hasil rename manual, tidak rusak, dan sudah disimpan ulang sebagai Excel Workbook (.xlsx/.xls). Detail: ' . $e->getMessage(),
             ];
         }
-
-        $sheet = $sheets[0] ?? [];
 
         if (!is_array($sheet) || count($sheet) < 2) {
             return [
