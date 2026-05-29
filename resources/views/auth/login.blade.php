@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — DRW Skincare SPK</title>
+    <title>Login — DRW Skincare</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen flex" style="background: linear-gradient(135deg, #fff0f5 0%, #ffe4ee 50%, #ffd6e8 100%);">
