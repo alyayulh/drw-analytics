@@ -323,7 +323,7 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
                     <svg viewBox="0 0 16 16"><path d="M3 11L8 5l5 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>
                   <span class="guide-panel-name">Benefit</span>
-                  <span class="guide-panel-badge">gitNilai tertinggi = terbaik</span>
+                  <span class="guide-panel-badge">tNilai tertinggi = terbaik</span>
                 </div>
 
                 <div class="guide-question">

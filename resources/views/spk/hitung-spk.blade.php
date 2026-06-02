@@ -82,8 +82,9 @@ input[type="range"] { width: 100%; height: 5px; border-radius: 10px; outline: no
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--pink); cursor: pointer; box-shadow: 0 1px 4px rgba(232,0,90,.35); border: 2px solid #fff; }
 input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--pink); cursor: pointer; border: 2px solid #fff; }
 
-.info-box { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-radius: 8px; font-size: 12px; }
-.info-box svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; margin-top: 1px; }
+.info-box { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-radius: 8px; font-size: 12px; line-height: 1.5; }
+.info-box svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; margin-top: 2px; }
+.info-box > span, .info-box > div { flex: 1; min-width: 0; }
 .info-amber { background: var(--amber-light); color: #92400e; border: 1px solid #fcd34d; }
 .info-green { background: var(--green-light); color: #065f46; border: 1px solid #6ee7b7; }
 .info-pink  { background: var(--pink-light);  color: var(--pink-dark); border: 1px solid var(--pink-soft); }
@@ -100,6 +101,200 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 .btn-pink:hover { opacity: .9; }
 .btn-pink:disabled { opacity: .45; cursor: not-allowed; }
 .btn-sm { padding: 5px 12px; font-size: 11px; }
+
+
+/* WARNING PRODUK BELUM LENGKAP */
+.calculation-warning {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, rgba(232, 0, 90, .10), transparent 42%),
+    linear-gradient(135deg, #fff6fa 0%, #ffe7ef 100%);
+  border: 1px solid #f9a8c9;
+  box-shadow: 0 10px 26px rgba(232, 0, 90, .10);
+  overflow: hidden;
+}
+
+.calculation-warning::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 4px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(180deg, var(--pink), var(--pink-mid));
+}
+
+.calculation-warning-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: var(--pink);
+  border: 1px solid #f9a8c9;
+  box-shadow: 0 6px 16px rgba(232, 0, 90, .10);
+}
+
+.calculation-warning-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+}
+
+.calculation-warning-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.calculation-warning-title {
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #9f1239;
+  margin-bottom: 4px;
+}
+
+.calculation-warning-desc {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #7f1d1d;
+}
+
+.calculation-warning-desc strong {
+  color: #be123c;
+  font-weight: 800;
+}
+
+.calculation-warning-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-top: 10px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--pink);
+  border: 1px solid #f9a8c9;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: all .15s ease;
+}
+
+.calculation-warning-action:hover {
+  background: #fff5f8;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(232, 0, 90, .10);
+}
+
+
+/* WARNING MINIMAL PRODUK SIAP HITUNG */
+.calculation-minimum {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, rgba(245, 158, 11, .16), transparent 44%),
+    linear-gradient(135deg, #fffbeb 0%, #fff7d6 100%);
+  border: 1px solid #fbbf24;
+  box-shadow: 0 10px 24px rgba(245, 158, 11, .12);
+  overflow: hidden;
+}
+
+.calculation-minimum::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 4px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(180deg, #f59e0b, #f97316);
+}
+
+.calculation-minimum-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: #d97706;
+  border: 1px solid #fcd34d;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, .14);
+}
+
+.calculation-minimum-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+}
+
+.calculation-minimum-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.calculation-minimum-title {
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #78350f;
+  margin-bottom: 4px;
+}
+
+.calculation-minimum-desc {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #92400e;
+}
+
+.calculation-minimum-desc strong {
+  color: #b45309;
+  font-weight: 800;
+}
+
+.calculation-minimum-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-top: 10px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: all .15s ease;
+}
+
+.calculation-minimum-action:hover {
+  background: #fffbeb;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(245, 158, 11, .14);
+}
 
 /* MATRIKS */
 .matrix-wrap { overflow-y: auto; overflow-x: auto; max-height: 430px; }
@@ -350,18 +545,54 @@ tr:hover td { background: var(--pink-light); }
           <div class="card-body">
             {{-- STRICT VALIDATION: produk dipilih tapi belum lengkap --}}
             @if(($produkDipilihBelumLengkap ?? 0) > 0)
-              <div class="info-box info-red" style="margin-bottom:14px;background:#ffe6ec;border-left:3px solid var(--pink);padding:10px 14px;border-radius:6px">
-                <svg viewBox="0 0 16 16" width="14" height="14" style="display:inline;vertical-align:-2px"><path d="M8 2L2 14h12L8 2z" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v3M8 11v.5" stroke="currentColor" stroke-linecap="round"/></svg>
-                <strong>Ada {{ $produkDipilihBelumLengkap }} produk dipilih yang belum dinilai lengkap.</strong>
-                Lengkapi dulu penilaian di menu <b>Input Permintaan</b> sebelum menjalankan perhitungan.
+              <div class="calculation-warning">
+                <div class="calculation-warning-icon" aria-hidden="true">
+                  <svg viewBox="0 0 16 16">
+                    <path d="M8 2L2 14h12L8 2z" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 6.5v3M8 11.5v.2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+
+                <div class="calculation-warning-content">
+                  <div class="calculation-warning-title">
+                    Ada {{ $produkDipilihBelumLengkap }} produk yang belum dinilai lengkap
+                  </div>
+
+                  <div class="calculation-warning-desc">
+                    Lengkapi penilaian produk terlebih dahulu pada menu
+                    <strong>Input Permintaan</strong> sebelum menjalankan perhitungan.
+                  </div>
+
+                  <a href="{{ route('input.index') }}" class="calculation-warning-action">
+                    Buka Input Permintaan →
+                  </a>
+                </div>
               </div>
             @endif
 
             @if($produkLengkap < 2)
-              <div class="info-box info-amber" style="margin-bottom:14px">
-                <svg viewBox="0 0 16 16"><path d="M8 2L2 14h12L8 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v3M8 11v.5" stroke-linecap="round"/></svg>
-                Minimal 2 produk siap untuk dihitung. Saat ini: <b>{{ $produkLengkap }}</b> produk siap.
-                Pastikan produk sudah dipilih di menu <b>Input Permintaan</b> dan sudah dinilai semua kriterianya.
+              <div class="calculation-minimum">
+                <div class="calculation-minimum-icon" aria-hidden="true">
+                  <svg viewBox="0 0 16 16">
+                    <path d="M8 2L2 14h12L8 2z" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 6.5v3M8 11.5v.2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+
+                <div class="calculation-minimum-content">
+                  <div class="calculation-minimum-title">
+                    Minimal 2 produk siap untuk dihitung
+                  </div>
+
+                  <div class="calculation-minimum-desc">
+                    Saat ini baru <strong>{{ $produkLengkap }}</strong> produk siap.
+                    Pilih produk di menu <strong>Input Permintaan</strong>, lalu pastikan semua kriterianya sudah dinilai.
+                  </div>
+
+                  <a href="{{ route('input.index') }}" class="calculation-minimum-action">
+                    Buka Input Permintaan →
+                  </a>
+                </div>
               </div>
             @endif
 
@@ -518,9 +749,10 @@ function updateTotalUI(total) {
 
   // Tombol & input
   const siapProduk = {{ $produkLengkap }} >= 2;
+  const tidakAdaProdukBelumLengkap = {{ ($produkDipilihBelumLengkap ?? 0) }} === 0;
   const btn   = document.getElementById('btn-hitung');
   const input = document.querySelector('input[name="periode_data"]');
-  const aktif = ok && siapProduk;
+  const aktif = ok && siapProduk && tidakAdaProdukBelumLengkap;
   btn.disabled   = !aktif;
   input.disabled = !aktif;
 }

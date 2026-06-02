@@ -406,108 +406,163 @@ class ProdukController extends Controller
      */
     private function resolveKategori(string $namaProduk): ?int
     {
-        $upper = strtoupper($namaProduk);
+        $upper = strtoupper(trim($namaProduk));
+        $upper = str_replace(['’', '‘', '`', '´'], "'", $upper);
+
+        // Paket produk tidak diberi kategori.
+        // Nanti otomatis masuk grup "Tanpa Kategori".
+        if (str_starts_with($upper, 'PAKET')) {
+            return null;
+        }
 
         $rules = [
-            // ── KRIM WAJAH ────────────────────────────────────────────────
-            'DAY ACNE CREAM'            => 'Krim Wajah',
-            'ACNE CREAM'                => 'Krim Wajah',
-            'DAY WHITE CREAM'           => 'Krim Wajah',
-            'DAY PINK CREAM'            => 'Krim Wajah',
-            'DAY CREAM'                 => 'Krim Wajah',
-            'BRIGHTENING CREAM'         => 'Krim Wajah',
-            'SNAIL CREAM'               => 'Krim Wajah',
-            'CNR PLUS'                  => 'Krim Wajah',
-            'RADIANT BRIGHT'            => 'Krim Wajah',
-            'RADIANT GLOW'              => 'Krim Wajah',
-            'SOFT ACNE CREAM'           => 'Krim Wajah',
-            'SOFT BRIGHTENING CREAM'    => 'Krim Wajah',
-            'BREAST CREAM'              => 'Krim Wajah',
-            'ANTI AGING EYE GEL'        => 'Krim Wajah',
+            // PERAWATAN RAMBUT
+            'HAIR SERUM'             => 'Perawatan Rambut',
+            'HAIR TONIC'             => 'Perawatan Rambut',
+            'ALOE VERA SHAMPOO'      => 'Perawatan Rambut',
+            'SHAMPOO'                => 'Perawatan Rambut',
 
-            // ── PEMBERSIH WAJAH ───────────────────────────────────────────
-            'FACIAL WASH'               => 'Pembersih Wajah',
-            'CLEANSING MILK'            => 'Pembersih Wajah',
-            'MICELLAR'                  => 'Pembersih Wajah',
+            // LIP PRODUCT
+            'AMOUR MATTE LIP'        => 'Lip Product',
+            'LIPS CREAM'             => 'Lip Product',
+            'LIP CREAM'              => 'Lip Product',
+            'LIPS CARE'              => 'Lip Product',
+            'LIP CARE'               => 'Lip Product',
+            'LIPGLOSS'               => 'Lip Product',
+            'LIPSTIK'                => 'Lip Product',
 
-            // ── TONER & ESSENCE ───────────────────────────────────────────
+            // SABUN
+            'KOJIC ACID MILK SOAP'   => 'Sabun',
+            'KOJIC SULFUR SOAP'      => 'Sabun',
+            'SULFUR SOAP'            => 'Sabun',
+            'MILK SOAP'              => 'Sabun',
+            'BAMBOO CHARCOAL'        => 'Sabun',
+            'SOAP'                   => 'Sabun',
+
+            // KRIM WAJAH ACNE
+            'ACNE BRIGHTENING CREAM' => 'Krim Wajah Acne',
+            'DAY ACNE CREAM'         => 'Krim Wajah Acne',
+            'DAY CREAM ACNE'         => 'Krim Wajah Acne',
+            'SOFT ACNE CREAM'        => 'Krim Wajah Acne',
+            'ACNE CREAM'             => 'Krim Wajah Acne',
+
+            // KRIM WAJAH BRIGHTENING
+            'SOFT BRIGHTENING CREAM' => 'Krim Wajah Brightening',
+            'BRIGHTENING CREAM'      => 'Krim Wajah Brightening',
+            'DAY WHITE CREAM'        => 'Krim Wajah Brightening',
+            'DAY CREAM WHITE'        => 'Krim Wajah Brightening',
+            'DAY PINK CREAM'         => 'Krim Wajah Brightening',
+            'DAY CREAM PINK'         => 'Krim Wajah Brightening',
+            'RADIANT BRIGHT'         => 'Krim Wajah Brightening',
+            'RADIANT GLOW'           => 'Krim Wajah Brightening',
+
+            // KRIM WAJAH ANTI AGING
+            'SNAIL CREAM'            => 'Krim Wajah Anti Aging',
+            'ANTI AGING EYE GEL'     => 'Krim Wajah Anti Aging',
+
+            // MOISTURIZER & TREATMENT WAJAH
+            'CNR PLUS'               => 'Moisturizer & Treatment Wajah',
+            'DAILY CERAMOIST'        => 'Moisturizer & Treatment Wajah',
+            'MOISTURIZER GEL'        => 'Moisturizer & Treatment Wajah',
+            'GLOWTECH SPICULE'       => 'Moisturizer & Treatment Wajah',
+            'REJUVENATION'           => 'Moisturizer & Treatment Wajah',
+
+            // PEMBERSIH WAJAH
+            'FACIAL WASH'            => 'Pembersih Wajah',
+            'CLEANSING MILK'         => 'Pembersih Wajah',
+            'MILK CLEANSER'          => 'Pembersih Wajah',
+            'MICELLAR CLEAN'         => 'Pembersih Wajah',
+            'MICELLAR WATER'         => 'Pembersih Wajah',
+            'MICELLAR'               => 'Pembersih Wajah',
+
+            // TONER & ESSENCE
             'EXFOLIATING COMPLEX TONER' => 'Toner & Essence',
+            'HYDRATING ESSENCE TONER'   => 'Toner & Essence',
             'HYDRATING ESSENCE'         => 'Toner & Essence',
             'FACE MIST'                 => 'Toner & Essence',
             'T- CHAMOMILE'              => 'Toner & Essence',
             'TONER'                     => 'Toner & Essence',
 
-            // ── SERUM ─────────────────────────────────────────────────────
-            'LUMINOUS BRIGHTENING'      => 'Serum',
-            'BEAUTY DNA SALMON'         => 'Serum',
-            'DNA SALMON EXTRA'          => 'Serum',
-            'GLOWTECH'                  => 'Serum',
-            'SERUM'                     => 'Serum',
+            // EXFOLIATING
+            'EXFOLIATING APPLE'      => 'Exfoliating',
+            'EXFOLIATING STRAWBERRY' => 'Exfoliating',
+            '3 IN 1 EXFOLIATING'     => 'Exfoliating',
+            'EXFOLIATING DERMA'      => 'Exfoliating',
+            'EXFOLIATING GEL'        => 'Exfoliating',
+            'EXFOLIATING'            => 'Exfoliating',
 
-            // ── EXFOLIATING ───────────────────────────────────────────────
-            'EXFOLIATING'               => 'Exfoliating',
+            // MASKER & PEELING
+            'BRIGHTENING PEEL'       => 'Masker & Peeling',
+            'PEEL OFF MASK'          => 'Masker & Peeling',
+            'PEEL OF MASK'           => 'Masker & Peeling',
+            'PEELING GEL'            => 'Masker & Peeling',
+            'GREEN TEA FACE MASK'    => 'Masker & Peeling',
+            'HONEY FACE MASK'        => 'Masker & Peeling',
+            'TEA TREE OIL FACE MASK' => 'Masker & Peeling',
+            'RICE FACE MASK'         => 'Masker & Peeling',
+            'FACE MASK'              => 'Masker & Peeling',
+            'MASK'                   => 'Masker & Peeling',
 
-            // ── MASKER & PEELING ──────────────────────────────────────────
-            'BRIGHTENING PEEL'          => 'Masker & Peeling',
-            'PEEL OFF MASK'             => 'Masker & Peeling',
-            'FACE MASK'                 => 'Masker & Peeling',
-            'RICE FACE MASK'            => 'Masker & Peeling',
+            // SUNSCREEN
+            'SUNSCREEN'              => 'Sunscreen',
+            'SUNCREEN'               => 'Sunscreen',
+            'SUNBLOK'                => 'Sunscreen',
+            'SUNBLOCK'               => 'Sunscreen',
 
-            // ── SUNSCREEN ─────────────────────────────────────────────────
-            'SUNSCREEN'                 => 'Sunscreen',
-            'SUNBLOK'                   => 'Sunscreen',
+            // MAKEUP WAJAH
+            'DAILY COMPACT POWDER'   => 'Makeup Wajah',
+            'COMPACT POWDER'         => 'Makeup Wajah',
+            'SILKY SOFT FACE POWDER' => 'Makeup Wajah',
+            'SILKY SOFT POWDER'      => 'Makeup Wajah',
+            'LIGHT SILKY SOFT POWDER'=> 'Makeup Wajah',
+            'LIGHTENING SILKY'       => 'Makeup Wajah',
+            'BB -'                   => 'Makeup Wajah',
+            'BB CUSHION'             => 'Makeup Wajah',
+            'BB CREAM'               => 'Makeup Wajah',
+            'BODY FOUNDATION'        => 'Makeup Wajah',
 
-            // ── MAKEUP ────────────────────────────────────────────────────
-            'DAILY COMPACT POWDER'      => 'Makeup',
-            'COMPACT POWDER'            => 'Makeup',
-            'SILKY SOFT FACE POWDER'    => 'Makeup',
-            'LIGHTENING SILKY'          => 'Makeup',
-            'BB -'                      => 'Makeup',
-            'BB CUSHION'                => 'Makeup',
-            'BB CREAM'                  => 'Makeup',
-            'DAY BODY FOUNDATION'       => 'Makeup',
-            'AMOUR MATTE LIP'           => 'Makeup',
-            'LIPS CREAM'                => 'Makeup',
-            'LIPS CARE'                 => 'Makeup',
-            'LIPGLOSS'                  => 'Makeup',
-            'LIPSTIK'                   => 'Makeup',
+            // SERUM WAJAH
+            'LUMINOUS BRIGHTENING'   => 'Serum Wajah',
+            'BEAUTY DNA SALMON'      => 'Serum Wajah',
+            'DNA SALMON EXTRA'       => 'Serum Wajah',
+            'SERUM'                  => 'Serum Wajah',
 
-            // ── PERAWATAN TUBUH ───────────────────────────────────────────
-            'BODY FIRMING'              => 'Perawatan Tubuh',
-            'FIRMING BODY'              => 'Perawatan Tubuh',
-            'DAY BODY LOTION'           => 'Perawatan Tubuh',
-            'NIGHT BODY LOTION'         => 'Perawatan Tubuh',
-            'BODY LOTION'               => 'Perawatan Tubuh',
-            'BODY SCRUB'                => 'Perawatan Tubuh',
-            'BODY WASH'                 => 'Perawatan Tubuh',
-            'HAND BODY'                 => 'Perawatan Tubuh',
-            'LULUR'                     => 'Perawatan Tubuh',
-            'STRETCHMARK'               => 'Perawatan Tubuh',
-            'KOJIC'                     => 'Perawatan Tubuh',
-            'BAMBOO CHARCOAL'           => 'Perawatan Tubuh',
-            'COOLBRIGHT'                => 'Perawatan Tubuh',
-            'MOISTURIZER GEL'           => 'Perawatan Tubuh',
-            'DAILY CERAMOIST'           => 'Perawatan Tubuh',
+            // PERAWATAN TUBUH
+            'BREAST CREAM'           => 'Perawatan Tubuh',
+            'BODY FIRMING'           => 'Perawatan Tubuh',
+            'FIRMING BODY'           => 'Perawatan Tubuh',
+            'DAY BODY LOTION'        => 'Perawatan Tubuh',
+            'NIGHT BODY LOTION'      => 'Perawatan Tubuh',
+            'BODY LOTION'            => 'Perawatan Tubuh',
+            'BODY SCRUB'             => 'Perawatan Tubuh',
+            'BODY WASH'              => 'Perawatan Tubuh',
+            'HAND BODY'              => 'Perawatan Tubuh',
+            'LULUR'                  => 'Perawatan Tubuh',
+            'STRETCH MARK'           => 'Perawatan Tubuh',
+            'STRETCHMARK'            => 'Perawatan Tubuh',
+            'COOLBRIGHT'             => 'Perawatan Tubuh',
+            'DEO HERBA'              => 'Perawatan Tubuh',
 
-            // ── PERAWATAN RAMBUT ──────────────────────────────────────────
-            // HAIR SERUM harus di atas SERUM agar tidak salah masuk Serum
-            'HAIR SERUM'                => 'Perawatan Rambut',
-            'HAIR TONIC'                => 'Perawatan Rambut',
-            'ALOE VERA SHAMPOO'         => 'Perawatan Rambut',
-            'SHAMPOO'                   => 'Perawatan Rambut',
+            // SUPLEMEN & MINUMAN
+            "D'ETAWA"                => 'Suplemen & Minuman',
+            'DETAWA'                 => 'Suplemen & Minuman',
+            'SUSU ETAWA'             => 'Suplemen & Minuman',
+            'DRW KAPSUL'             => 'Suplemen & Minuman',
+            'DRW SLIMMING'           => 'Suplemen & Minuman',
+            'SLIMMING CAPSUL'        => 'Suplemen & Minuman',
+            'KAPSUL GEMUK'           => 'Suplemen & Minuman',
+            'HB DOSTING'             => 'Suplemen & Minuman',
 
-            // ── SUPLEMEN & LAINNYA ────────────────────────────────────────
-            "D'ETAWA"                   => 'Suplemen & Lainnya',
-            'DETAWA'                    => 'Suplemen & Lainnya',
-            'DRW KAPSUL'                => 'Suplemen & Lainnya',
-            'DRW SLIMMING'              => 'Suplemen & Lainnya',
-            'HB DOSTING'                => 'Suplemen & Lainnya',
-            'POUCH'                     => 'Suplemen & Lainnya',
+            // AKSESORIS
+            'POUCH'                  => 'Aksesoris / Pouch',
         ];
 
         foreach ($rules as $keyword => $namaKategori) {
             if (str_contains($upper, strtoupper($keyword))) {
-                $kat = KategoriProduk::firstOrCreate(['nama_kategori' => $namaKategori]);
+                $kat = KategoriProduk::firstOrCreate([
+                    'nama_kategori' => $namaKategori
+                ]);
+
                 return $kat->id_kategori;
             }
         }

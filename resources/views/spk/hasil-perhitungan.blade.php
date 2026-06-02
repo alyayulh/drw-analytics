@@ -258,6 +258,375 @@ tr:hover td { background: var(--pink-light); }
 .sb-logout { margin-left: auto; cursor: pointer; color: var(--text-3); }
 .sb-logout:hover { color: var(--pink); }
 
+
+/* ============================================================
+   VERSI BARU — LAYOUT REKOMENDASI BERBEDA
+   ============================================================ */
+body {
+  background:
+    radial-gradient(circle at 14% 8%, rgba(232, 0, 90, .08), transparent 26%),
+    radial-gradient(circle at 92% 0%, rgba(255, 77, 141, .10), transparent 30%),
+    var(--bg);
+}
+.main { background: transparent; }
+.topbar {
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.content {
+  padding: 30px 34px 44px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+.sb-brand { background: linear-gradient(135deg, #e8005a08, #ff4d8d05); }
+.sb-footer { background: linear-gradient(135deg, #fff5f8, #fff); }
+.nav-item.active {
+  background: linear-gradient(135deg, var(--pink-light), #ffe4ef);
+  color: var(--pink);
+}
+.nav-item:hover { background: var(--pink-light); color: var(--pink-dark); }
+.mode-switcher {
+  display: inline-flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+.mode-btn {
+  background: transparent;
+  border: none;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all .15s ease;
+  font-family: inherit;
+}
+.mode-btn.active {
+  background: var(--surface);
+  color: var(--pink);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.mode-btn:hover:not(.active) { color: var(--text-2); }
+.btn { border-radius: 8px; border-color: var(--border-strong); }
+.btn-pink {
+  background: linear-gradient(135deg, var(--pink), var(--pink-mid));
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(232,0,90,.25);
+}
+.card {
+  border-radius: var(--radius-lg);
+  border-color: var(--border);
+  box-shadow: var(--shadow);
+}
+.hero-box {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, .8fr);
+  gap: 22px;
+  align-items: stretch;
+  padding: 28px;
+  margin-bottom: 22px;
+  border-radius: 28px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255,255,255,.22), transparent 24%),
+    radial-gradient(circle at 92% 18%, rgba(255,214,232,.35), transparent 25%),
+    linear-gradient(135deg, #b3004a 0%, #e8005a 50%, #ff4d8d 100%);
+  box-shadow: 0 24px 50px rgba(232,0,90,.20);
+}
+.hero-box::after {
+  content: "";
+  position: absolute;
+  right: -90px;
+  bottom: -110px;
+  width: 260px;
+  height: 260px;
+  border-radius: 999px;
+  border: 34px solid rgba(255,255,255,.12);
+}
+.hero-main, .hero-summary { position: relative; z-index: 1; }
+.hero-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 150px;
+}
+.hero-label {
+  width: fit-content;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.28);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.hero-name {
+  font-size: clamp(25px, 3vw, 36px);
+  font-weight: 800;
+  letter-spacing: -.8px;
+  line-height: 1.06;
+  margin-bottom: 10px;
+}
+.hero-sub { font-size: 13px; opacity: .88; line-height: 1.6; max-width: 560px; }
+.hero-action-note {
+  margin-top: 16px;
+  width: fit-content;
+  padding: 9px 13px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.17);
+  border: 1px solid rgba(255,255,255,.24);
+  font-size: 12px;
+  font-weight: 700;
+}
+.hero-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-content: center;
+}
+.hero-summary-card {
+  padding: 15px 16px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.25);
+  backdrop-filter: blur(10px);
+}
+.hero-summary-card span {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  opacity: .78;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.hero-summary-card strong { font-size: 22px; font-weight: 800; }
+.hero-summary-wide { grid-column: 1 / -1; }
+.hero-summary-wide strong { font-size: 14px; }
+.meta-row { display: none; }
+.awam-board {
+  display: grid;
+  grid-template-columns: 350px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.insight-panel, .recommend-panel {
+  background: rgba(255,255,255,.94);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  box-shadow: 0 12px 28px rgba(232,0,90,.07);
+}
+.insight-panel {
+  position: sticky;
+  top: 82px;
+  padding: 22px;
+}
+.panel-kicker {
+  color: var(--pink);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.insight-panel h2, .recommend-head h2 {
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: -.35px;
+  margin: 0 0 6px;
+  color: var(--text);
+}
+.insight-panel p, .recommend-head p {
+  color: var(--text-3);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+}
+.summary-stack { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+.summary-tile {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+.summary-tile .tile-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+.tile-copy span { display: block; font-size: 13px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+.tile-copy small { display: block; font-size: 11px; line-height: 1.4; color: var(--text-3); }
+.tile-count { font-size: 28px; line-height: 1; font-weight: 800; color: var(--text); }
+.tile-utama { background: linear-gradient(135deg, #f0fdf4, #fff); border-color: #bbf7d0; }
+.tile-utama .tile-icon { background: #dcfce7; }
+.tile-pertim { background: linear-gradient(135deg, #fff7ed, #fff); border-color: #fed7aa; }
+.tile-pertim .tile-icon { background: #ffedd5; }
+.tile-tunda { background: linear-gradient(135deg, #eff6ff, #fff); border-color: #bfdbfe; }
+.tile-tunda .tile-icon { background: #dbeafe; }
+.recommend-panel { padding: 0; overflow: hidden; }
+.recommend-head {
+  padding: 22px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(232,0,90,.05), rgba(255,77,141,.04));
+}
+.total-products-chip {
+  flex-shrink: 0;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--pink);
+  font-size: 12px;
+  font-weight: 800;
+}
+.recommend-content { padding: 18px 22px 22px; }
+.rec-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 10px;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 800;
+}
+.rec-section-title:first-child { margin-top: 0; }
+.rec-section-title b {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 800;
+}
+.rec-section-title em {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-3);
+  font-style: normal;
+  font-weight: 700;
+}
+.produk-card-awam {
+  position: relative;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 17px;
+  margin-bottom: 10px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.produk-card-awam:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: 0 12px 28px rgba(232,0,90,.07);
+}
+.produk-card-awam.top1 {
+  background: linear-gradient(135deg, #fff5f8 0%, #ffffff 68%);
+  border-color: var(--border-strong);
+  box-shadow: 0 14px 28px rgba(232,0,90,.10);
+}
+.produk-rank-bubble {
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #f0ece8;
+  color: #78625f;
+}
+.produk-rank-bubble.top1 {
+  background: linear-gradient(135deg, var(--pink), var(--pink-mid));
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(245,158,11,.23);
+}
+.produk-rank-bubble.top2 { background: #e5e7eb; color: #374151; }
+.produk-rank-bubble.top3 { background: #ffedd5; color: #9a3412; }
+.produk-info-awam { min-width: 0; }
+.produk-nama-awam {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -.2px;
+  color: var(--text);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.produk-alasan-awam {
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.45;
+}
+.produk-badge-awam {
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.badge-awam-utama { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.badge-awam-pertim { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
+.badge-awam-tunda { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.empty-state-awam {
+  border-radius: 20px;
+  background: #fff;
+  border: 1px dashed var(--border-strong);
+}
+@media (max-width: 1100px) {
+  .hero-box, .awam-board { grid-template-columns: 1fr; }
+  .insight-panel { position: static; }
+}
+@media (max-width: 760px) {
+  .content { padding: 20px 16px 32px; }
+  .topbar { height: auto; min-height: 64px; flex-wrap: wrap; padding: 12px 16px; }
+  .hero-box { padding: 22px; border-radius: 22px; }
+  .hero-summary { grid-template-columns: 1fr; }
+  .produk-card-awam { grid-template-columns: 44px minmax(0,1fr); }
+  .produk-badge-awam { grid-column: 2 / -1; width: fit-content; }
+}
+
 </style>
 </head>
 {{-- 
@@ -378,13 +747,26 @@ tr:hover td { background: var(--pink-light); }
 
     {{-- HERO: PRODUK TERBAIK (tampil di kedua mode, karena ini ringkasan tertinggi) --}}
     <div class="hero-box">
-      <div class="hero-label">🏆 Produk Terbaik</div>
-      <div class="hero-name">{{ $perhitungan->produk_prioritas }}</div>
-      <div class="hero-sub">Produk dikelompokkan berdasarkan performa hasil perhitungan sistem.</div>
-      <div class="meta-row">
-        <div class="meta-item"><b>{{ $perhitungan->jumlah_produk }}</b> produk dihitung</div>
-        <div class="meta-item"><b>{{ $kriterias->count() }}</b> kriteria</div>
-        <div class="meta-item">Waktu proses: <b>{{ \Carbon\Carbon::parse($perhitungan->created_at)->format('d M Y H:i') }}</b></div>
+      <div class="hero-main">
+        <div class="hero-label">🏆 Produk Terbaik</div>
+        <div class="hero-name">{{ $perhitungan->produk_prioritas }}</div>
+        <div class="hero-sub">Produk dengan performa paling kuat berdasarkan hasil perhitungan sistem.</div>
+        <div class="hero-action-note">Cocok dijadikan fokus utama dalam periode promosi ini.</div>
+      </div>
+
+      <div class="hero-summary">
+        <div class="hero-summary-card">
+          <span>Produk Dihitung</span>
+          <strong>{{ $perhitungan->jumlah_produk }}</strong>
+        </div>
+        <div class="hero-summary-card">
+          <span>Kriteria</span>
+          <strong>{{ $kriterias->count() }}</strong>
+        </div>
+        <div class="hero-summary-card hero-summary-wide">
+          <span>Waktu Proses</span>
+          <strong>{{ \Carbon\Carbon::parse($perhitungan->created_at)->format('d M Y H:i') }}</strong>
+        </div>
       </div>
     </div>
 
@@ -456,7 +838,7 @@ tr:hover td { background: var(--pink-light); }
               <div class="priority-title">Prioritas Utama</div>
               <div class="priority-subtitle">Produk bintang lima dengan performa terbaik</div>
             </div>
-            <div class="priority-percentage">Top 25%</div>
+            <div class="priority-percentage">Top 75%</div>
             <div class="priority-body">
               <p>✓ Produk dengan performa <b>tertinggi</b> dibanding yang lain</p>
               <p>✓ <b>Rekomendasi utama</b> untuk dipromosikan</p>
@@ -571,114 +953,118 @@ tr:hover td { background: var(--pink-light); }
     {{-- ========== MODE AWAM (default, bahasa bisnis) ============== --}}
     {{-- ============================================================ --}}
 
-    {{-- Panduan ringkas untuk user awam: jelaskan arti tiap label --}}
-    <div class="mode-awam-only">
-      <div class="guide-awam-title">📌 Panduan Rekomendasi</div>
-      <div class="guide-awam-sub">Setiap produk dikelompokkan ke salah satu kategori berikut</div>
-      <div class="guide-awam">
-        <div class="guide-awam-card ga-utama">
-          <div class="ga-left">
-            <div class="ga-icon">⭐</div>
-            <div class="ga-body">
-              <div class="ga-label">Sangat Direkomendasikan</div>
-              <div class="ga-desc">Produk paling sesuai — siap digunakan atau dipasarkan.</div>
-            </div>
-          </div>
-          <div class="ga-count">{{ $utama->count() }}</div>
-        </div>
-        <div class="guide-awam-card ga-pertim">
-          <div class="ga-left">
-            <div class="ga-icon">⚖️</div>
-            <div class="ga-body">
-              <div class="ga-label">Perlu Pertimbangan</div>
-              <div class="ga-desc">Perlu evaluasi tambahan sebelum keputusan final.</div>
-            </div>
-          </div>
-          <div class="ga-count">{{ $pertimbang->count() }}</div>
-        </div>
-        <div class="guide-awam-card ga-tunda">
-          <div class="ga-left">
-            <div class="ga-icon">⏳</div>
-            <div class="ga-body">
-              <div class="ga-label">Sebaiknya Ditunda</div>
-              <div class="ga-desc">Tunda hingga kondisi lebih optimal.</div>
-            </div>
-          </div>
-          <div class="ga-count">{{ $tunda->count() }}</div>
-        </div>
-      </div>
-    </div>
+    {{-- Layout baru mode awam: ringkasan di kiri, daftar rekomendasi di kanan --}}
+    <div class="awam-board mode-awam-only">
+      <aside class="insight-panel">
+        <div class="panel-kicker">Ringkasan Keputusan</div>
+        <h2>Panduan Rekomendasi</h2>
+        <p>Produk dibagi menjadi tiga kelompok agar keputusan promosi lebih cepat dibaca.</p>
 
-    <div class="card mode-awam-only">
-      <div class="card-hd">
-        <div>
-          <div class="card-title">Rekomendasi Produk Promosi</div>
-          <div class="card-sub">Daftar produk yang sebaiknya diprioritaskan untuk dipromosikan, berdasarkan data penjualan dan stok.</div>
-        </div>
-      </div>
-
-      <div>
-        {{-- KATEGORI 1: SANGAT DIREKOMENDASIKAN --}}
-        @if($utama->count() > 0)
-          <div class="section-title-awam">
-            ⭐ Sangat Direkomendasikan
-            <span class="section-count-pill">{{ $utama->count() }} produk</span>
+        <div class="summary-stack">
+          <div class="summary-tile tile-utama">
+            <div class="tile-icon">⭐</div>
+            <div class="tile-copy">
+              <span>Sangat Direkomendasikan</span>
+              <small>Siap diprioritaskan untuk promosi.</small>
+            </div>
+            <div class="tile-count">{{ $utama->count() }}</div>
           </div>
-          @foreach($utama as $h)
-            <div class="produk-card-awam {{ $h->ranking == 1 ? 'top1' : '' }}">
-              <div class="produk-rank-bubble {{ $h->ranking == 1 ? 'top1' : ($h->ranking == 2 ? 'top2' : ($h->ranking == 3 ? 'top3' : '')) }}">
-                #{{ $h->ranking }}
+
+          <div class="summary-tile tile-pertim">
+            <div class="tile-icon">⚖️</div>
+            <div class="tile-copy">
+              <span>Perlu Pertimbangan</span>
+              <small>Layak dicek lagi sebelum final.</small>
+            </div>
+            <div class="tile-count">{{ $pertimbang->count() }}</div>
+          </div>
+
+          <div class="summary-tile tile-tunda">
+            <div class="tile-icon">⏳</div>
+            <div class="tile-copy">
+              <span>Sebaiknya Ditunda</span>
+              <small>Belum menjadi prioritas promosi.</small>
+            </div>
+            <div class="tile-count">{{ $tunda->count() }}</div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="recommend-panel">
+        <div class="recommend-head">
+          <div>
+            <div class="panel-kicker">Hasil Rekomendasi</div>
+            <h2>Daftar Prioritas Produk</h2>
+            <p>Urutan produk berdasarkan hasil perhitungan dan kategori promosi.</p>
+          </div>
+          <div class="total-products-chip">{{ $hasil->count() }} produk</div>
+        </div>
+
+        <div class="recommend-content">
+          {{-- KATEGORI 1: SANGAT DIREKOMENDASIKAN --}}
+          @if($utama->count() > 0)
+            <div class="rec-section-title title-utama">
+              <span>⭐ Sangat Direkomendasikan</span>
+              <b>{{ $utama->count() }} produk</b>
+            </div>
+            @foreach($utama as $h)
+              <div class="produk-card-awam {{ $h->ranking == 1 ? 'top1' : '' }}">
+                <div class="produk-rank-bubble {{ $h->ranking == 1 ? 'top1' : ($h->ranking == 2 ? 'top2' : ($h->ranking == 3 ? 'top3' : '')) }}">
+                  #{{ $h->ranking }}
+                </div>
+                <div class="produk-info-awam">
+                  <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
+                  <div class="produk-alasan-awam">{{ $generateNarasi($h->detailPerhitungan) }}</div>
+                </div>
+                <span class="produk-badge-awam badge-awam-utama">Direkomendasikan</span>
               </div>
-              <div class="produk-info-awam">
-                <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
-              </div>
-              <span class="produk-badge-awam badge-awam-utama">Sangat Direkomendasikan</span>
-            </div>
-          @endforeach
-        @endif
+            @endforeach
+          @endif
 
-        {{-- KATEGORI 2: PERLU PERTIMBANGAN --}}
-        @if($pertimbang->count() > 0)
-          <div class="section-title-awam">
-            ⚖️ Perlu Pertimbangan
-            <span class="section-count-pill">{{ $pertimbang->count() }} produk</span>
-          </div>
-          @foreach($pertimbang as $h)
-            <div class="produk-card-awam">
-              <div class="produk-rank-bubble">#{{ $h->ranking }}</div>
-              <div class="produk-info-awam">
-                <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
-              </div>
-              <span class="produk-badge-awam badge-awam-pertim">Perlu Pertimbangan</span>
+          {{-- KATEGORI 2: PERLU PERTIMBANGAN --}}
+          @if($pertimbang->count() > 0)
+            <div class="rec-section-title title-pertim">
+              <span>⚖️ Perlu Pertimbangan</span>
+              <b>{{ $pertimbang->count() }} produk</b>
             </div>
-          @endforeach
-        @endif
-
-        {{-- KATEGORI 3: SEBAIKNYA DITUNDA (collapse default) --}}
-        @if($tunda->count() > 0)
-          <div class="section-title-awam" style="cursor:pointer" onclick="toggleTunda()">
-            ⏳ Sebaiknya Ditunda
-            <span class="section-count-pill">{{ $tunda->count() }} produk</span>
-            <span style="margin-left:auto;font-size:11px;color:var(--text-3);font-weight:600" id="tunda-toggle-label">Klik untuk lihat ▾</span>
-          </div>
-          <div id="tunda-list" style="display:none">
-            @foreach($tunda as $h)
+            @foreach($pertimbang as $h)
               <div class="produk-card-awam">
                 <div class="produk-rank-bubble">#{{ $h->ranking }}</div>
                 <div class="produk-info-awam">
                   <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
+                  <div class="produk-alasan-awam">{{ $generateNarasi($h->detailPerhitungan) }}</div>
                 </div>
-                <span class="produk-badge-awam badge-awam-tunda">Ditunda</span>
+                <span class="produk-badge-awam badge-awam-pertim">Pertimbangkan</span>
               </div>
             @endforeach
-          </div>
-        @endif
+          @endif
 
-        {{-- Empty state kalau tidak ada produk sama sekali --}}
-        @if($utama->count() === 0 && $pertimbang->count() === 0 && $tunda->count() === 0)
-          <div class="empty-state-awam">Belum ada hasil perhitungan untuk ditampilkan.</div>
-        @endif
-      </div>
+          {{-- KATEGORI 3: SEBAIKNYA DITUNDA --}}
+          @if($tunda->count() > 0)
+            <div class="rec-section-title title-tunda" onclick="toggleTunda()" style="cursor:pointer">
+              <span>⏳ Sebaiknya Ditunda</span>
+              <b>{{ $tunda->count() }} produk</b>
+              <em id="tunda-toggle-label">Klik untuk lihat ▾</em>
+            </div>
+            <div id="tunda-list" style="display:none">
+              @foreach($tunda as $h)
+                <div class="produk-card-awam">
+                  <div class="produk-rank-bubble">#{{ $h->ranking }}</div>
+                  <div class="produk-info-awam">
+                    <div class="produk-nama-awam">{{ $h->nama_produk }}</div>
+                    <div class="produk-alasan-awam">{{ $generateNarasi($h->detailPerhitungan) }}</div>
+                  </div>
+                  <span class="produk-badge-awam badge-awam-tunda">Ditunda</span>
+                </div>
+              @endforeach
+            </div>
+          @endif
+
+          @if($utama->count() === 0 && $pertimbang->count() === 0 && $tunda->count() === 0)
+            <div class="empty-state-awam">Belum ada hasil perhitungan untuk ditampilkan.</div>
+          @endif
+        </div>
+      </section>
     </div>
 
     {{-- ============================================================ --}}
