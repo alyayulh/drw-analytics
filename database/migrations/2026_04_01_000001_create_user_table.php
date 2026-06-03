@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('username', 100)->unique();
             $table->string('password', 255);
             $table->enum('role', ['Admin', 'Manajer'])->default('Manajer');
-            $table->enum('status', ['Aktif', 'Nonaktif'])->default('Aktif');
             $table->timestamps(); // created_at & updated_at
         });
 
@@ -28,7 +27,6 @@ return new class extends Migration
                 'username'     => 'admin',
                 'password'     => Hash::make('admin123'),
                 'role'         => 'Admin',
-                'status'       => 'Aktif',
                 'created_at'   => now(),
                 'updated_at'   => now(),
             ],
@@ -37,7 +35,6 @@ return new class extends Migration
                 'username'     => 'manajer',
                 'password'     => Hash::make('drw2025'),
                 'role'         => 'Manajer',
-                'status'       => 'Aktif',
                 'created_at'   => now(),
                 'updated_at'   => now(),
             ],

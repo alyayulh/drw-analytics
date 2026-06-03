@@ -45,14 +45,8 @@ class AuthController extends Controller
             ])->redirectTo('/login');
         }
 
-        // 4) Cek status user
-        if (isset($user->status) && $user->status === 'Nonaktif') {
-            throw ValidationException::withMessages([
-                'username' => 'Akun Anda telah dinonaktifkan. Hubungi administrator.',
-            ])->redirectTo('/login');
-        }
 
-        // 5) Login user secara manual karena kita sudah verifikasi sendiri
+        // 4) Login user secara manual karena kita sudah verifikasi sendiri
         Auth::login($user);
         $request->session()->regenerate();
         $request->session()->put('auth.user_id', $user->id_user);

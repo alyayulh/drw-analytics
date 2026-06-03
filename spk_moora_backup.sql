@@ -329,7 +329,6 @@ CREATE TABLE `user` (
   `email` varchar(150) NOT NULL,
   `password` varchar(255) NOT NULL,
   `role` enum('Admin','Manajer') NOT NULL DEFAULT 'Admin',
-  `status` enum('Aktif','Nonaktif') NOT NULL DEFAULT 'Aktif',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_user`),
