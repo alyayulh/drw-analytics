@@ -27,7 +27,7 @@
 
     <div class="page-header">
         <h1>Riwayat Analisis</h1>
-        <p>Lihat dan kelola riwayat analisis pola hubungan dari data transaksi yang telah dilakukan</p>
+        <p>Lihat dan kelola riwayat analisis asosiasi yang telah dilakukan</p>
     </div>
 
     @if (session('success'))
@@ -38,7 +38,7 @@
                           stroke="currentColor"
                           stroke-width="2.6"
                           stroke-linecap="round"
-                          stroke-linejoin="round"/>
+                          stroke-linejoin="round" />
                 </svg>
             </div>
 
@@ -52,11 +52,11 @@
                     <path d="M18 6L6 18"
                           stroke="currentColor"
                           stroke-width="2.2"
-                          stroke-linecap="round"/>
+                          stroke-linecap="round" />
                     <path d="M6 6l12 12"
                           stroke="currentColor"
                           stroke-width="2.2"
-                          stroke-linecap="round"/>
+                          stroke-linecap="round" />
                 </svg>
             </button>
         </div>
@@ -69,14 +69,14 @@
                     <path d="M12 8v5"
                           stroke="currentColor"
                           stroke-width="2.4"
-                          stroke-linecap="round"/>
+                          stroke-linecap="round" />
                     <path d="M12 16.5h.01"
                           stroke="currentColor"
                           stroke-width="3"
-                          stroke-linecap="round"/>
+                          stroke-linecap="round" />
                     <circle cx="12" cy="12" r="9"
                             stroke="currentColor"
-                            stroke-width="2"/>
+                            stroke-width="2" />
                 </svg>
             </div>
 
@@ -90,11 +90,11 @@
                     <path d="M18 6L6 18"
                           stroke="currentColor"
                           stroke-width="2.2"
-                          stroke-linecap="round"/>
+                          stroke-linecap="round" />
                     <path d="M6 6l12 12"
                           stroke="currentColor"
                           stroke-width="2.2"
-                          stroke-linecap="round"/>
+                          stroke-linecap="round" />
                 </svg>
             </button>
         </div>
@@ -196,7 +196,11 @@
                         $status = data_get($item, 'status', '-');
 
                         $statusLower = strtolower(trim((string) $status));
-                        $canDownload = $id && in_array($statusLower, ['selesai', 'berhasil', 'success'], true);
+
+                        $isSuccessStatus = in_array($statusLower, ['selesai', 'berhasil', 'success'], true);
+                        $isFailedStatus = in_array($statusLower, ['gagal', 'failed', 'error'], true);
+
+                        $canDownload = $id && $isSuccessStatus;
                     @endphp
 
                     <tr class="riwayat-row"
@@ -223,9 +227,15 @@
                         </td>
 
                         <td>
-                            <span class="status-badge {{ $canDownload ? 'status-normal' : 'status-anomaly' }}">
-                                {{ $status }}
-                            </span>
+                            @if ($isFailedStatus)
+                                <span class="status-badge status-anomaly">
+                                    Gagal
+                                </span>
+                            @else
+                                <span class="status-badge status-normal">
+                                    {{ $status ?: 'Selesai' }}
+                                </span>
+                            @endif
                         </td>
 
                         <td>
@@ -234,334 +244,287 @@
                                     <a href="{{ route('asosiasi.riwayat.detail', $id) }}"
                                        class="detail-icon"
                                        title="Lihat Detail">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             viewBox="0 0 24 24"
-                                             fill="none"
-                                             stroke="currentColor"
-                                             stroke-width="2"
-                                             stroke-linecap="round"
-                                             stroke-linejoin="round">
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
-                                            <circle cx="12" cy="12" r="3"/>
+                                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+                                                  stroke="currentColor"
+                                                  stroke-width="2"
+                                                  stroke-linejoin="round" />
+                                            <circle cx="12" cy="12" r="3"
+                                                    stroke="currentColor"
+                                                    stroke-width="2" />
                                         </svg>
                                     </a>
-                                @endif
 
-                                @if ($canDownload)
-                                    <a href="{{ route('asosiasi.riwayat.download', $id) }}"
-                                       class="download-icon"
-                                       title="Unduh hasil analisis">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             viewBox="0 0 24 24"
-                                             fill="none"
-                                             stroke="currentColor"
-                                             stroke-width="2"
-                                             stroke-linecap="round"
-                                             stroke-linejoin="round">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                            <polyline points="7 10 12 15 17 10"/>
-                                            <line x1="12" y1="15" x2="12" y2="3"/>
-                                        </svg>
-                                    </a>
-                                @else
-                                    <button type="button"
-                                            class="disabled-download-icon"
-                                            title="Hasil tidak dapat diunduh karena analisis belum berhasil"
-                                            disabled>
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             viewBox="0 0 24 24"
-                                             fill="none"
-                                             stroke="currentColor"
-                                             stroke-width="2"
-                                             stroke-linecap="round"
-                                             stroke-linejoin="round">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                            <polyline points="7 10 12 15 17 10"/>
-                                            <line x1="12" y1="15" x2="12" y2="3"/>
-                                        </svg>
-                                    </button>
-                                @endif
+                                    @if ($canDownload)
+                                        <a href="{{ route('asosiasi.riwayat.download', $id) }}"
+                                           class="download-icon"
+                                           title="Unduh Hasil">
+                                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <path d="M12 3v11m0 0 4-4m-4 4-4-4"
+                                                      stroke="currentColor"
+                                                      stroke-width="2"
+                                                      stroke-linecap="round"
+                                                      stroke-linejoin="round" />
+                                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+                                                      stroke="currentColor"
+                                                      stroke-width="2"
+                                                      stroke-linecap="round" />
+                                            </svg>
+                                        </a>
+                                    @else
+                                        <span class="disabled-download-icon" title="Hasil belum tersedia">
+                                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <path d="M12 3v11m0 0 4-4m-4 4-4-4"
+                                                      stroke="currentColor"
+                                                      stroke-width="2"
+                                                      stroke-linecap="round"
+                                                      stroke-linejoin="round" />
+                                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+                                                      stroke="currentColor"
+                                                      stroke-width="2"
+                                                      stroke-linecap="round" />
+                                            </svg>
+                                        </span>
+                                    @endif
 
-                                @if ($id)
                                     <form action="{{ route('asosiasi.riwayat.destroy', $id) }}"
                                           method="POST"
                                           class="delete-form"
-                                          onsubmit="return confirm('Yakin ingin menghapus riwayat analisis ini? Data yang sudah dihapus tidak bisa dikembalikan.');">
+                                          onsubmit="return confirm('Yakin ingin menghapus riwayat analisis ini? Data yang sudah dihapus tidak dapat dikembalikan.')">
                                         @csrf
                                         @method('DELETE')
 
-                                        <button type="submit"
-                                                class="delete-icon"
-                                                title="Hapus Riwayat">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 viewBox="0 0 24 24"
-                                                 fill="none"
-                                                 stroke="currentColor"
-                                                 stroke-width="2"
-                                                 stroke-linecap="round"
-                                                 stroke-linejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                                                <path d="M10 11v6"></path>
-                                                <path d="M14 11v6"></path>
-                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                        <button type="submit" class="delete-icon" title="Hapus Riwayat">
+                                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <path d="M4 7h16"
+                                                      stroke="currentColor"
+                                                      stroke-width="2"
+                                                      stroke-linecap="round" />
+                                                <path d="M10 11v6"
+                                                      stroke="currentColor"
+                                                      stroke-width="2"
+                                                      stroke-linecap="round" />
+                                                <path d="M14 11v6"
+                                                      stroke="currentColor"
+                                                      stroke-width="2"
+                                                      stroke-linecap="round" />
+                                                <path d="M6 7l1 14h10l1-14"
+                                                      stroke="currentColor"
+                                                      stroke-width="2"
+                                                      stroke-linejoin="round" />
+                                                <path d="M9 7V4h6v3"
+                                                      stroke="currentColor"
+                                                      stroke-width="2"
+                                                      stroke-linejoin="round" />
                                             </svg>
                                         </button>
                                     </form>
+                                @else
+                                    <span>-</span>
                                 @endif
                             </div>
                         </td>
                     </tr>
                 @empty
-                    <tr id="emptyRiwayatRow">
-                        <td colspan="9" style="text-align: center; padding: 32px;">
+                    <tr id="emptyRiwayatRowStatic">
+                        <td colspan="9" style="text-align: center;">
                             Belum ada riwayat analisis.
                         </td>
                     </tr>
                 @endforelse
 
-                @if ($riwayats->isNotEmpty())
-                    <tr id="noFilterResultRow" style="display: none;">
-                        <td colspan="9" style="text-align: center; padding: 32px;">
-                            Data riwayat tidak ditemukan.
-                        </td>
-                    </tr>
-                @endif
+                <tr id="emptyRiwayatRow" style="display: none;">
+                    <td colspan="9" style="text-align: center;">
+                        Data riwayat tidak ditemukan.
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
 
-    @if ($riwayats->isNotEmpty())
-        <div class="riwayat-pagination" id="riwayatPagination">
-            <button type="button" id="prevRiwayatPage" class="riwayat-pagination-btn">
-                ‹ Sebelumnya
-            </button>
+    <div class="riwayat-pagination">
+        <button type="button" id="prevRiwayatPage" class="riwayat-pagination-btn">
+            ‹ Sebelumnya
+        </button>
 
-            <span id="riwayatPageInfo" class="riwayat-pagination-info">
-                1-10 dari {{ $riwayats->count() }}
-            </span>
+        <span id="riwayatPageInfo" class="riwayat-pagination-info">
+            1-10 dari {{ $riwayats->count() }}
+        </span>
 
-            <button type="button" id="nextRiwayatPage" class="riwayat-pagination-btn">
-                Berikutnya ›
-            </button>
-        </div>
-    @endif
-
+        <button type="button" id="nextRiwayatPage" class="riwayat-pagination-btn">
+            Berikutnya ›
+        </button>
+    </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const toast = document.getElementById('riwayatToast');
-
-        if (toast && toast.dataset.show === 'true') {
-            setTimeout(function () {
-                toast.classList.add('show');
-            }, 150);
-
-            const closeToast = toast.querySelector('.riwayat-toast-close');
-
-            if (closeToast) {
-                closeToast.addEventListener('click', function () {
-                    toast.classList.remove('show');
-
-                    setTimeout(function () {
-                        toast.remove();
-                    }, 250);
-                });
-            }
-
-            setTimeout(function () {
-                if (toast && toast.parentElement) {
-                    toast.classList.remove('show');
-
-                    setTimeout(function () {
-                        if (toast && toast.parentElement) {
-                            toast.remove();
-                        }
-                    }, 250);
-                }
-            }, 3500);
-        }
-
-        const searchInput = document.getElementById('searchRiwayat');
-        const dateInput = document.getElementById('filterTanggal');
-        const sortSelect = document.getElementById('sortRiwayat');
-        const tbody = document.getElementById('riwayatTableBody');
-        const noFilterResultRow = document.getElementById('noFilterResultRow');
-
-        const prevPageBtn = document.getElementById('prevRiwayatPage');
-        const nextPageBtn = document.getElementById('nextRiwayatPage');
-        const pageInfo = document.getElementById('riwayatPageInfo');
-
-        const rowsPerPage = 10;
-        let currentPage = 1;
-        let filteredRows = [];
-
-        if (!tbody) {
-            return;
-        }
-
-        function getRows() {
-            return Array.from(tbody.querySelectorAll('.riwayat-row'));
-        }
-
-        function applySort() {
-            const rows = getRows();
-            const sortValue = sortSelect ? sortSelect.value : 'terbaru';
-
-            rows.sort(function (a, b) {
-                const dateA = a.dataset.date || '';
-                const dateB = b.dataset.date || '';
-
-                const idA = parseInt(a.dataset.id || '0', 10);
-                const idB = parseInt(b.dataset.id || '0', 10);
-
-                if (sortValue === 'terlama') {
-                    const dateCompare = dateA.localeCompare(dateB);
-
-                    if (dateCompare !== 0) {
-                        return dateCompare;
-                    }
-
-                    return idA - idB;
-                }
-
-                const dateCompare = dateB.localeCompare(dateA);
-
-                if (dateCompare !== 0) {
-                    return dateCompare;
-                }
-
-                return idB - idA;
-            });
-
-            rows.forEach(function (row) {
-                tbody.appendChild(row);
-            });
-
-            if (noFilterResultRow) {
-                tbody.appendChild(noFilterResultRow);
-            }
-        }
-
-        function getFilteredRows() {
-            const keyword = searchInput ? searchInput.value.toLowerCase().trim() : '';
-            const selectedDate = dateInput ? dateInput.value : '';
-            const rows = getRows();
-
-            return rows.filter(function (row) {
-                const fileName = row.dataset.file || '';
-                const rowDate = row.dataset.date || '';
-
-                const matchKeyword = keyword === '' || fileName.includes(keyword);
-                const matchDate = selectedDate === '' || rowDate === selectedDate;
-
-                return matchKeyword && matchDate;
-            });
-        }
-
-        function hideAllRows() {
-            getRows().forEach(function (row) {
-                row.style.display = 'none';
-            });
-        }
-
-        function renderTablePage() {
-            hideAllRows();
-
-            const totalRows = filteredRows.length;
-            const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
-
-            if (currentPage > totalPages) {
-                currentPage = totalPages;
-            }
-
-            const startIndex = (currentPage - 1) * rowsPerPage;
-            const endIndex = startIndex + rowsPerPage;
-            const rowsToShow = filteredRows.slice(startIndex, endIndex);
-
-            rowsToShow.forEach(function (row, index) {
-                row.style.display = '';
-
-                const numberCell = row.querySelector('.row-number');
-
-                if (numberCell) {
-                    numberCell.textContent = startIndex + index + 1;
-                }
-            });
-
-            if (noFilterResultRow) {
-                noFilterResultRow.style.display = totalRows === 0 ? '' : 'none';
-            }
-
-            if (pageInfo) {
-                if (totalRows === 0) {
-                    pageInfo.textContent = 'Tidak ada data';
-                } else {
-                    pageInfo.textContent = `${startIndex + 1}-${Math.min(endIndex, totalRows)} dari ${totalRows}`;
-                }
-            }
-
-            if (prevPageBtn) {
-                prevPageBtn.disabled = currentPage <= 1 || totalRows === 0;
-            }
-
-            if (nextPageBtn) {
-                nextPageBtn.disabled = currentPage >= totalPages || totalRows === 0;
-            }
-        }
-
-        function refreshTable(resetPage = true) {
-            applySort();
-
-            if (resetPage) {
-                currentPage = 1;
-            }
-
-            filteredRows = getFilteredRows();
-            renderTablePage();
-        }
-
-        if (searchInput) {
-            searchInput.addEventListener('input', function () {
-                refreshTable(true);
-            });
-        }
-
-        if (dateInput) {
-            dateInput.addEventListener('change', function () {
-                refreshTable(true);
-            });
-        }
-
-        if (sortSelect) {
-            sortSelect.addEventListener('change', function () {
-                refreshTable(true);
-            });
-        }
-
-        if (prevPageBtn) {
-            prevPageBtn.addEventListener('click', function () {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderTablePage();
-                }
-            });
-        }
-
-        if (nextPageBtn) {
-            nextPageBtn.addEventListener('click', function () {
-                const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
-
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderTablePage();
-                }
-            });
-        }
-
-        refreshTable(true);
-    });
-</script>
-
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const toast = document.getElementById('riwayatToast');
+
+    if (toast && toast.dataset.show === 'true') {
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 150);
+
+        const closeButton = toast.querySelector('.riwayat-toast-close');
+
+        if (closeButton) {
+            closeButton.addEventListener('click', function () {
+                toast.classList.remove('show');
+            });
+        }
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3500);
+    }
+
+    const searchInput = document.getElementById('searchRiwayat');
+    const dateInput = document.getElementById('filterTanggal');
+    const sortSelect = document.getElementById('sortRiwayat');
+    const tableBody = document.getElementById('riwayatTableBody');
+
+    const prevButton = document.getElementById('prevRiwayatPage');
+    const nextButton = document.getElementById('nextRiwayatPage');
+    const pageInfo = document.getElementById('riwayatPageInfo');
+    const emptyRow = document.getElementById('emptyRiwayatRow');
+
+    const rows = Array.from(document.querySelectorAll('.riwayat-row'));
+
+    let currentPage = 1;
+    const rowsPerPage = 10;
+    let filteredRows = [...rows];
+
+    function normalizeText(value) {
+        return String(value || '').toLowerCase().trim();
+    }
+
+    function getFilteredRows() {
+        const keyword = normalizeText(searchInput ? searchInput.value : '');
+        const selectedDate = dateInput ? dateInput.value : '';
+        const sortValue = sortSelect ? sortSelect.value : 'terbaru';
+
+        let result = rows.filter(function (row) {
+            const fileName = normalizeText(row.dataset.file);
+            const rowDate = row.dataset.date || '';
+
+            const matchKeyword = fileName.includes(keyword);
+            const matchDate = !selectedDate || rowDate === selectedDate;
+
+            return matchKeyword && matchDate;
+        });
+
+        result.sort(function (a, b) {
+            const dateA = a.dataset.date || '';
+            const dateB = b.dataset.date || '';
+            const idA = Number(a.dataset.id || 0);
+            const idB = Number(b.dataset.id || 0);
+
+            if (dateA === dateB) {
+                return sortValue === 'terbaru' ? idB - idA : idA - idB;
+            }
+
+            return sortValue === 'terbaru'
+                ? dateB.localeCompare(dateA)
+                : dateA.localeCompare(dateB);
+        });
+
+        return result;
+    }
+
+    function renderTable() {
+        rows.forEach(function (row) {
+            row.style.display = 'none';
+        });
+
+        filteredRows.forEach(function (row) {
+            tableBody.appendChild(row);
+        });
+
+        const totalRows = filteredRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        const rowsToShow = filteredRows.slice(startIndex, endIndex);
+
+        rowsToShow.forEach(function (row, index) {
+            row.style.display = '';
+
+            const numberCell = row.querySelector('.row-number');
+
+            if (numberCell) {
+                numberCell.textContent = startIndex + index + 1;
+            }
+        });
+
+        if (emptyRow) {
+            emptyRow.style.display = totalRows === 0 ? '' : 'none';
+        }
+
+        if (pageInfo) {
+            if (totalRows === 0) {
+                pageInfo.textContent = 'Tidak ada data';
+            } else {
+                pageInfo.textContent = `${startIndex + 1}-${Math.min(endIndex, totalRows)} dari ${totalRows}`;
+            }
+        }
+
+        if (prevButton) {
+            prevButton.disabled = currentPage <= 1 || totalRows === 0;
+        }
+
+        if (nextButton) {
+            nextButton.disabled = currentPage >= totalPages || totalRows === 0;
+        }
+    }
+
+    function applyFilters() {
+        currentPage = 1;
+        filteredRows = getFilteredRows();
+        renderTable();
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+    }
+
+    if (dateInput) {
+        dateInput.addEventListener('change', applyFilters);
+    }
+
+    if (sortSelect) {
+        sortSelect.addEventListener('change', applyFilters);
+    }
+
+    if (prevButton) {
+        prevButton.addEventListener('click', function () {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+    }
+
+    if (nextButton) {
+        nextButton.addEventListener('click', function () {
+            const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+    }
+
+    applyFilters();
+});
+</script>
+@endpush

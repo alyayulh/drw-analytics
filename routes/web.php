@@ -105,6 +105,15 @@ Route::middleware('auth')->group(function () {
 
         /*
         |--------------------------------------------------------------------------
+        | Hapus riwayat analisis
+        | Ditaruh di luar role:Admin supaya tidak kena 403 dari middleware role.
+        |--------------------------------------------------------------------------
+        */
+
+        Route::delete('/riwayat/{id}', [AsosiasiController::class, 'destroyRiwayat'])->name('riwayat.destroy');
+
+        /*
+        |--------------------------------------------------------------------------
         | Download laporan dashboard asosiasi
         |--------------------------------------------------------------------------
         */
@@ -148,8 +157,6 @@ Route::middleware('auth')->group(function () {
             */
 
             Route::get('/hasil/download', [AsosiasiController::class, 'downloadHasil'])->name('hasil.download');
-
-            Route::delete('/riwayat/{id}', [AsosiasiController::class, 'destroyRiwayat'])->name('riwayat.destroy');
         });
     });
 });
