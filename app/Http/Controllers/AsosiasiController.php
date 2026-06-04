@@ -142,7 +142,6 @@ class AsosiasiController extends Controller
 
             DB::transaction(function () use ($proses) {
                 AturanAsosiasi::where('id_proses_analisis', $proses->id_proses_analisis)->delete();
-
                 $proses->delete();
             });
 
@@ -157,22 +156,16 @@ class AsosiasiController extends Controller
 
             return redirect()
                 ->route('asosiasi.riwayat')
-                ->with('success', 'Riwayat analisis berhasil dihapus.');
+                ->with('success', 'Data berhasil dihapus.');
         } catch (\Exception $e) {
             return redirect()
                 ->route('asosiasi.riwayat')
-                ->with('error', 'Gagal menghapus riwayat analisis: ' . $e->getMessage());
+                ->with('error', 'Gagal menghapus data riwayat analisis.');
         }
     }
 
-
     public function validasiFormat(Request $request)
     {
-        /*
-         * Jangan pakai rule mimes:xls,xlsx di sini.
-         * Pada beberapa laptop/browser, file .xlsx bisa terbaca sebagai application/zip,
-         * sehingga Laravel menolak file walaupun ekstensi file sudah benar.
-         */
         $validator = Validator::make($request->all(), [
             'file' => 'required|file|max:20480',
         ], [
@@ -215,10 +208,6 @@ class AsosiasiController extends Controller
 
     public function prosesAnalisis(Request $request)
     {
-        /*
-         * Validasi file dibuat fleksibel: cek required/file/size lewat Laravel,
-         * lalu cek ekstensi .xlsx/.xls secara manual.
-         */
         $request->validate([
             'file' => 'required|file|max:20480',
             'min_support' => 'nullable|numeric|min:0.0001|max:1',
@@ -334,6 +323,15 @@ class AsosiasiController extends Controller
             }
 
             $apiResult = $response->json();
+
+            if (!is_array($apiResult)) {
+                $proses->update([
+                    'status' => 'gagal',
+                    'pesan_error' => 'Response API tidak valid.',
+                ]);
+
+                return back()->with('error', 'Response API tidak valid. Pastikan API Python mengembalikan data JSON.');
+            }
 
             if (($apiResult['status'] ?? null) !== 'success') {
                 $message = $apiResult['message'] ?? 'Analisis gagal diproses.';
@@ -484,37 +482,37 @@ class AsosiasiController extends Controller
     }
 
     public function downloadHasil()
-{
-    $data = $this->getLatestAnalysisData();
+    {
+        $data = $this->getLatestAnalysisData();
 
-    $fileName = 'hasil_analisis_asosiasi_' . now()->format('Ymd_His') . '.xlsx';
+        $fileName = 'hasil_analisis_asosiasi_' . now()->format('Ymd_His') . '.xlsx';
 
-    return Excel::download(new HasilAnalisisExport($data), $fileName);
-}
-
-public function downloadHasilRiwayat($id)
-{
-    $proses = ProsesAnalisis::with('aturanAsosiasi')
-        ->where('id_proses_analisis', $id)
-        ->firstOrFail();
-
-    if ($proses->status !== 'berhasil') {
-        return back()->with('error', 'Hasil analisis tidak dapat diunduh karena proses analisis gagal.');
+        return Excel::download(new HasilAnalisisExport($data), $fileName);
     }
 
-    $data = $this->getAnalysisDataFromDatabase($proses);
+    public function downloadHasilRiwayat($id)
+    {
+        $proses = ProsesAnalisis::with('aturanAsosiasi')
+            ->where('id_proses_analisis', $id)
+            ->firstOrFail();
 
-    $namaFile = pathinfo($proses->nama_file ?? 'hasil_analisis', PATHINFO_FILENAME);
-    $namaFile = preg_replace('/[^A-Za-z0-9_\-]/', '_', $namaFile);
+        if ($proses->status !== 'berhasil') {
+            return back()->with('error', 'Hasil analisis tidak dapat diunduh karena proses analisis gagal.');
+        }
 
-    $fileName = 'hasil_analisis_riwayat_' .
-        $proses->id_proses_analisis . '_' .
-        $namaFile . '_' .
-        now()->format('Ymd_His') .
-        '.xlsx';
+        $data = $this->getAnalysisDataFromDatabase($proses);
 
-    return Excel::download(new HasilAnalisisExport($data), $fileName);
-}
+        $namaFile = pathinfo($proses->nama_file ?? 'hasil_analisis', PATHINFO_FILENAME);
+        $namaFile = preg_replace('/[^A-Za-z0-9_\-]/', '_', $namaFile);
+
+        $fileName = 'hasil_analisis_riwayat_' .
+            $proses->id_proses_analisis . '_' .
+            $namaFile . '_' .
+            now()->format('Ymd_His') .
+            '.xlsx';
+
+        return Excel::download(new HasilAnalisisExport($data), $fileName);
+    }
 
     private function getDatasetFormatErrorMessage(array $missingGroups = [])
     {
@@ -610,10 +608,6 @@ public function downloadHasilRiwayat($id)
     private function validateDatasetColumns($file)
     {
         try {
-            /*
-             * Pakai PhpSpreadsheet langsung supaya pembacaan Excel lebih stabil
-             * dan tidak terlalu bergantung pada MIME type yang kadang berbeda antar laptop.
-             */
             $filePath = $file->getPathname();
 
             if (!$filePath || !is_file($filePath)) {
@@ -1384,18 +1378,18 @@ public function downloadHasilRiwayat($id)
     }
 
     private function generateInterpretasi($rule, $confidence, $lift)
-{
-    $antecedents = $this->normalizeRulePart(
-        $rule['antecedents_display'] ?? ($rule['antecedents_raw'] ?? ($rule['antecedents'] ?? '-'))
-    );
+    {
+        $antecedents = $this->normalizeRulePart(
+            $rule['antecedents_display'] ?? ($rule['antecedents_raw'] ?? ($rule['antecedents'] ?? '-'))
+        );
 
-    $consequents = $this->normalizeRulePart(
-        $rule['consequents_display'] ?? ($rule['consequents_raw'] ?? ($rule['consequents'] ?? '-'))
-    );
+        $consequents = $this->normalizeRulePart(
+            $rule['consequents_display'] ?? ($rule['consequents_raw'] ?? ($rule['consequents'] ?? '-'))
+        );
 
-    return 'Jika terdapat ' . $antecedents .
-    ', maka cenderung berkaitan dengan ' . $consequents . '.';
-}
+        return 'Jika terdapat ' . $antecedents .
+            ', maka cenderung berkaitan dengan ' . $consequents . '.';
+    }
 
     private function getJenisRule($rule)
     {
@@ -1682,47 +1676,41 @@ public function downloadHasilRiwayat($id)
     }
 
     private function getHeatmapStyleByLift($lift, $minLift, $maxLift)
-{
-    $lift = (float) $lift;
-    $minLift = (float) $minLift;
-    $maxLift = (float) $maxLift;
+    {
+        $lift = (float) $lift;
+        $minLift = (float) $minLift;
+        $maxLift = (float) $maxLift;
 
-    if ($lift <= 0 || $maxLift <= 0) {
+        if ($lift <= 0 || $maxLift <= 0) {
+            return [
+                'bg_color' => '#f9fafb',
+                'border_color' => '#e5e7eb',
+                'text_color' => '#111827',
+                'opacity' => 0,
+                'intensity' => 0,
+            ];
+        }
+
+        if ($maxLift == $minLift) {
+            $normalized = 1;
+        } else {
+            $normalized = ($lift - $minLift) / ($maxLift - $minLift);
+        }
+
+        $normalized = max(0, min(1, $normalized));
+        $contrast = pow($normalized, 1.65);
+
+        $opacity = round(0.08 + ($contrast * 0.92), 2);
+        $borderOpacity = round(min(1, $opacity + 0.22), 2);
+
         return [
-            'bg_color' => '#f9fafb',
-            'border_color' => '#e5e7eb',
-            'text_color' => '#111827',
-            'opacity' => 0,
-            'intensity' => 0,
+            'bg_color' => 'rgba(185, 28, 28, ' . $opacity . ')',
+            'border_color' => 'rgba(185, 28, 28, ' . $borderOpacity . ')',
+            'text_color' => $opacity >= 0.50 ? '#ffffff' : '#7f1d1d',
+            'opacity' => $opacity,
+            'intensity' => round($normalized, 4),
         ];
     }
-
-    if ($maxLift == $minLift) {
-        $normalized = 1;
-    } else {
-        $normalized = ($lift - $minLift) / ($maxLift - $minLift);
-    }
-
-    $normalized = max(0, min(1, $normalized));
-
-    /*
-     * Dibikin lebih kontras:
-     * - lift kecil dibuat jauh lebih pudar
-     * - lift besar dibuat lebih pekat
-     */
-    $contrast = pow($normalized, 1.65);
-
-    $opacity = round(0.08 + ($contrast * 0.92), 2);
-    $borderOpacity = round(min(1, $opacity + 0.22), 2);
-
-    return [
-        'bg_color' => 'rgba(185, 28, 28, ' . $opacity . ')',
-        'border_color' => 'rgba(185, 28, 28, ' . $borderOpacity . ')',
-        'text_color' => $opacity >= 0.50 ? '#ffffff' : '#7f1d1d',
-        'opacity' => $opacity,
-        'intensity' => round($normalized, 4),
-    ];
-}
 
     private function getSummaryInt(array $summary, array $keys, $default = 0)
     {

@@ -31,14 +31,72 @@
     </div>
 
     @if (session('success'))
-        <div class="alert alert-success" style="margin: 20px 0; padding: 14px 18px; border-radius: 10px; background: #eafaf1; color: #157347;">
-            {{ session('success') }}
+        <div id="riwayatToast" class="riwayat-toast riwayat-toast-success" data-show="true">
+            <div class="riwayat-toast-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M20 6L9 17l-5-5"
+                          stroke="currentColor"
+                          stroke-width="2.6"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <div class="riwayat-toast-content">
+                <strong>Berhasil</strong>
+                <p>{{ session('success') }}</p>
+            </div>
+
+            <button type="button" class="riwayat-toast-close" aria-label="Tutup notifikasi">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18"
+                          stroke="currentColor"
+                          stroke-width="2.2"
+                          stroke-linecap="round"/>
+                    <path d="M6 6l12 12"
+                          stroke="currentColor"
+                          stroke-width="2.2"
+                          stroke-linecap="round"/>
+                </svg>
+            </button>
         </div>
     @endif
 
     @if (session('error'))
-        <div class="alert alert-danger" style="margin: 20px 0; padding: 14px 18px; border-radius: 10px; background: #fdecec; color: #b42318;">
-            {{ session('error') }}
+        <div id="riwayatToast" class="riwayat-toast riwayat-toast-error" data-show="true">
+            <div class="riwayat-toast-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 8v5"
+                          stroke="currentColor"
+                          stroke-width="2.4"
+                          stroke-linecap="round"/>
+                    <path d="M12 16.5h.01"
+                          stroke="currentColor"
+                          stroke-width="3"
+                          stroke-linecap="round"/>
+                    <circle cx="12" cy="12" r="9"
+                            stroke="currentColor"
+                            stroke-width="2"/>
+                </svg>
+            </div>
+
+            <div class="riwayat-toast-content">
+                <strong>Gagal</strong>
+                <p>{{ session('error') }}</p>
+            </div>
+
+            <button type="button" class="riwayat-toast-close" aria-label="Tutup notifikasi">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18"
+                          stroke="currentColor"
+                          stroke-width="2.2"
+                          stroke-linecap="round"/>
+                    <path d="M6 6l12 12"
+                          stroke="currentColor"
+                          stroke-width="2.2"
+                          stroke-linecap="round"/>
+                </svg>
+            </button>
         </div>
     @endif
 
@@ -291,65 +349,40 @@
 
 </div>
 
-<style>
-    .riwayat-pagination {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 12px;
-        margin-top: 16px;
-        margin-bottom: 8px;
-    }
-
-    .riwayat-pagination-btn {
-        height: 36px;
-        padding: 0 15px;
-        border-radius: 9px;
-        border: 1px solid #d1d5db;
-        background: #ffffff;
-        color: #344054;
-        font-size: 13px;
-        font-weight: 800;
-        cursor: pointer;
-        transition: 0.2s ease;
-    }
-
-    .riwayat-pagination-btn:hover:not(:disabled) {
-        background: #fdf2f8;
-        border-color: #f9a8d4;
-        color: #e8007a;
-    }
-
-    .riwayat-pagination-btn:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-    }
-
-    .riwayat-pagination-info {
-        font-size: 13px;
-        font-weight: 800;
-        color: #344054;
-    }
-
-    @media (max-width: 768px) {
-        .riwayat-pagination {
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .riwayat-pagination-btn {
-            width: 100%;
-        }
-
-        .riwayat-pagination-info {
-            width: 100%;
-            text-align: center;
-        }
-    }
-</style>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const toast = document.getElementById('riwayatToast');
+
+        if (toast && toast.dataset.show === 'true') {
+            setTimeout(function () {
+                toast.classList.add('show');
+            }, 150);
+
+            const closeToast = toast.querySelector('.riwayat-toast-close');
+
+            if (closeToast) {
+                closeToast.addEventListener('click', function () {
+                    toast.classList.remove('show');
+
+                    setTimeout(function () {
+                        toast.remove();
+                    }, 250);
+                });
+            }
+
+            setTimeout(function () {
+                if (toast && toast.parentElement) {
+                    toast.classList.remove('show');
+
+                    setTimeout(function () {
+                        if (toast && toast.parentElement) {
+                            toast.remove();
+                        }
+                    }, 250);
+                }
+            }, 3500);
+        }
+
         const searchInput = document.getElementById('searchRiwayat');
         const dateInput = document.getElementById('filterTanggal');
         const sortSelect = document.getElementById('sortRiwayat');

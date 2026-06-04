@@ -50,7 +50,14 @@
             <input type="file" name="file" id="file" accept=".xlsx,.xls" hidden>
 
             <label for="file" class="btn-upload">
-                Pilih File Excel
+                <span class="btn-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 16V5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                        <path d="M8 9l4-4 4 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <span>Pilih File Excel</span>
             </label>
 
             <p id="fileName" class="selected-file-name">
@@ -59,19 +66,72 @@
         </div>
 
         <div class="upload-notes">
-            <div>ⓘ Format file yang diterima: .xlsx atau .xls</div>
-            <div>ⓘ Dataset harus berisi data transaksi penjualan</div>
-            <div>ⓘ Dataset minimal harus memiliki kolom nomor transaksi, produk, operator, dan waktu/tanggal transaksi</div>
-            <div>ⓘ Sistem akan melakukan preprocessing, pembentukan basket transaksi, dan analisis FP-Growth secara otomatis</div>
+            <div>
+                <span class="note-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 17v-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                        <path d="M12 7.5h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </span>
+                Format file yang diterima: .xlsx atau .xls
+            </div>
+
+            <div>
+                <span class="note-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M7 4h7l4 4v12H7V4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M14 4v5h5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                Dataset harus berisi data transaksi penjualan
+            </div>
+
+            <div>
+                <span class="note-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M5 17h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                Dataset minimal harus memiliki kolom nomor transaksi, produk, operator, dan waktu/tanggal transaksi
+            </div>
+
+            <div>
+                <span class="note-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 3v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M12 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M4.2 7.5l2.6 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M17.2 15l2.6 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M4.2 16.5l2.6-1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M17.2 9l2.6-1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </span>
+                Sistem akan melakukan preprocessing, pembentukan basket transaksi, dan analisis FP-Growth secara otomatis
+            </div>
         </div>
 
         <div class="action-row">
             <button type="submit" id="btnProses" class="btn-process">
-                ▷ Proses Analisis
+                <span class="btn-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5.14v13.72c0 .8.87 1.3 1.57.9l10.28-5.86c.71-.4.71-1.41 0-1.82L9.57 4.24A1.04 1.04 0 0 0 8 5.14z"/>
+                    </svg>
+                </span>
+                <span class="btn-text-default">Proses Analisis</span>
             </button>
 
             <button type="button" id="btnReset" class="btn-reset">
-                ↺ Reset
+                <span class="btn-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M3 12a9 9 0 1 0 3-6.7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 4v5h5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <span>Reset</span>
             </button>
         </div>
     </div>
@@ -189,7 +249,6 @@
 
         function clearClientError() {
             if (!clientErrorContainer) return;
-
             clientErrorContainer.innerHTML = '';
         }
 
@@ -239,148 +298,71 @@
                 return false;
             }
 
-            const fileNameLower = file.name.toLowerCase();
-            const allowedExtensions = ['.xlsx', '.xls'];
+            const allowedExtensions = ['xlsx', 'xls'];
+            const fileNameParts = file.name.split('.');
+            const extension = fileNameParts.length > 1
+                ? fileNameParts.pop().toLowerCase()
+                : '';
 
-            return allowedExtensions.some(function (extension) {
-                return fileNameLower.endsWith(extension);
-            });
+            return allowedExtensions.includes(extension);
         }
 
-        function hideLoading() {
-            if (loadingAnalisis) {
-                loadingAnalisis.classList.add('hidden');
-            }
+        function setButtonLoading() {
+            if (!btnProses) return;
+
+            btnProses.disabled = true;
+            btnProses.innerHTML = `
+                <span class="btn-loading-content">
+                    <span class="btn-mini-spinner"></span>
+                    <span>Memproses...</span>
+                </span>
+            `;
         }
 
-        function showLoading() {
-            if (loadingAnalisis) {
-                loadingAnalisis.classList.remove('hidden');
+        function resetButtonLoading() {
+            if (!btnProses) return;
 
-                setTimeout(function () {
-                    loadingAnalisis.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }, 100);
-            }
-        }
-
-        function resetButtonState() {
-            if (btnProses) {
-                btnProses.disabled = false;
-                btnProses.innerHTML = '▷ Proses Analisis';
-            }
-
-            if (btnReset) {
-                btnReset.disabled = false;
-            }
-        }
-
-        function setValidatingButtonState() {
-            if (btnProses) {
-                btnProses.disabled = true;
-                btnProses.innerHTML = `
-                    <span class="btn-loading-content">
-                        <span class="btn-mini-spinner"></span>
-                        Memvalidasi...
-                    </span>
-                `;
-            }
-
-            if (btnReset) {
-                btnReset.disabled = true;
-            }
-        }
-
-        function setProcessingButtonState() {
-            if (btnProses) {
-                btnProses.disabled = true;
-                btnProses.innerHTML = `
-                    <span class="btn-loading-content">
-                        <span class="btn-mini-spinner"></span>
-                        Memproses...
-                    </span>
-                `;
-            }
-
-            if (btnReset) {
-                btnReset.disabled = true;
-            }
-        }
-
-        async function validateDatasetFormat(selectedFile) {
-            const tokenInput = formAnalisis.querySelector('input[name="_token"]');
-
-            const formData = new FormData();
-            formData.append('file', selectedFile);
-
-            if (tokenInput) {
-                formData.append('_token', tokenInput.value);
-            }
-
-            const response = await fetch("{{ route('asosiasi.validasiFormat') }}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            });
-
-            let result;
-
-            try {
-                result = await response.json();
-            } catch (error) {
-                result = {
-                    valid: false,
-                    message: 'Terjadi kesalahan saat memvalidasi dataset.'
-                };
-            }
-
-            if (!response.ok || !result.valid) {
-                return {
-                    valid: false,
-                    message: result.message || 'Format dataset tidak sesuai.'
-                };
-            }
-
-            return {
-                valid: true,
-                message: result.message || 'Format dataset sesuai.'
-            };
+            btnProses.disabled = false;
+            btnProses.innerHTML = `
+                <span class="btn-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5.14v13.72c0 .8.87 1.3 1.57.9l10.28-5.86c.71-.4.71-1.41 0-1.82L9.57 4.24A1.04 1.04 0 0 0 8 5.14z"/>
+                    </svg>
+                </span>
+                <span class="btn-text-default">Proses Analisis</span>
+            `;
         }
 
         if (fileInput) {
             fileInput.addEventListener('change', function () {
                 clearClientError();
-                hideLoading();
-                stopProcessAnimation();
-                resetButtonState();
-                isSubmitting = false;
 
-                if (this.files && this.files.length > 0) {
-                    const selectedFile = this.files[0];
+                const selectedFile = fileInput.files && fileInput.files.length > 0
+                    ? fileInput.files[0]
+                    : null;
 
-                    if (fileName) {
-                        fileName.textContent = selectedFile.name;
-                    }
-
-                    if (!isValidExcelFile(selectedFile)) {
-                        showClientError('Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.');
-                    }
-                } else {
-                    if (fileName) {
-                        fileName.textContent = 'Belum ada file yang dipilih';
-                    }
+                if (!selectedFile) {
+                    fileName.textContent = 'Belum ada file yang dipilih';
+                    fileName.classList.remove('file-selected');
+                    return;
                 }
+
+                if (!isValidExcelFile(selectedFile)) {
+                    fileInput.value = '';
+                    fileName.textContent = 'Belum ada file yang dipilih';
+                    fileName.classList.remove('file-selected');
+                    showClientError('Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.');
+                    return;
+                }
+
+                fileName.textContent = selectedFile.name;
+                fileName.classList.add('file-selected');
             });
         }
 
         if (btnReset) {
             btnReset.addEventListener('click', function () {
-                clearClientError();
+                if (isSubmitting) return;
 
                 if (fileInput) {
                     fileInput.value = '';
@@ -388,68 +370,52 @@
 
                 if (fileName) {
                     fileName.textContent = 'Belum ada file yang dipilih';
+                    fileName.classList.remove('file-selected');
                 }
 
-                hideLoading();
+                clearClientError();
                 stopProcessAnimation();
-                resetButtonState();
-                isSubmitting = false;
+
+                if (loadingAnalisis) {
+                    loadingAnalisis.classList.add('hidden');
+                }
+
+                resetButtonLoading();
             });
         }
 
         if (formAnalisis) {
-            formAnalisis.addEventListener('submit', async function (event) {
-                if (isSubmitting) {
-                    return;
-                }
-
-                event.preventDefault();
-
+            formAnalisis.addEventListener('submit', function (event) {
                 clearClientError();
-                hideLoading();
-                stopProcessAnimation();
-                resetButtonState();
 
-                if (!fileInput.files || fileInput.files.length === 0) {
-                    showClientError('File dataset wajib diunggah.');
+                const selectedFile = fileInput && fileInput.files && fileInput.files.length > 0
+                    ? fileInput.files[0]
+                    : null;
+
+                if (!selectedFile) {
+                    event.preventDefault();
+                    showClientError('Silakan pilih file Excel terlebih dahulu sebelum memproses analisis.');
                     return;
                 }
-
-                const selectedFile = fileInput.files[0];
 
                 if (!isValidExcelFile(selectedFile)) {
+                    event.preventDefault();
                     showClientError('Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.');
                     return;
                 }
 
-                setValidatingButtonState();
+                isSubmitting = true;
+                setButtonLoading();
 
-                try {
-                    const validationResult = await validateDatasetFormat(selectedFile);
-
-                    if (!validationResult.valid) {
-                        showClientError(validationResult.message);
-                        hideLoading();
-                        stopProcessAnimation();
-                        resetButtonState();
-                        isSubmitting = false;
-                        return;
-                    }
-
-                    showLoading();
-                    setProcessingButtonState();
-                    startProcessAnimation();
-
-                    isSubmitting = true;
-                    formAnalisis.submit();
-
-                } catch (error) {
-                    showClientError('Terjadi kesalahan saat memvalidasi dataset.');
-                    hideLoading();
-                    stopProcessAnimation();
-                    resetButtonState();
-                    isSubmitting = false;
+                if (loadingAnalisis) {
+                    loadingAnalisis.classList.remove('hidden');
+                    loadingAnalisis.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
                 }
+
+                startProcessAnimation();
             });
         }
     });

@@ -104,7 +104,6 @@
         }
 
         $normalized = max(0, min(1, $normalized));
-
         $contrast = pow($normalized, 1.65);
 
         $opacity = round(0.08 + ($contrast * 0.92), 2);
@@ -289,9 +288,11 @@
     </div>
 
     <div class="hasil-card anomaly-card">
-        <div>
+        <div class="anomaly-content">
             <h2>Mode Deteksi Anomali</h2>
-            <p>Aktifkan mode deteksi anomali untuk melihat rule yang terdeteksi sebagai anomali berdasarkan model.</p>
+            <p>
+                Aktifkan mode deteksi anomali untuk melihat rule yang terdeteksi sebagai anomali berdasarkan model.
+            </p>
         </div>
 
         <label class="switch">
@@ -333,18 +334,18 @@
                 </colgroup>
 
                 <thead>
-    <tr>
-        <th>No</th>
-        <th>Kondisi<br>Transaksi</th>
-        <th>Pola yang<br>Berkaitan</th>
-        <th>Tingkat<br>Kemunculan</th>
-        <th>Tingkat<br>Kepercayaan</th>
-        <th>Kekuatan<br>Hubungan</th>
-        <th>Kategori<br>Pola</th>
-        <th>Status<br>Pola</th>
-        <th>Interpretasi</th>
-    </tr>
-</thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Kondisi<br>Transaksi</th>
+                        <th>Pola yang<br>Berkaitan</th>
+                        <th>Tingkat<br>Kemunculan</th>
+                        <th>Tingkat<br>Kepercayaan</th>
+                        <th>Kekuatan<br>Hubungan</th>
+                        <th>Kategori<br>Pola</th>
+                        <th>Status<br>Pola</th>
+                        <th>Interpretasi</th>
+                    </tr>
+                </thead>
 
                 <tbody>
                     @forelse ($rulesCollection as $rule)
@@ -383,7 +384,7 @@
                             </td>
 
                             <td>
-                                @if($isAnomaly)
+                                @if ($isAnomaly)
                                     <span class="status-badge status-anomaly">
                                         Anomali
                                     </span>
@@ -394,7 +395,7 @@
                                 @endif
                             </td>
 
-                            <td class="interpretasi-cell" style="white-space: normal; word-break: normal; overflow-wrap: break-word;">
+                            <td class="interpretasi-cell">
                                 {{ $rule['interpretasi'] ?? '-' }}
                             </td>
                         </tr>
@@ -428,7 +429,7 @@
         <div class="hasil-card chart-card chart-card-left">
             <h2>Grafik 5 Pola Hubungan Teratas</h2>
 
-            @if($chartRules->count() > 0)
+            @if ($chartRules->count() > 0)
                 <div class="bar-chart-wrapper">
                     <canvas id="liftChart"></canvas>
                 </div>
@@ -450,7 +451,7 @@
                     </div>
 
                     <div class="composition-legend">
-                        @foreach($ruleComposition as $item)
+                        @foreach ($ruleComposition as $item)
                             <div class="composition-legend-item">
                                 <span class="composition-dot composition-dot-{{ $loop->iteration }}"></span>
                                 <span class="composition-label">{{ $item['label'] }}</span>
@@ -465,7 +466,7 @@
         <div class="hasil-card chart-card">
             <h2>Peta Kekuatan Pola Hubungan</h2>
 
-            @if($hasHeatmapData)
+            @if ($hasHeatmapData)
                 <p class="heatmap-note">
                     Peta ini menampilkan kekuatan asosiasi berdasarkan nilai lift.
                     Semakin pekat warna merah pada cell, semakin tinggi nilai lift rule tersebut.
@@ -478,7 +479,7 @@
                     >
                         <div class="heatmap-corner">A ↓ / C →</div>
 
-                        @foreach($heatmapColumns as $column)
+                        @foreach ($heatmapColumns as $column)
                             @php
                                 $columnCode = $column['code'] ?? $column['label'] ?? ('C' . $loop->iteration);
                                 $columnName = $column['name'] ?? $column['key'] ?? '-';
@@ -489,7 +490,7 @@
                             </div>
                         @endforeach
 
-                        @foreach($heatmapRows as $row)
+                        @foreach ($heatmapRows as $row)
                             @php
                                 $rowCode = $row['code'] ?? $row['label'] ?? ('A' . $loop->iteration);
                                 $rowName = $row['name'] ?? $row['key'] ?? '-';
@@ -500,7 +501,7 @@
                                 {{ $rowCode }}
                             </div>
 
-                            @foreach($rowCells as $cell)
+                            @foreach ($rowCells as $cell)
                                 @php
                                     $cellExists = (bool) ($cell['exists'] ?? false);
                                     $cellLift = $cell['lift'] ?? null;
@@ -540,7 +541,7 @@
                                     $cellTitle = implode(' | ', $cellTitleParts);
                                 @endphp
 
-                                @if($cellExists)
+                                @if ($cellExists)
                                     <div
                                         class="heatmap-cell has-value"
                                         style="
@@ -569,7 +570,7 @@
                         <div class="heatmap-legend-column">
                             <h4>A: Kondisi Transaksi</h4>
 
-                            @foreach($heatmapRows as $row)
+                            @foreach ($heatmapRows as $row)
                                 <div class="heatmap-legend-row">
                                     <span class="heatmap-legend-code">
                                         {{ $row['code'] ?? $row['label'] ?? ('A' . $loop->iteration) }}
@@ -587,7 +588,7 @@
                         <div class="heatmap-legend-column">
                             <h4>C: Pola yang Berkaitan</h4>
 
-                            @foreach($heatmapColumns as $column)
+                            @foreach ($heatmapColumns as $column)
                                 <div class="heatmap-legend-row">
                                     <span class="heatmap-legend-code">
                                         {{ $column['code'] ?? $column['label'] ?? ('C' . $loop->iteration) }}
