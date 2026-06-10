@@ -1,9 +1,4 @@
 {
-  "steps": {
-    "extensions": {
-      "commands": [
-        "install-php-extensions ctype curl dom fileinfo filter gd hash intl mbstring openssl pcre pdo pdo_mysql session tokenizer xml zip"
-      ]
-    }
-  }
+  "$schema": "https://schema.railpack.io/railpack.json",
+  "provider": "dockerfile"
 }
