@@ -38,5 +38,5 @@ RUN npm run build \
 
 EXPOSE 8080
 
-# Saat container start: migrate DB, cache config, lalu jalankan server
-CMD ["sh", "-c", "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && frankenphp php-server --listen :${PORT:-8080} --root /app/public"]
+# Gunakan ; bukan && agar server tetap start meski ada error di migrate
+CMD ["sh", "-c", "php artisan migrate --force; php artisan config:cache; php artisan route:cache; php artisan view:cache; php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
