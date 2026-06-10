@@ -36,7 +36,7 @@ RUN npm run build \
     && chmod -R 777 storage bootstrap/cache \
     && COMPOSER_ALLOW_SUPERUSER=1 php artisan package:discover --ansi 2>/dev/null || true
 
-EXPOSE 80
+EXPOSE 8080
 
 # Saat container start: migrate DB, cache config, lalu jalankan server
-CMD ["sh", "-c", "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && frankenphp php-server --listen :80 --root /app/public"]
+CMD ["sh", "-c", "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && frankenphp php-server --listen :${PORT:-8080} --root /app/public"]
