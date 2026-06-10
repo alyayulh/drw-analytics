@@ -14,6 +14,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
+# Set Node memory limit untuk Railway builder (free tier RAM terbatas)
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
 # Install PHP dependencies
 COPY composer.json composer.lock artisan ./
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
@@ -21,7 +24,7 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer install \
 
 # Install & build Node dependencies
 COPY package.json package-lock.json vite.config.js ./
-RUN npm ci
+RUN npm install --prefer-offline --no-audit --no-fund
 
 # Copy semua file aplikasi
 COPY . .
