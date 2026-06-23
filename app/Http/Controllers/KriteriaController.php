@@ -36,7 +36,7 @@ class KriteriaController extends Controller
 
         Kriteria::create([
             'nama_kriteria'    => $request->nama_kriteria,
-            'tipe_atribut'     => $request->tipe_atribut,
+            'tipe_atribut'     => $request->tipe_atribut,   
             'bobot'            => $request->bobot,
             'sumber_data'      => $request->sumber_data,
             'nama_kolom_excel' => $request->sumber_data === 'Excel'
@@ -44,9 +44,9 @@ class KriteriaController extends Controller
                 : null,
         ]);
 
-        // FIX BUG #1: Setelah tambah kriteria baru, semua produk harus di-recalculate.
-        // Kriteria baru belum ada nilainya di nilai_produk, jadi semua produk otomatis
-        // akan menjadi 'Belum Lengkap' (kecuali sudah punya nilai untuk kriteria ini).
+        #Setelah tambah kriteria baru, semua produk harus di-recalculate.
+        #Kriteria baru belum ada nilainya di nilai_produk, jadi semua produk otomatis
+        #akan menjadi 'Belum Lengkap' (kecuali sudah punya nilai untuk kriteria ini).
         $this->recalculateSemuaProduk();
 
         return back()->with('success', 'Kriteria berhasil ditambahkan.');
@@ -83,23 +83,12 @@ class KriteriaController extends Controller
                 : null,
         ]);
 
-        // FIX BUG (data stale saat sumber_data berubah):
-        // Saat sumber_data kriteria diubah (mis. Manual → Excel atau sebaliknya),
-        // data lama di input_permintaan dan nilai_produk harus dibersihkan,
-        // karena:
-        //   - Manual → Excel: input_permintaan untuk kriteria ini tidak relevan lagi
-        //                     (akan ditolak validasi store karena bukan Manual)
-        //   - Excel → Manual: nilai_produk lama dari Excel tidak relevan lagi
-        //                     (akan diganti oleh input manual user)
-        // Tanpa cleanup ini, data stale akan menyebabkan error validasi atau
-        // perhitungan yang tidak konsisten.
+        #mengecek apakah sumber_data kriteria diubah, jika ya maka hapus data lama terkait kritreia tersebut karena sudah tidak relevan.
         if ($sumberDataLama !== $sumberDataBaru) {
             InputPermintaan::where('id_kriteria', $id)->delete();
             NilaiProduk::where('id_kriteria', $id)->delete();
         }
 
-        // Update kriteria (misal ganti nama/tipe) tidak mengubah jumlah nilai_produk,
-        // tapi tetap perlu recalculate untuk konsistensi (misal sumber_data berubah Excel↔Manual).
         $this->recalculateSemuaProduk();
 
         return back()->with('success', 'Kriteria berhasil diupdate.');
@@ -108,37 +97,17 @@ class KriteriaController extends Controller
     public function destroy($id)
     {
         $kriteria = Kriteria::findOrFail($id);
-
-        // FIX BUG #1 & #4 (+ extension): Sebelum hapus kriteria, hapus dulu
-        // semua data terkait kriteria ini di:
-        //   - nilai_produk      (data perhitungan)
-        //   - input_permintaan  (data input manual dari manajer)
-        // Lalu recalculate status semua produk.
-        //
-        // Sebelumnya: kriteria dihapus tapi data lama masih ada,
-        // menyebabkan totalNilai tetap >= totalKriteria (status palsu 'Lengkap')
-        // dan input_permintaan stale yang menyebabkan error validasi store().
         NilaiProduk::where('id_kriteria', $id)->delete();
         InputPermintaan::where('id_kriteria', $id)->delete();
 
         $kriteria->delete();
 
-        // Recalculate SETELAH hapus kriteria dan semua data terkaitnya
         $this->recalculateSemuaProduk();
 
         return back()->with('success', 'Kriteria berhasil dihapus.');
     }
 
-    /**
-     * Recalculate status_data semua produk berdasarkan kriteria yang aktif saat ini.
-     *
-     * Status = 'Lengkap' hanya jika:
-     *   jumlah nilai_produk untuk produk ini >= jumlah total kriteria aktif
-     *   DAN total kriteria > 0
-     *
-     * Ini dipanggil setiap kali kriteria ditambah, diupdate, atau dihapus
-     * agar status produk selalu sinkron dengan definisi kriteria terkini.
-     */
+    #Recalculate status_data semua produk berdasarkan kriteria yang aktif saat ini. dipanggil setiap kali ada perubahan.
     private function recalculateSemuaProduk(): void
     {
         $totalKriteria = Kriteria::count();

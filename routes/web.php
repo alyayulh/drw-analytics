@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route; #class route dari Laravel untuk mendefinisikan route.
-use App\Http\Controllers\AuthController; #menghubungkan route dengan controller AuthController.
+use App\Http\Controllers\AuthController; 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\KriteriaController;
@@ -20,28 +20,21 @@ use App\Http\Controllers\AsosiasiController;
 
 #jenis route → URL → controller → method → nama route
 
-#bagian routing untuk autentikasi (login/logout) user.
-#1. Route untuk menampilkan halaman login (GET /login). cuma menampilkan form login, tidak ada proses autentikasi/logika. makanya dipakai closure langsung tanpa controller khusus.
-#closure maksudnya function anonim (tanpa nama) tanpa perlu membuat controller khusus untuk menampilkan view login
+#user klik url login, maka akan tampil halaman login tanpa perlu controller khusus karena hanya menampilkan view login saja.
 Route::get('/login', fn() => view('auth.login'))->name('login');    
-#ketika user akses GET /login, tampilkan view auth.login (form login).
-#fn() => view('auth.login') -> closure yang langsung return view login tanpa perlu controller khusus.
-#name('login') -> beri nama route 'login' untuk memudahkan referensi di kode lain (misal: route('login')).
 
-#2. Route untuk memproses login (POST /login). methodnya post karena form login mengirim data username/password ke server untuk diproses autentikasi.
-# arahkan ke AuthController@login untuk memproses login.
+#user submit form login dengan method POST, lalu diproses oleh method login() di AuthController untuk melakukan autentikasi user. 
 Route::post('/login', [AuthController::class, 'login'])->name('login.post'); 
 
-#3. Route untuk logout (POST /logout). methodnya post karena logout mengubah state atau session user di server.
+#user submit form logout dengan method POST, lalu diproses oleh method logout() di AuthController untuk melakukan proses logout user.
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); 
-#ketika user submit form logout (POST /logout), panggil method logout() di AuthController untuk proses logout.
 
 /*
 |--------------------------------------------------------------------------
 | DEFAULT ROUTE
 |--------------------------------------------------------------------------
 */
-#ketika user mengakses root URL (/) dari aplikasi, langsung redirect ke /dashboard.
+#ketika user akses halaman utama web yaitu / , maka akan diarahkan ke halaman dashboard.
 Route::get('/', fn() => redirect('/dashboard'));
 
 /*
@@ -57,7 +50,8 @@ Route::middleware('auth')->group(function () {
     | DASHBOARD UTAMA
     |--------------------------------------------------------------------------
     */
-    #route untuk menampilkan dashboard utama setelah login. memanggil method index() di DashboardController untuk menampilkan halaman dashboard.
+    #user mengakses halaman dashboard, maka akan diproses oleh method index() di DashboardController untuk menampilkan halaman dashboard.
+    #kenapa manggil controller? karena dashboard mungkin menampilkan data dinamis yang diambil dari database, sehingga perlu diproses terlebih dahulu di controller sebelum ditampilkan di view.
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     /*

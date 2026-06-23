@@ -15,40 +15,44 @@ class InputPermintaanController extends Controller
     {
         $kriterias = Kriteria::where('sumber_data', 'Manual')->get();
 
-        // FIX BUG #2 & #5: eager load relasi 'kategori' agar $p->kategori adalah object,
-        // lalu akses ->nama_kategori untuk groupBy yang benar.
-        // Sebelumnya: ->groupBy(fn($p) => $p->kategori ?: 'Tanpa Kategori')
-        //   → $p->kategori memanggil relasi Eloquent dan mengembalikan object/null, bukan string!
-        //   → Sehingga semua produk masuk 'Tanpa Kategori'.
+        #mengelompokkan produk berdasarkan kategori, jika tidak ada masuk ke tanpa kategori
         $grouped = Produk::with('kategoriProduk')->get()
             ->groupBy(fn($p) => $p->kategoriProduk?->nama_kategori ?? 'Tanpa Kategori');
 
-        // Pisahkan "Tanpa Kategori" agar bisa ditaruh di paling bawah.
-        // sortKeys() sebelumnya mengurutkan alfabet biasa, sehingga "Tanpa Kategori"
-        // muncul di tengah daftar (di antara huruf S dan T).
+
         $tanpaKategori = $grouped->pull('Tanpa Kategori');
 
-        // Sort kategori normal alfabetis
+        #Sort kategori alfabetis
         $produkByKategori = $grouped->sortKeys();
 
-        // Tambahkan "Tanpa Kategori" di akhir (hanya jika ada produknya)
+        #Tambahkan "Tanpa Kategori" di akhir (hanya jika ada produknya)
         if ($tanpaKategori) {
             $produkByKategori->put('Tanpa Kategori', $tanpaKategori);
         }
+        #Supaya data input permintaan yang sudah pernah disimpan bisa muncul lagi di halaman, tapi tetap dibatasi maksimal 5 produk per kategori.
+        #1. ambil data input manual yang pernah tersimpan & kelompokkan berdasarkan id
+        #2. simpan data input manual tersebut ke collections untuk menyimpan id produk yang valid. 
+            #valid maksudnya, produk yang sudah pernah di input dan masuk batas 5 produk.
+        #3. jika ada, lanjut ke menerapkan batas 5 maksimal produk. 
+        #4. id_produk yang valid digabungkan ke variabel validProdukIds.
+        # data input lama di filter agar hanya input yang valid yang dikirim ke view.
 
-        // Ambil semua inputs, filter max 5 per kategori
+        #mengambil data input manual yang pernah disimpan & kelompokkan berdasarkan id
         $allInputs = InputPermintaan::all()->groupBy('id_produk');
 
+        #menentukan produk valid maksimal 5 produk dengan membuat collcetions/fungsi laravel. dengan batas maksimal 5 produk.
         $validProdukIds = collect();
         foreach ($produkByKategori as $kategori => $items) {
             $saved = $items
-                ->filter(fn($p) => $allInputs->has((string)$p->id_produk))
-                ->take(5)
+            #ambil produk yang sudah pernah diinputkan nilainya.
+                ->filter(fn($p) => $allInputs->has((string)$p->id_produk)) #kenapa string? karna hasil groupby(id_produk) mengubah key jadi string.
+                ->take(5) 
                 ->pluck('id_produk')
-                ->map(fn($id) => (string)$id);
+                ->map(fn($id) => (string)$id); #mengubah id_produk jadi string.
             $validProdukIds = $validProdukIds->merge($saved);
         }
 
+        #mengambil produk yang id produknya valid dan tampilkan.
         $inputs = $allInputs->filter(
             fn($rows, $id) => $validProdukIds->contains((string)$id)
         );
@@ -58,36 +62,32 @@ class InputPermintaanController extends Controller
 
     public function store(Request $request)
     {
-        // =========================================================
-        // STEP 1 — Decode & validasi struktur payload
-        // =========================================================
+        #apakah permintaan yang dikirim ada datanya. jika tidak akan menolak.
+        #422 data yg dikirim tidak valid
         if (!$request->has('data')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Payload tidak berisi field "data".'
             ], 422);
         }
-
+        #mengubah json jadi array
         $data = json_decode($request->input('data'), true);
 
+        #validasi format data (kalo bukan array atau kosong, ditolak)
         if (!is_array($data) || empty($data)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Format data tidak valid atau kosong.'
             ], 422);
         }
-
-        // =========================================================
-        // STEP 2 — Whitelist id_kriteria Manual + id_produk yang ada
-        //
-        // Tujuan: cegah payload menyisipkan id_kriteria milik Excel
-        // (akan menimpa nilai_produk dari Excel) atau id_produk palsu.
-        // =========================================================
+        // mengecek kriteria manual & produk yang dikirim beneran ada didatabase.
+        #mengambil id kriteria manual
         $manualKriteriaIds = Kriteria::where('sumber_data', 'Manual')
             ->pluck('id_kriteria')
             ->map(fn($id) => (int) $id)
-            ->all();
+            ->all(); #diubah dari collections jadi array.
 
+        #mengecek apakah ada kriteria manual. 
         if (empty($manualKriteriaIds)) {
             return response()->json([
                 'success' => false,
@@ -95,73 +95,74 @@ class InputPermintaanController extends Controller
             ], 422);
         }
 
-        // Ambil semua id_produk yang dikirim, ke integer, filter yang benar-benar ada di DB
-        $payloadProdukIds = array_map('intval', array_keys($data));
+        // Ambil semua id_produk yang dikirim & cek produk benar-benar ada di DB
+        #mengambil id produk dari data yang dikirim halaman lalu diubah jadi integer.
+        $payloadProdukIds = array_map('intval', array_keys($data)); 
+        #mengambil data produk sekalgius dengan kategori dari database.
         $produkValid = Produk::with('kategoriProduk')
-            ->whereIn('id_produk', $payloadProdukIds)
-            ->get()
-            ->keyBy('id_produk');
+            ->whereIn('id_produk', $payloadProdukIds) #mengambil produk yang id ada di daftar tadi.
+            ->get() # ambil dari database
+            ->keyBy('id_produk'); #ubah jadi collection dengan key=id_produk supaya mudah dicek has(idproduk)
 
-        // =========================================================
-        // STEP 3 — Validasi tiap baris payload secara strict
-        // =========================================================
-        $errors    = [];
-        $cleanData = [];  // payload yang sudah lulus validasi
+        $errors    = [];   // data yang tidak ditemukan.
+        $cleanData = [];  // data yang sudah lulus validasi.
 
+        #mengecek satu per satu produk &mengubah jadi integer
         foreach ($data as $rawIdProduk => $kriteriaValues) {
             $idProduk = (int) $rawIdProduk;
 
-            // 3a. id_produk harus ada
+            // 3a. id_produk harus ada di daftar produkvalid, jika tidak ada dilewati
             if (!$produkValid->has($idProduk)) {
                 $errors[] = "Produk #{$idProduk} tidak ditemukan.";
                 continue;
             }
 
-            // 3b. kriteriaValues harus array (dict {id_kriteria: nilai})
+            // 3b. cek apakah produk punya nilai kriteria harus array dan tidak boleh kosong.
             if (!is_array($kriteriaValues) || empty($kriteriaValues)) {
                 $errors[] = "Produk #{$idProduk} tidak punya nilai kriteria.";
                 continue;
             }
 
-            $cleanRow = [];
+            $cleanRow = []; //data valid per produk
+            #mengecek nilai kriteria produk & diubah jadi integer agar cocok saat di cek array $manualKriteriaIds
             foreach ($kriteriaValues as $rawIdKriteria => $rawNilai) {
                 $idKriteria = (int) $rawIdKriteria;
 
-                // 3c. id_kriteria harus Manual
+                #id_kriteria harus Manual
                 if (!in_array($idKriteria, $manualKriteriaIds, true)) {
                     $errors[] = "Kriteria #{$idKriteria} bukan kriteria Manual (atau tidak ada).";
                     continue;
                 }
 
-                // 3d. Nilai harus integer 1..5
-                //     (FILTER_VALIDATE_INT menolak '3.5', '-1', '', 'abc', dst.)
+                #Nilai harus integer 1-5
                 $nilaiInt = filter_var($rawNilai, FILTER_VALIDATE_INT);
+                #3 kondisi salah: nilai kurang dari 1, nilai lebih dari 5 atau nilai bukan integer.
                 if ($nilaiInt === false || $nilaiInt < 1 || $nilaiInt > 5) {
                     $errors[] = "Nilai untuk produk #{$idProduk} kriteria #{$idKriteria} harus integer 1–5 (diterima: " . json_encode($rawNilai) . ").";
                     continue;
                 }
-
                 $cleanRow[$idKriteria] = $nilaiInt;
             }
-
+            #kalo tidak valid, lanjut ke produk berikutnya kalo valid simpan ke cleanRow
             if (empty($cleanRow)) {
-                continue; // Semua kriteria row ini gagal validasi; skip produk ini
+                continue; 
             }
-
+            #menyimpan 1 produk yg valid ke cleandata
             $cleanData[$idProduk] = $cleanRow;
         }
-
+        #pesan error jika ada error.
         if (!empty($errors)) {
-            // Tampilkan max 5 error pertama supaya pesan tidak meledak
             $shown = array_slice($errors, 0, 5);
+            #error lebih dari 5
             $more  = count($errors) > 5 ? ' (+' . (count($errors) - 5) . ' kesalahan lain)' : '';
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal: ' . implode(' ', $shown) . $more,
-                'errors'  => $errors,
+                'message' => 'Validasi gagal: ' . implode(' ', $shown) . $more, #implode gabungkan beberapa pesan error jadi 1 string dipisah spasi.
+                'errors'  => $errors, #menyimpan error
             ], 422);
         }
 
+        #jika data yang valid kosong, hentikan proses.
         if (empty($cleanData)) {
             return response()->json([
                 'success' => false,
@@ -169,83 +170,69 @@ class InputPermintaanController extends Controller
             ], 422);
         }
 
-        // =========================================================
-        // STEP 4 — Batas max 5 produk per kategori (sesuai aturan UI)
-        // =========================================================
-        $perKategori = [];
+        $perKategori = []; //kelompokkan produk per kategori.
+        #mengambil idproduk dari data bersih, nama kategori, dan masukkan id produk ke kategori tersebut.
         foreach (array_keys($cleanData) as $idProduk) {
             $kat = $produkValid[$idProduk]->kategoriProduk?->nama_kategori ?? 'Tanpa Kategori';
             $perKategori[$kat][] = $idProduk;
         }
 
-        $allowedIds = [];
+        $allowedIds = []; //produk yang diizinkan
         $rejected   = [];
+        #mengecek setiap produk perkategori  dengan 
         foreach ($perKategori as $kat => $ids) {
-            $head = array_slice($ids, 0, 5);
-            $tail = array_slice($ids, 5);
-            $allowedIds = array_merge($allowedIds, $head);
+            $head = array_slice($ids, 0, 5); #mengambil 5 produk pertama.
+            $tail = array_slice($ids, 5); #mengambil sisanya setelah 5 produk.
+            $allowedIds = array_merge($allowedIds, $head); #memasukkan 5 produk pertama ke daftar yang diizinkan.
+            #jika ada produk lebih dari 5, masuk ditolak. 
             if (!empty($tail)) {
                 $rejected[$kat] = count($tail);
             }
         }
-
+        #jika ada produk yang ditolak.
         if (!empty($rejected)) {
-            $msg = collect($rejected)->map(fn($n, $k) => "{$n} produk di kategori \"{$k}\"")->implode(', ');
+            #mengubah array rejected jadi collection agar bisa pakai method map dan implode.
+            #kenapa ga array? karna kalo fungsi array cm bisa akses untuk nilai gabisa untuk kategori.collection lebih ringkas.  
+            $msg = collect($rejected)->map(fn($n, $k) => "{$n} produk di kategori \"{$k}\"")->implode(', '); #mengubah jadi kalimat dengan menggabungkan dengan spasi.
             return response()->json([
                 'success' => false,
                 'message' => "Maksimal 5 produk per kategori. Kelebihan: {$msg}."
             ], 422);
         }
-
+        #data final isinya data valid & id produk yang diizinkan.
         $finalData = array_intersect_key($cleanData, array_flip($allowedIds));
+        #kenapa di flip posisinya value jadi key dluan? 
+        #karna dipakai array_intersect_key yang mencocokkan berdasarkan key bukan value.
 
-        // =========================================================
-        // STEP 5 — Tulis ke DB dalam transaction
-        //
-        // WORKFLOW ASLI: payload = "set aktif lengkap" untuk sesi penilaian.
-        // Produk yang di-uncheck di Step 1 = harus dihapus nilai manualnya.
-        // Jadi: hapus SEMUA nilai manual dulu, lalu reinsert berdasarkan payload.
-        //
-        // PERBEDAAN DARI KODE LAMA:
-        // 1. Pakai DB::transaction dengan throw → atomic, rollback total kalau error
-        // 2. Validasi dilakukan SEBELUM masuk transaction (di Step 3) — kalau ada
-        //    nilai invalid, kita NGGAK hapus apa-apa, langsung reject di awal
-        // 3. Status_data direcalc untuk SEMUA produk yang pernah punya nilai
-        //    manual (tidak cuma yang ada di payload). Bug lama: subquery
-        //    jalan SETELAH delete sehingga selalu kosong.
-        // 4. Pakai bulk insert (lebih cepat dari N kali updateOrCreate)
-        // =========================================================
+        #menyimpan data ke database pake transaction
         try {
             DB::transaction(function () use ($finalData, $manualKriteriaIds, $payloadProdukIds) {
 
-                // 5a. Ambil dulu daftar SEMUA produk yang punya nilai manual saat ini.
-                //     Ini PENTING untuk recalc status_data di akhir — kalau cuma
-                //     pakai $payloadProdukIds, produk yang di-uncheck tidak akan
-                //     di-recalc, status_data-nya tetap 'Lengkap' padahal nilainya
-                //     sudah dihapus.
+               #mengambil produk lama yang pernah punya nilai input manual 
                 $produkLama = NilaiProduk::whereIn('id_kriteria', $manualKriteriaIds)
                     ->pluck('id_produk')
-                    ->unique()
-                    ->all();
+                    ->unique() #menghapus id duplikat.
+                    ->all(); #mengubah collection jadi array.
 
-                // Gabungkan: produk lama (yang akan kehilangan nilai) + produk baru di payload
+                // Gabungkan: produk lama  + produk yang baru dikirim & hapus id yang sama. 
                 $allAffectedProdukIds = array_unique(array_merge(
                     $produkLama,
                     array_keys($finalData)
                 ));
-
-                // 5b. Hapus SEMUA nilai manual lama (Excel-driven nilai tidak disentuh
-                //     karena where-nya cuma kriteria Manual).
+    
+                // Hapus semua nilai manual lama 
                 InputPermintaan::whereIn('id_kriteria', $manualKriteriaIds)->delete();
                 NilaiProduk::whereIn('id_kriteria', $manualKriteriaIds)->delete();
 
-                // 5c. Insert nilai baru (bulk insert, lebih cepat)
+                #waktu sekarang
                 $now = now();
-                $inputRows = [];
-                $nilaiRows = [];
-
+                $inputRows = []; // data yang masuk ke tabel inputpermintaan
+                $nilaiRows = []; // data yang masuk ke nilaiproduk
+                #ngecek setiap produk beserta nilai kriteria
                 foreach ($finalData as $idProduk => $kriteriaValues) {
+                    #ngecek  kriteria beserta nilai setiap produk    
                     foreach ($kriteriaValues as $idKriteria => $nilai) {
+                        #menyimpan ke tabel input permintaan
                         $inputRows[] = [
                             'id_produk'   => $idProduk,
                             'id_kriteria' => $idKriteria,
@@ -253,6 +240,7 @@ class InputPermintaanController extends Controller
                             'created_at'  => $now,
                             'updated_at'  => $now,
                         ];
+                        #menyimpan ke tabel nilai_produk
                         $nilaiRows[] = [
                             'id_produk'   => $idProduk,
                             'id_kriteria' => $idKriteria,
@@ -262,18 +250,21 @@ class InputPermintaanController extends Controller
                         ];
                     }
                 }
-
+                
+                #jika tidak kosong, simpan ke tabel input permintaan & nilai produk. (bulk insert menyimpan data banyak sekaligus)
                 if (!empty($inputRows)) {
                     InputPermintaan::insert($inputRows);
                     NilaiProduk::insert($nilaiRows);
                 }
 
-                // 5d. Recalc status_data untuk SEMUA produk yang affected
-                //     (yang lama kehilangan nilai + yang baru dapat nilai)
+                #hitung jumlah kriteria
                 $totalKriteria = Kriteria::count();
 
+                #mengecek produk yang terdampak seperti, produk lama yang nilainya dihapus atau produk baru yang nilainya ditambahkan.
                 foreach ($allAffectedProdukIds as $idProduk) {
+                    #hitung jumlah nilai kriteria setiap produk.
                     $totalNilai = NilaiProduk::where('id_produk', $idProduk)->count();
+                    #update status data produk. lebih dari 0 dan jumlah nilai dan kriteria sama.
                     Produk::where('id_produk', $idProduk)->update([
                         'status_data' => ($totalKriteria > 0 && $totalNilai >= $totalKriteria)
                             ? 'Lengkap'
@@ -282,19 +273,22 @@ class InputPermintaanController extends Controller
                 }
             });
         } catch (\Throwable $e) {
+            #menyimpan error ke laravel 
+            #Log ini berguna untuk developer/admin saat mencari penyebab error.
             \Log::error('InputPermintaan store error', [
-                'msg'   => $e->getMessage(),
-                'file'  => $e->getFile(),
-                'line'  => $e->getLine(),
-                'user'  => optional(auth()->user())->id_user,
+                'msg'   => $e->getMessage(), //pesan error
+                'file'  => $e->getFile(),   //file error
+                'line'  => $e->getLine(),   //baris kode error
+                'user'  => optional(auth()->user())->id_user, //user yang sedang login.
             ]);
 
+            #mengirim pesan gagal
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyimpan data. Silakan coba lagi atau hubungi administrator.'
             ], 500);
         }
-
+        #pesan berhasil
         return response()->json([
             'success' => true,
             'message' => 'Penilaian berhasil disimpan untuk ' . count($finalData) . ' produk.'
