@@ -19,12 +19,14 @@ class LogKriteria extends Model
         'detail',
     ];
 
+    #kolom detail dibaca sebagai array. biasanya detail disimpan dalam JSON.
     protected $casts = [
         'detail' => 'array',
     ];
 
     public function user()
     {
+        #1logkriteria dimiliki 1 user
         return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
 }

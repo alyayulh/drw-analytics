@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Kriteria extends Model
 {
-    protected $table = 'kriteria';
+    protected $table = 'kriteria'; 
     protected $primaryKey = 'id_kriteria';
     public $timestamps = true;
 
+    
     protected $fillable = [
         'nama_kriteria',
         'tipe_atribut',
@@ -18,6 +19,7 @@ class Kriteria extends Model
         'nama_kolom_excel', // hanya diisi jika sumber_data = 'Excel'
     ];
 
+    #relasi
     // Satu kriteria menghasilkan banyak nilai produk (dari Excel)
     public function nilaiProduk()
     {

@@ -21,6 +21,7 @@ class LogProduk extends Model
 
     public function user()
     {
+        #1logproduk dimiliki 1 user
         return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
 }

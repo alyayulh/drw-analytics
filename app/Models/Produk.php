@@ -7,11 +7,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Produk extends Model
 {
-    // FIX BUG #3: Pakai SoftDeletes trait.
-    // Produk yang dihapus admin tidak benar-benar dihilangkan dari DB,
-    // melainkan ditandai dengan kolom `deleted_at`. Tujuan: menjaga
-    // integritas riwayat perhitungan SPK — produk yang pernah masuk
-    // ranking tetap bisa di-trace meskipun "dihapus".
+    #Produk yang dihapus admin tidak benar-benar dihilangkan dari DB,
+    # agar riwayat perhitungan tetap ada meskipun dihapus, ditandai dengan kolom deleted_at, otomatis dari laravel.
     use SoftDeletes;
 
     protected $table = 'produk';
@@ -23,11 +20,10 @@ class Produk extends Model
         'status_data'
     ];
 
-    // RENAMED: kategori() → kategoriProduk()
-    // Karena tabel produk punya kolom 'kategori' (string lama),
-    // Eloquent bentrok antara kolom dan nama method relasi.
+
     public function kategoriProduk()
     {
+        # 1 produk dimiliki oleh 1 kategori.
         return $this->belongsTo(
             KategoriProduk::class,
             'id_kategori',
@@ -37,6 +33,7 @@ class Produk extends Model
 
     public function nilaiProduk()
     {
+        #1 produk memiliki banyak nilai kriteria.
         return $this->hasMany(NilaiProduk::class, 'id_produk', 'id_produk');
     }
 }

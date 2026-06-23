@@ -18,11 +18,13 @@ class InputPermintaan extends Model
 
     public function produk()
     {
+        #Satu data input permintaan dimiliki oleh satu produk.
         return $this->belongsTo(Produk::class, 'id_produk', 'id_produk');
     }
 
     public function kriteria()
-    {
+    {   
+        #1 data input permintaan dimiliki oleh 1 kriteria
         return $this->belongsTo(Kriteria::class, 'id_kriteria', 'id_kriteria');
     }
 }

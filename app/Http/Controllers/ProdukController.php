@@ -422,31 +422,6 @@ class ProdukController extends Controller
         return back()->with('success', 'Produk berhasil diupdate.');
     }
 
-    /**
-     * Hapus produk.
-     *
-     * FIX BUG #3: pakai SOFT DELETE supaya riwayat perhitungan tetap utuh.
-     *
-     * Strategi:
-     * - Produk hanya ditandai `deleted_at` (tidak benar-benar dihapus dari DB).
-     * - Data terkait yang harus ikut hilang: nilai_produk & input_permintaan
-     *   (karena ini data "operasional" yang tidak perlu dipertahankan).
-     * - Data yang HARUS DIPERTAHANKAN: hasil_perhitungan (riwayat ranking).
-     *   Baris ini tetap di DB dan tetap merujuk ke produk (via id_produk +
-     *   snapshot nama_produk), sehingga riwayat tetap konsisten.
-     *
-     * Bug lama:
-     *   HasilPerhitungan::where('id_produk', $id)->delete();
-     *   → menghapus seluruh riwayat ranking produk ini.
-     *   → riwayat perhitungan jadi tidak konsisten dengan jumlah_produk
-     *     dan produk_prioritas yang sudah snapshot di tabel perhitungan.
-     *
-     * Catatan:
-     * - Kalau di masa depan butuh "Restore Produk", tinggal panggil
-     *   $produk->restore() pada produk yang trashed.
-     * - Halaman Data Produk otomatis menyembunyikan produk soft-deleted
-     *   karena SoftDeletes trait di Model Produk.
-     */
     #method destroy() untuk menghapus produk berdasarkan id yang diterima dari parameter.
     public function destroy($id)
     {
@@ -469,14 +444,6 @@ class ProdukController extends Controller
 
         return back()->with('success', 'Produk berhasil dihapus. Riwayat perhitungan tetap tersimpan.');
     }
-
-    // ── PRIVATE HELPERS ───────────────────────────────────────────────────────
-
-    /**
-     * Resolve id_kategori dari nama produk berdasarkan keyword rules.
-     * Urutan PENTING — keyword lebih spesifik di atas, lebih umum di bawah.
-     * Ditest terhadap 168 produk DRW Skincare: 0 produk tanpa kategori.
-     */
     #method resolveKategori() untuk menentukan id_kategori dari nama produk berdasarkan aturan keyword tertentu.
     private function resolveKategori(string $namaProduk): ?int
     {

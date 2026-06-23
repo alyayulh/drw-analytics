@@ -18,11 +18,13 @@ class NilaiProduk extends Model
 
     public function produk()
     {
+        #1 nilai dimiliki 1 produk
         return $this->belongsTo(Produk::class, 'id_produk', 'id_produk');
     }
 
     public function kriteria()
     {
+        #1 nilai dimiliki 1 kriteria
         return $this->belongsTo(Kriteria::class, 'id_kriteria', 'id_kriteria');
     }
 }

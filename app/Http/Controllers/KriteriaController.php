@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class KriteriaController extends Controller
 {
-    public function index()
+    public function index() 
     {
         $kriterias  = Kriteria::all();
         $totalBobot = $kriterias->sum('bobot');

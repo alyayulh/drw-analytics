@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable; //kode ini mengimpor kelas User dari Laravel yang menyediakan fungsionalitas autentikasi dasar.
+use Illuminate\Foundation\Auth\User as Authenticatable; 
 
-// membuat model User yang mewakili tabel 'user' di database. model ini digunakan untuk autentikasi user di aplikasi Laravel.
 class User extends Authenticatable 
 {
-    //kenapa protected? karena table dan primarykey ini hanya bisa diakses oleh class ini dan turunannya, tidak bisa diakses dari luar class.
     protected $table = 'user';
     protected $primaryKey = 'id_user';
 
