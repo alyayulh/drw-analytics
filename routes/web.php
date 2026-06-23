@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
+use Illuminate\Support\Facades\Route; #class route dari Laravel untuk mendefinisikan route.
+use App\Http\Controllers\AuthController; #menghubungkan route dengan controller AuthController.
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\KriteriaController;
@@ -15,16 +15,33 @@ use App\Http\Controllers\AsosiasiController;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/login', fn() => view('auth.login'))->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+#route: GET -> saat membuka atau menampilkan halaman.
+#route: POST -> saat mengirim data (form login) ke server untuk diproses.
+
+#jenis route → URL → controller → method → nama route
+
+#bagian routing untuk autentikasi (login/logout) user.
+#1. Route untuk menampilkan halaman login (GET /login). cuma menampilkan form login, tidak ada proses autentikasi/logika. makanya dipakai closure langsung tanpa controller khusus.
+#closure maksudnya function anonim (tanpa nama) tanpa perlu membuat controller khusus untuk menampilkan view login
+Route::get('/login', fn() => view('auth.login'))->name('login');    
+#ketika user akses GET /login, tampilkan view auth.login (form login).
+#fn() => view('auth.login') -> closure yang langsung return view login tanpa perlu controller khusus.
+#name('login') -> beri nama route 'login' untuk memudahkan referensi di kode lain (misal: route('login')).
+
+#2. Route untuk memproses login (POST /login). methodnya post karena form login mengirim data username/password ke server untuk diproses autentikasi.
+# arahkan ke AuthController@login untuk memproses login.
+Route::post('/login', [AuthController::class, 'login'])->name('login.post'); 
+
+#3. Route untuk logout (POST /logout). methodnya post karena logout mengubah state atau session user di server.
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); 
+#ketika user submit form logout (POST /logout), panggil method logout() di AuthController untuk proses logout.
 
 /*
 |--------------------------------------------------------------------------
 | DEFAULT ROUTE
 |--------------------------------------------------------------------------
 */
-
+#ketika user mengakses root URL (/) dari aplikasi, langsung redirect ke /dashboard.
 Route::get('/', fn() => redirect('/dashboard'));
 
 /*
@@ -40,7 +57,7 @@ Route::middleware('auth')->group(function () {
     | DASHBOARD UTAMA
     |--------------------------------------------------------------------------
     */
-
+    #route untuk menampilkan dashboard utama setelah login. memanggil method index() di DashboardController untuk menampilkan halaman dashboard.
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     /*
@@ -50,16 +67,16 @@ Route::middleware('auth')->group(function () {
     */
 
     Route::middleware('role:Admin')->group(function () {
+        
+        Route::get('/data-produk', [ProdukController::class, 'index'])->name('produk.index'); #Menampilkan halaman Data Produk. memanggil method index() di ProdukController untuk menampilkan halaman data produk.
+        Route::post('/data-produk', [ProdukController::class, 'store'])->name('produk.store'); #Menambahkan produk baru. memanggil method store() di ProdukController untuk menyimpan data produk baru ke database.
 
-        Route::get('/data-produk', [ProdukController::class, 'index'])->name('produk.index');
-        Route::post('/data-produk', [ProdukController::class, 'store'])->name('produk.store');
-
-        Route::post('/data-produk/preview', [ProdukController::class, 'preview'])->name('produk.preview');
-        Route::get('/data-produk/preview', [ProdukController::class, 'showPreview'])->name('produk.preview.show');
+        Route::post('/data-produk/preview', [ProdukController::class, 'preview'])->name('produk.preview'); #Menampilkan preview data produk yang akan diimpor. memanggil method preview() di ProdukController untuk menampilkan halaman preview data produk sebelum diimpor ke database.
+        Route::get('/data-produk/preview', [ProdukController::class, 'showPreview'])->name('produk.preview.show');#Menampilkan halaman preview data produk yang sudah diunggah. memanggil method showPreview() di ProdukController untuk menampilkan halaman preview data produk yang sudah diunggah sebelumnya.
         Route::post('/data-produk/import-confirm', [ProdukController::class, 'importConfirm'])->name('produk.import.confirm');
         Route::post('/data-produk/cancel-preview', [ProdukController::class, 'cancelPreview'])->name('produk.preview.cancel');
 
-        Route::put('/data-produk/{id}', [ProdukController::class, 'update'])->name('produk.update');
+        Route::put('/data-produk/{id}', [ProdukController::class, 'update'])->name('produk.update'); #Mengupdate data produk yang sudah ada. memanggil method update() di ProdukController untuk mengupdate data produk yang sudah ada di database berdasarkan id produk yang diberikan.
         Route::delete('/data-produk/{id}', [ProdukController::class, 'destroy'])->name('produk.destroy');
     });
 
