@@ -610,6 +610,12 @@ class AsosiasiController extends Controller
         try {
             $filePath = $file->getPathname();
 
+            // Setelah deploy/pindah environment, beberapa server menyimpan file upload
+            // di path sementara yang berbeda. Karena itu, gunakan fallback getRealPath().
+            if (!$filePath || !is_file($filePath)) {
+                $filePath = $file->getRealPath();
+            }
+
             if (!$filePath || !is_file($filePath)) {
                 return [
                     'valid' => false,
@@ -751,12 +757,21 @@ class AsosiasiController extends Controller
 
     private function getRequiredDatasetColumnGroups()
     {
+        // Alias dibuat fleksibel karena nama header Excel bisa berbeda-beda,
+        // misalnya no_transaksi, Nomor Transaksi, Transaction ID, Nama Produk, dst.
+        // Semua alias akan dinormalisasi oleh normalizeHeaderName(), jadi underscore,
+        // strip, slash, titik, dan huruf besar/kecil tetap aman.
         return [
             'nomor_transaksi' => [
                 'no transaksi',
+                'no transaksi penjualan',
                 'nomor transaksi',
+                'nomor transaksi penjualan',
                 'kode transaksi',
                 'id transaksi',
+                'id transaksi penjualan',
+                'transaksi',
+                'transaction',
                 'transaction id',
                 'transaction number',
                 'transaction no',
@@ -773,30 +788,41 @@ class AsosiasiController extends Controller
                 'nomor struk',
                 'no struk',
                 'sales id',
+                'nota',
+                'no nota',
+                'nomor nota',
             ],
             'produk' => [
                 'produk',
                 'nama produk',
+                'nama barang',
+                'barang',
                 'product',
                 'product name',
                 'item',
                 'item name',
                 'nama item',
+                'sku',
                 'sku name',
                 'product sku',
                 'service',
                 'treatment',
                 'description',
                 'item description',
+                'nama layanan',
+                'layanan',
             ],
             'operator' => [
                 'operator',
                 'nama operator',
                 'kasir',
+                'nama kasir',
                 'cashier',
                 'cashier name',
                 'staff',
                 'staff name',
+                'pegawai',
+                'nama pegawai',
                 'employee',
                 'employee name',
                 'user',
@@ -809,16 +835,22 @@ class AsosiasiController extends Controller
                 'admin',
                 'sales',
                 'sales name',
+                'nama sales',
             ],
             'waktu_transaksi' => [
                 'tanggal',
+                'tgl',
                 'waktu',
                 'jam',
+                'tanggal waktu',
+                'tanggal dan waktu',
                 'tanggal transaksi',
                 'waktu transaksi',
                 'jam transaksi',
                 'tanggal pembelian',
                 'waktu pembelian',
+                'tgl transaksi',
+                'tgl pembelian',
                 'transaction date',
                 'transaction time',
                 'transaction datetime',
@@ -863,11 +895,28 @@ class AsosiasiController extends Controller
             ->all();
 
         foreach ($headers as $header) {
+            $header = $this->normalizeHeaderName($header);
+
+            if ($header === '') {
+                continue;
+            }
+
             foreach ($normalizedAliases as $alias) {
                 if ($header === $alias) {
                     return true;
                 }
 
+                // Cocokkan bentuk jamak/kolom yang mengandung kata tambahan,
+                // contoh: "No Transaksi Penjualan" tetap cocok dengan "no transaksi".
+                if (strlen($alias) >= 3 && preg_match('/(^| )' . preg_quote($alias, '/') . '( |$)/', $header)) {
+                    return true;
+                }
+
+                if (strlen($header) >= 3 && preg_match('/(^| )' . preg_quote($header, '/') . '( |$)/', $alias)) {
+                    return true;
+                }
+
+                // Fallback contains untuk header yang panjang.
                 if (strlen($alias) >= 5 && str_contains($header, $alias)) {
                     return true;
                 }
