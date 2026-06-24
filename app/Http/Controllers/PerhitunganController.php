@@ -34,11 +34,8 @@ class PerhitunganController extends Controller
         #menghitung jumlah produk yang siap
         $produkLengkap = $produks->count();
 
-        # untuk menghitung produk yang dipilih tapi belum lengkap nilainya.
+        #menghitung jumlah produk yang sudah dipilih di input permintaan tapi belum ada nilainya 
         $produkDipilihBelumLengkap = 0;
-        #ada sumber data manual?
-        #ambil id produk dari input permintaan
-        #menghitung berapa produk dengan status yang belum lengkap
         if (Kriteria::where('sumber_data', 'Manual')->exists()) {
             $idDipilih = InputPermintaan::distinct()->pluck('id_produk');
             $produkDipilihBelumLengkap = Produk::whereIn('id_produk', $idDipilih)
@@ -52,7 +49,7 @@ class PerhitunganController extends Controller
         ));
     }
     
-    #harus lengkap dan ada input permintaan.
+    #produk mana yang boleh masuk ke perhitungan.
     private function queryProdukUntukSPK()
     {
         #mengecek kriteria dengan sumber data manual
@@ -65,7 +62,7 @@ class PerhitunganController extends Controller
             $query->whereIn('id_produk', $produkDipilih);
         }
 
-        return $query;
+        return $query; #kenapa bukan get, karna lebih fleksibel bisa dipake buat diperhitungan & mengambil data produk.
     }
 
    #PROSES PERHITUNGAN MOORA
@@ -84,12 +81,12 @@ class PerhitunganController extends Controller
         if ($kriterias->isEmpty()) {
             return back()->with('error', 'Belum ada kriteria. Tambahkan kriteria terlebih dahulu.');
         }
-
-        // Terapkan bobot override dari slider jika ada
+        #mengambil inputan bobot
         $bobotOverride = $request->input('bobot_override', []);
         if (!empty($bobotOverride)) {
             foreach ($kriterias as $kriteria) {
                 if (isset($bobotOverride[$kriteria->id_kriteria])) {
+                    #mengganti menjadi bobot kriteria sementara
                     $kriteria->bobot = (float) $bobotOverride[$kriteria->id_kriteria];
                 }
             }
@@ -101,22 +98,17 @@ class PerhitunganController extends Controller
             return back()->with('error', "Total bobot kriteria harus 100%. Saat ini: {$totalBobot}%.");
         }
 
-        #STRICT VALIDATION: semua produk yang dipilih harus lengkap.
-        #Tujuan strict validation: Validasi produk yang dihitung harus lengkap nilainya. 
-
+        #validasi semua produk yang dipilih harus lengkap untuk dihitung.
         $adaKriteriaManual = Kriteria::where('sumber_data', 'Manual')->exists();
 
         if ($adaKriteriaManual) {
-            # ambil Semua produk yang DIPILIH (ada di input_permintaan)
             $idProdukDipilih = InputPermintaan::distinct()->pluck('id_produk');
             $jumlahDipilih   = $idProdukDipilih->count();
-
-            #dari produk yang dipilih di input permintaan, hitung produk yang lengkap
             $jumlahLengkap = Produk::whereIn('id_produk', $idProdukDipilih)
                 ->where('status_data', 'Lengkap')
                 ->count();
 
-            # kalau ada produk dipilih tapi belum dinilai lengkap → tolak
+            # kalau ada produk dipilih tapi belum dinilai di tolak
             if ($jumlahLengkap < $jumlahDipilih) {
                 $belumLengkap = $jumlahDipilih - $jumlahLengkap;
                 return back()->with('error',
@@ -126,7 +118,7 @@ class PerhitunganController extends Controller
             }
         }
 
-        #Ambil semua produk yang berhak masuk SPK 
+        #Ambil semua produk yang berhak masuk perhitungan 
         $produks = $this->queryProdukUntukSPK()->get();
 
         if ($produks->count() < 2) {
@@ -149,9 +141,9 @@ class PerhitunganController extends Controller
             #mengambil semua nilai produk
             $nilaiProduk = $semuaNilai->get($produk->id_produk, collect());
             foreach ($kriterias as $kriteria) {
-                #mengambil kriteria yang memiliki nilai
+                #mengambil nilai kriteria
                 $n = $nilaiProduk->firstWhere('id_kriteria', $kriteria->id_kriteria);
-                #menyimpan dengan format $matriks[id_produk][id_kriteria] = nilai. jika gada nilai 0
+                #menyimpan dengan format matriks. jika gada nilai 0
                 $matriks[$produk->id_produk][$kriteria->id_kriteria] = $n ? (float)$n->nilai : 0;
             }
         }
@@ -162,14 +154,13 @@ class PerhitunganController extends Controller
         // =============================================
         $akarKuadrat = [];
         foreach ($kriterias as $kriteria) {
-            #variabel menampung jumlah kuadrat nilai pada setiap kriteria.
             $sumKuadrat = 0;
-            #Menjumlahkan kuadrat nilai semua produk pada kriteria tersebut.
-            #pow(nilai, 2) artinya nilai dipangkatkan 2.
+            #Menjumlahkan kuadrat nilai semua produk pada kriteria tersebut. #pow(nilai, 2) artinya nilai dipangkatkan 2.
             foreach ($produks as $produk) {
                 $sumKuadrat += pow($matriks[$produk->id_produk][$kriteria->id_kriteria], 2);
-            }
-            $akarKuadrat[$kriteria->id_kriteria] = $sumKuadrat > 0 ? sqrt($sumKuadrat) : 1;
+            }   
+                #menyimpan penjumlahan akar kuadrat. kalo lebih dari 0 maka dihitung. kalo ga maka 0.
+                $akarKuadrat[$kriteria->id_kriteria] = $sumKuadrat > 0 ? sqrt($sumKuadrat) : 1;
         }
 
         // =============================================
@@ -180,6 +171,7 @@ class PerhitunganController extends Controller
         foreach ($produks as $produk) {
             foreach ($kriterias as $kriteria) {
                 $nilaiAsli = $matriks[$produk->id_produk][$kriteria->id_kriteria];
+                #proses normalisasi
                 $matriksNormal[$produk->id_produk][$kriteria->id_kriteria] =
                     $akarKuadrat[$kriteria->id_kriteria] > 0
                     ? $nilaiAsli / $akarKuadrat[$kriteria->id_kriteria]
@@ -195,9 +187,12 @@ class PerhitunganController extends Controller
             $benefit = 0;
             $cost    = 0;
             foreach ($kriterias as $kriteria) {
+                #mengambil nilai normalisai dan mengubah bobot jadi desimal
                 $nilaiNormal = $matriksNormal[$produk->id_produk][$kriteria->id_kriteria];
                 $bobot       = $kriteria->bobot / 100;
 
+                #strtolower untuk membaca dalam format tulisan apapun.
+                #mengalikan normalisasi dengan bobot.
                 if (strtolower($kriteria->tipe_atribut) === 'benefit') {
                     $benefit += $nilaiNormal * $bobot;
                 } else {
@@ -217,11 +212,8 @@ class PerhitunganController extends Controller
         //
         // Tingkat 1: Yi tertinggi (utama)
         // Tingkat 2: Benefit tertinggi (tie-breaker 1)
-        //            → produk dengan kontribusi nilai lebih besar didahulukan
         // Tingkat 3: Cost terendah (tie-breaker 2)
-        //            → produk lebih efisien biaya didahulukan
         // Tingkat 4: Nama A-Z (tie-breaker 3)
-        //            → netral dan konsisten untuk produk benar-benar identik
         // =============================================
         uasort($hasilYi, function ($a, $b) {
             // Tingkat 1: Yi tertinggi
@@ -237,14 +229,12 @@ class PerhitunganController extends Controller
                 return $a['cost'] <=> $b['cost'];
             }
             // Tingkat 4: Nama A-Z
+            #strcmp untuk bandingan nama produk, lalu urutkan.
             return strcmp($a['produk']->nama_produk, $b['produk']->nama_produk);
         });
 
         // =============================================
-        // STEP 5b: Dense Ranking
-        // Produk dengan Yi sama mendapat ranking yang sama.
-        // Contoh: jika 4 produk bernilai Yi=0.0749, semuanya
-        // mendapat ranking yang sama (bukan 7,8,9,10). 
+        // Dense Ranking 
         // =============================================
         $urutan      = 0;
         $prevYi      = null;
@@ -259,7 +249,7 @@ class PerhitunganController extends Controller
                 // Yi sama → ranking sama dengan sebelumnya
                 $hasilYi[$idProduk]['ranking'] = $prevRanking;
             } else {
-                // Yi berbeda → ranking = urutan absolut saat ini
+                // Yi berbeda → ranking = lanjutkan urutan
                 $hasilYi[$idProduk]['ranking'] = $urutan;
             }
 
@@ -267,18 +257,10 @@ class PerhitunganController extends Controller
             $prevRanking = $hasilYi[$idProduk]['ranking'];
         }
 
-        // =============================================
-        // STEP 5c: Hitung Kuartil dari distribusi nilai Yi
-        //
-        // Threshold ditentukan secara statistik (bukan asumsi manual):
-        //   Q3 (75th percentile) = batas atas
-        //   Q1 (25th percentile) = batas bawah
-        //
-        // Kategori prioritas:
-        //   Yi >= Q3  → Utama         (75% produk terbaik)
-        //   Yi >= Q1  → Pertimbangkan (50% produk menengah)
-        //   Yi <  Q1  → Tunda         (25% produk terbawah)
-        // =============================================
+        // ========================================================
+        // STEP 6: Pemngelompokan Kuartil dari distribusi nilai Yi
+        // ========================================================
+        #mengambil nilai yi dari array hasil yi
         $semuaYi = array_map(fn($d) => $d['yi'], array_values($hasilYi));
         sort($semuaYi); // ascending untuk perhitungan kuartil
 
@@ -287,7 +269,7 @@ class PerhitunganController extends Controller
         $q3 = $semuaYi[(int) floor($n * 0.75)]; // Q3 = 75th percentile
 
         // =============================================
-        // STEP 6: Simpan ke database (dalam transaksi)
+        // STEP 7: Simpan ke database (dalam transaksi)
         // =============================================
         DB::transaction(function () use (
             $request, $kriterias, $produks, $matriks, $matriksNormal, $hasilYi, $q1, $q3
@@ -299,7 +281,8 @@ class PerhitunganController extends Controller
                 'bobot'        => $k->bobot,
                 'sumber_data'  => $k->sumber_data,
             ])->toArray();
-
+            
+            #mmenyimpan produk prioritas. mengubah array Yi agar indexnya jadi 0
             $produkPrioritas = array_values($hasilYi)[0]['produk']->nama_produk;
 
             // Simpan header perhitungan
@@ -319,7 +302,7 @@ class PerhitunganController extends Controller
 
                 // Tentukan prioritas berdasarkan kuartil Yi
                 if ($data['yi'] >= $q3) {
-                    $prioritas = 'Utama';         // 25% teratas
+                    $prioritas = 'Utama';         // 75% teratas
                 } elseif ($data['yi'] >= $q1) {
                     $prioritas = 'Pertimbangkan'; // 50% menengah
                 } else {
@@ -349,7 +332,7 @@ class PerhitunganController extends Controller
                     ]);
                 }
             }
-
+            #menyimpan id perhitungan terakhir
             session(['last_perhitungan_id' => $perhitungan->id_perhitungan]);
         });
 
@@ -357,10 +340,7 @@ class PerhitunganController extends Controller
             ->with('success', 'Perhitungan MOORA berhasil dijalankan.');
     }
 
-    /**
-     * Tampilkan halaman hasil perhitungan berdasarkan id perhitungan.
-     * Menyiapkan data hasil produk dan snapshot bobot kriteria.
-     */
+    #Tampilkan halaman hasil perhitungan berdasarkan id perhitungan.
     public function hasil($id)
     {
         $perhitungan = Perhitungan::findOrFail($id);
@@ -372,25 +352,20 @@ class PerhitunganController extends Controller
             ->orderBy('nama_produk')       // tie-breaker 3
             ->get();
 
+        #mengambil kriteria dari riwayat perhitungan dari bobot snapshot karna kriteria itu dinamis. 
         $kriterias = collect($perhitungan->bobot_snapshot);
 
         return view('spk.hasil-perhitungan', compact('perhitungan', 'hasil', 'kriterias'));
     }
 
-    /**
-     * Tampilkan riwayat semua perhitungan SPK.
-     * Menyajikan daftar perhitungan yang sudah disimpan untuk ditinjau ulang.
-     */
+    #Tampilkan riwayat perhitungan
     public function riwayat()
     {
         $riwayat = Perhitungan::orderBy('created_at', 'desc')->get();
         return view('spk.riwayat', compact('riwayat'));
     }
 
-    /**
-     * Hapus perhitungan terpilih.
-     * Menghapus data perhitungan beserta relasi hasilnya dari database.
-     */
+    #menghapus perhitungan
     public function destroy($id)
     {
         $perhitungan = Perhitungan::findOrFail($id);

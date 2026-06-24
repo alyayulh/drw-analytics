@@ -621,7 +621,7 @@ td.status-col { white-space: nowrap; }
         </button>
       </div>
 
-    </div>{{-- /step2 --}}
+    </div>
 
   </div>
 </div>
