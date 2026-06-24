@@ -10,41 +10,35 @@ use App\Models\HasilPerhitungan;
 use App\Models\DetailPerhitungan;
 use App\Models\InputPermintaan;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth; #mengambil id user
 use Illuminate\Support\Facades\DB;
-
-/**
- * Controller untuk alur SPK MOORA.
- * Mengelola tampilan form, eksekusi perhitungan, hasil, riwayat, dan penghapusan data.
- */
+ 
+#Mengelola tampilan form, eksekusi perhitungan, hasil, riwayat, dan penghapusan data.
 class PerhitunganController extends Controller
 {
-    /**
-     * Tampilkan halaman form perhitungan SPK.
-     * Mengambil kriteria, produk yang siap dihitung, dan riwayat perhitungan terakhir.
-     *
-     * FIX BUG (produk tidak dipilih ikut terhitung):
-     * Produk yang masuk SPK = produk yang status_data='Lengkap' DAN
-     * dipilih di Input Permintaan (punya record di tabel input_permintaan).
-     * Logika ini di-extract ke method queryProdukUntukSPK() agar tidak duplicate.
-     */
+
     public function index()
     {
+        #mengambil semua kriteria, total bobot, jumlah produk, 
         $kriterias     = Kriteria::all();
         $totalBobot    = $kriterias->sum('bobot');
         $totalProduk   = Produk::count();
-        $riwayat       = Perhitungan::orderBy('created_at', 'desc')->take(5)->get();
+        $riwayat       = Perhitungan::orderBy('created_at', 'desc')->take(5)->get(); #untuk menampilkan 5 riwayat perhitungan di halaman perhitungan
 
+        #mengambil produk yang siap dihitung (nilai dan nama produk) dari database
         $produks = $this->queryProdukUntukSPK()
             ->with('nilaiProduk')
             ->orderBy('nama_produk')
             ->get();
 
+        #menghitung jumlah produk yang siap
         $produkLengkap = $produks->count();
 
-        // STRICT VALIDATION INFO: hitung produk yang dipilih tapi belum lengkap
-        // → tampilkan warning di UI agar user tahu sebelum submit.
+        # untuk menghitung produk yang dipilih tapi belum lengkap nilainya.
         $produkDipilihBelumLengkap = 0;
+        #ada sumber data manual?
+        #ambil id produk dari input permintaan
+        #menghitung berapa produk dengan status yang belum lengkap
         if (Kriteria::where('sumber_data', 'Manual')->exists()) {
             $idDipilih = InputPermintaan::distinct()->pluck('id_produk');
             $produkDipilihBelumLengkap = Produk::whereIn('id_produk', $idDipilih)
@@ -57,29 +51,16 @@ class PerhitunganController extends Controller
             'riwayat', 'produks', 'produkDipilihBelumLengkap'
         ));
     }
-
-    /**
-     * Helper: query produk yang berhak masuk SPK.
-     *
-     * Aturan HYBRID:
-     *   - Kalau ADA kriteria Manual → produk harus status_data='Lengkap'
-     *     DAN dipilih di Input Permintaan (ada record di input_permintaan).
-     *   - Kalau TIDAK ada kriteria Manual → cukup status_data='Lengkap'
-     *     (fallback supaya sistem tidak deadlock saat semua kriteria
-     *     dari Excel).
-     *
-     * Returns: Eloquent query builder (belum di-execute), supaya caller
-     * bisa chain ->with(), ->orderBy(), ->get() sesuai kebutuhan.
-     */
+    
+    #harus lengkap dan ada input permintaan.
     private function queryProdukUntukSPK()
     {
+        #mengecek kriteria dengan sumber data manual
         $adaKriteriaManual = Kriteria::where('sumber_data', 'Manual')->exists();
-
+        #mengambil produk dengan status lengkap.
         $query = Produk::where('status_data', 'Lengkap');
 
         if ($adaKriteriaManual) {
-            // Filter: hanya produk yang punya entry di input_permintaan
-            // (artinya dipilih oleh manajer di Step 1 Input Permintaan).
             $produkDipilih = InputPermintaan::distinct()->pluck('id_produk');
             $query->whereIn('id_produk', $produkDipilih);
         }
@@ -87,16 +68,9 @@ class PerhitunganController extends Controller
         return $query;
     }
 
-    /**
-     * Jalankan perhitungan MOORA.
-     * Validasi input, hitung normalisasi, nilai Yi, ranking, dan simpan hasil ke database.
-     */
+   #PROSES PERHITUNGAN MOORA
     public function hitung(Request $request)
-    {
-        // FIX BUG #6: max:100 di validator vs VARCHAR(20) di migration.
-        // Sebelumnya: input 21–100 char lolos validasi tapi gagal saat insert
-        // ke DB → error 500 yang tidak jelas untuk user.
-        // Solusi: samakan dengan ukuran kolom DB (20) + pesan error custom.
+    {  
         $request->validate([
             'periode_data' => 'required|string|max:100',
         ], [
@@ -127,29 +101,22 @@ class PerhitunganController extends Controller
             return back()->with('error', "Total bobot kriteria harus 100%. Saat ini: {$totalBobot}%.");
         }
 
-        // =========================================================
-        // STRICT VALIDATION: semua produk yang dipilih harus lengkap.
-        //
-        // Aturan: kalau ada kriteria Manual, produk yang masuk SPK harus
-        // (a) dipilih di Input Permintaan DAN (b) status_data='Lengkap'.
-        //
-        // Tujuan strict validation: cegah perhitungan diam-diam mengabaikan
-        // produk yang dipilih tapi belum lengkap nilainya. User harus tahu
-        // dan lengkapi dulu, baru boleh hitung.
-        // =========================================================
+        #STRICT VALIDATION: semua produk yang dipilih harus lengkap.
+        #Tujuan strict validation: Validasi produk yang dihitung harus lengkap nilainya. 
+
         $adaKriteriaManual = Kriteria::where('sumber_data', 'Manual')->exists();
 
         if ($adaKriteriaManual) {
-            // Semua produk yang DIPILIH (ada di input_permintaan)
+            # ambil Semua produk yang DIPILIH (ada di input_permintaan)
             $idProdukDipilih = InputPermintaan::distinct()->pluck('id_produk');
             $jumlahDipilih   = $idProdukDipilih->count();
 
-            // Dari yang dipilih, berapa yang lengkap?
+            #dari produk yang dipilih di input permintaan, hitung produk yang lengkap
             $jumlahLengkap = Produk::whereIn('id_produk', $idProdukDipilih)
                 ->where('status_data', 'Lengkap')
                 ->count();
 
-            // Strict: kalau ada produk dipilih tapi belum dinilai lengkap → tolak
+            # kalau ada produk dipilih tapi belum dinilai lengkap → tolak
             if ($jumlahLengkap < $jumlahDipilih) {
                 $belumLengkap = $jumlahDipilih - $jumlahLengkap;
                 return back()->with('error',
@@ -159,8 +126,7 @@ class PerhitunganController extends Controller
             }
         }
 
-        // Ambil semua produk yang berhak masuk SPK (Hybrid logic).
-        // Lihat queryProdukUntukSPK() untuk aturan lengkapnya.
+        #Ambil semua produk yang berhak masuk SPK 
         $produks = $this->queryProdukUntukSPK()->get();
 
         if ($produks->count() < 2) {
@@ -170,7 +136,7 @@ class PerhitunganController extends Controller
             );
         }
 
-        // Ambil semua nilai produk sekaligus (1 query)
+        // Ambil semua nilai produk
         $semuaNilai = NilaiProduk::whereIn('id_produk', $produks->pluck('id_produk'))
             ->get()
             ->groupBy('id_produk');
@@ -180,19 +146,26 @@ class PerhitunganController extends Controller
         // =============================================
         $matriks = [];
         foreach ($produks as $produk) {
+            #mengambil semua nilai produk
             $nilaiProduk = $semuaNilai->get($produk->id_produk, collect());
             foreach ($kriterias as $kriteria) {
+                #mengambil kriteria yang memiliki nilai
                 $n = $nilaiProduk->firstWhere('id_kriteria', $kriteria->id_kriteria);
+                #menyimpan dengan format $matriks[id_produk][id_kriteria] = nilai. jika gada nilai 0
                 $matriks[$produk->id_produk][$kriteria->id_kriteria] = $n ? (float)$n->nilai : 0;
             }
         }
 
         // =============================================
-        // STEP 2: Hitung akar jumlah kuadrat per kriteria
+        // NORMALISASI 
+        // STEP 1: hitung pembagi (akar kuadrat dari nilai)
         // =============================================
         $akarKuadrat = [];
         foreach ($kriterias as $kriteria) {
+            #variabel menampung jumlah kuadrat nilai pada setiap kriteria.
             $sumKuadrat = 0;
+            #Menjumlahkan kuadrat nilai semua produk pada kriteria tersebut.
+            #pow(nilai, 2) artinya nilai dipangkatkan 2.
             foreach ($produks as $produk) {
                 $sumKuadrat += pow($matriks[$produk->id_produk][$kriteria->id_kriteria], 2);
             }
@@ -200,7 +173,8 @@ class PerhitunganController extends Controller
         }
 
         // =============================================
-        // STEP 3: Normalisasi matriks
+        // NORMALISASI 
+        // STEP 2: normalisasi matriks
         // =============================================
         $matriksNormal = [];
         foreach ($produks as $produk) {
@@ -270,7 +244,7 @@ class PerhitunganController extends Controller
         // STEP 5b: Dense Ranking
         // Produk dengan Yi sama mendapat ranking yang sama.
         // Contoh: jika 4 produk bernilai Yi=0.0749, semuanya
-        // mendapat ranking yang sama (bukan 7,8,9,10).
+        // mendapat ranking yang sama (bukan 7,8,9,10). 
         // =============================================
         $urutan      = 0;
         $prevYi      = null;

@@ -840,8 +840,8 @@ body {
             </div>
             <div class="priority-percentage">Top 75%</div>
             <div class="priority-body">
-              <p>✓ Produk dengan performa <b>tertinggi</b> dibanding yang lain</p>
-              <p>✓ <b>Rekomendasi utama</b> untuk dipromosikan</p>
+              <p>Produk dengan performa <b>tertinggi</b> dibanding yang lain</p>
+              <p><b>Rekomendasi utama</b> untuk dipromosikan</p>
             </div>
           </div>
         </div>
@@ -855,11 +855,11 @@ body {
             </div>
             <div class="priority-percentage">25-75%</div>
             <div class="priority-body">
-              <p>✓ Performa <b>cukup baik</b> dan konsisten</p>
-              <p>✓ <b>Layak dipromosikan</b> dengan pertimbangan lebih lanjut</p>
+              <p>Performa <b>cukup baik</b> dan konsisten</p>
+              <p><b>Layak dipromosikan</b> dengan pertimbangan lebih lanjut</p>
             </div>
             <div class="priority-details">
-              💡 Dapat menjadi produk pendamping promosi untuk menambah pilihan customer
+              Dapat menjadi produk pendamping promosi untuk menambah pilihan customer
             </div>
           </div>
         </div>
@@ -873,19 +873,18 @@ body {
             </div>
             <div class="priority-percentage">25% terbawah</div>
             <div class="priority-body">
-              <p>✓ Performa <b>rendah</b> dibanding produk lain</p>
-              <p>✓ <b>Belum direkomendasikan</b> untuk dipromosikan saat ini</p>
+              <p>Performa <b>rendah</b> dibanding produk lain</p>
+              <p><b>Belum direkomendasikan</b> untuk dipromosikan saat ini</p>
             </div>
             <div class="priority-details">
-              💡 Analisis ulang strategi penjualan atau pertimbangkan perbaikan produk sebelum promosi
+              Analisis ulang strategi penjualan atau pertimbangkan perbaikan produk sebelum promosi
             </div>
           </div>
         </div>
       </div>
 
       <div class="priority-note">
-        <strong>📌 Catatan Penting:</strong> Jika ada produk dengan skor sama, sistem akan mengurutkan berdasarkan: (1) Total keuntungan tertinggi, (2) Total biaya terendah, (3) Nama produk (A–Z). Pengurutan ini memastikan konsistensi dan keadilan dalam penilaian.
-      </div>
+        <strong>📌 Catatan Penting:</strong> Jika ada produk dengan skor sama, sistem akan mengurutkan berdasarkan: (1) Total benefit tertinggi, (2) Total cost terendah, (3) Nama produk (A–Z)
     </div>
 
     {{-- Persiapan data untuk kedua mode --}}
