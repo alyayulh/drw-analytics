@@ -422,6 +422,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
 
 </div>
 
+<!-- MAIN -->
 <div class="main">
   <div class="content">
 
@@ -675,7 +676,7 @@ code, .mono { font-family: 'DM Mono', monospace; }
             </div>
             <ul class="step-actions">
               <li><span class="step-dot green"></span>Buka menu Hitung di sidebar.</li>
-              <li><span class="step-dot green"></span>Klik tombol Mulai Perhitungan — sistem akan memproses data secara otomatis.</li>
+              <li><span class="step-dot green"></span>Masukkan nama promosi lalu klik tombol Mulai Perhitungan — sistem akan memproses data secara otomatis.</li>
               <li><span class="step-dot green"></span>Tunggu hingga hasil perhitungan muncul.</li>
               <li><span class="step-dot green"></span>Hasil perhitunganberupa peringkat produk dari Yi score tertinggi ke terendah.</li>
             </ul>

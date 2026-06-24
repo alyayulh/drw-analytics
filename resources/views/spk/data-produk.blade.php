@@ -169,7 +169,6 @@ tr:hover td { background: var(--pink-light); }
 <body>
 
 {{-- Halaman data produk.
-     Menampilkan daftar produk dan memungkinkan pengelolaan data produk untuk SPK.
 --}}
 
 <div class="sidebar">

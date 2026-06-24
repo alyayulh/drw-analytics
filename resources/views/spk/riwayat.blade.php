@@ -102,7 +102,6 @@ tr:hover td { background: var(--pink-light); }
 <body>
 
 {{-- Halaman riwayat perhitungan SPK.
-     Menampilkan daftar semua perhitungan yang pernah dijalankan.
 --}}
 
 <div class="sidebar">

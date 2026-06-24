@@ -47,12 +47,6 @@
                 </div>
             @endif
 
-            {{-- 
-                Form login.
-                novalidate = matikan tooltip native HTML5 (yg jelek tampilannya),
-                kita pakai validation pesan kita sendiri (server + JS).
-                id=loginForm untuk JS hook.
-            --}}
             <form method="POST" action="/login" id="loginForm" novalidate>
                 @csrf
 
@@ -113,10 +107,6 @@
                                       : 'border-gray-200 focus:ring-pink-400 focus:border-transparent' }}"
                         >
                     </div>
-                    {{-- Error message di bawah input.
-                         Khusus password: hanya tampil kalau pesannya BERISI (bukan spasi/kosong).
-                         Pesan ' ' (spasi) dipakai sbg trik agar border merah aktif saat kredensial salah,
-                         tanpa duplikasi pesan (pesan utama sudah di bawah username). --}}
                     @php $passwordError = trim($errors->first('password')); @endphp
                     <p id="passwordError"
                        class="mt-1.5 flex items-center gap-1.5 text-xs text-red-600 {{ $passwordError !== '' ? '' : 'hidden' }}">
@@ -146,10 +136,6 @@
         </div>
     </div>
 
-    {{-- ============ Validasi client-side (UX) ============ 
-         Validasi sebenarnya tetap di server (AuthController), ini hanya layer UX
-         supaya feedback instan tanpa harus reload halaman.
-    --}}
     <script>
     (function() {
         var form     = document.getElementById('loginForm');

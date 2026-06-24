@@ -193,7 +193,6 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
 <body>
 
 {{-- Halaman kelola kriteria.
-     Menyediakan kontrol untuk membuat, mengedit, dan menghapus kriteria SPK.
 --}}
 
 <div class="sidebar">

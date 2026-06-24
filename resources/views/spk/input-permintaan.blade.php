@@ -9,7 +9,6 @@ $kriteriaJs = $kriterias->map(function($k) {
 })->values()->toArray();
 
 // Siapkan data tersimpan dengan validasi max 5 per kategori
-// $inputs sudah difilter oleh controller, tapi kita pastikan lagi di view
 $savedData = [];
 foreach ($inputs as $idProduk => $rows) {
     foreach ($rows as $row) {
@@ -440,7 +439,7 @@ td.status-col { white-space: nowrap; }
   </div>
 </div>
 
-{{-- ===== MAIN ===== --}}
+<!-- MAIN -->
 <div class="main-wrap">
   <div class="topbar">
     <div class="topbar-title">Input Permintaan</div>
@@ -448,7 +447,7 @@ td.status-col { white-space: nowrap; }
 
   <div class="content">
 
-    {{-- ======================== STEP 1 ======================== --}}
+    <!-- STEP 1 -->
     <div id="step1">
 
       <div class="stepper">
@@ -529,7 +528,7 @@ td.status-col { white-space: nowrap; }
 
     </div>{{-- /step1 --}}
 
-    {{-- ======================== STEP 2 ======================== --}}
+    <!-- STEP 2 -->
     <div id="step2" style="display:none;">
 
       <div class="stepper">
@@ -767,7 +766,6 @@ function selectRating(btn) {
   const kriteriaId = btn.dataset.kriteria;
   const value      = parseInt(btn.dataset.value);
 
-  // deactivate siblings in same rating-group
   document.getElementById(`rg-${produkId}-${kriteriaId}`)
     .querySelectorAll('.rating-btn')
     .forEach(b => b.classList.remove('active'));
@@ -831,7 +829,6 @@ function savePenilaian() {
   btn.classList.add('loading');
   btn.textContent = 'Menyimpan...';
 
-  // ratings sudah dalam format {id_produk: {id_kriteria: nilai}}
   fetch("{{ route('input.store') }}", {
     method: 'POST',
     headers: {

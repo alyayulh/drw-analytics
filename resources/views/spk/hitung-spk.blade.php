@@ -347,7 +347,6 @@ tr:hover td { background: var(--pink-light); }
 <body>
 
 {{-- Halaman hitung SPK.
-     Menampilkan form bobot, daftar produk, dan kontrol untuk menjalankan perhitungan MOORA.
 --}}
 
 <div class="sidebar">
@@ -601,8 +600,6 @@ tr:hover td { background: var(--pink-light); }
               <div id="hidden-bobots"></div>
               <div style="margin-bottom:12px">
                 <label class="form-label">Nama Periode Promosi</label>
-                {{-- FIX BUG #6: maxlength=100 match dengan kolom DB VARCHAR(100)
-                     dan validator backend max:100. --}}
                 <input class="form-input" name="periode_data"
                        placeholder="contoh: Promo Lebaran April 2026"
                        maxlength="100"

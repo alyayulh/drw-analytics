@@ -884,7 +884,7 @@ body {
       </div>
 
       <div class="priority-note">
-        <strong>📌 Catatan Penting:</strong> Jika ada produk dengan skor sama, sistem akan mengurutkan berdasarkan: (1) Total benefit tertinggi, (2) Total cost terendah, (3) Nama produk (A–Z)
+        <strong>Catatan Penting:</strong> Jika ada produk dengan skor sama, sistem akan mengurutkan berdasarkan: (1) Total benefit tertinggi, (2) Total cost terendah, (3) Nama produk (A–Z)
     </div>
 
     {{-- Persiapan data untuk kedua mode --}}
@@ -948,11 +948,7 @@ body {
       $tunda      = $hasil->whereNotIn('prioritas', ['Utama', 'Pertimbangkan'])->values();
     @endphp
 
-    {{-- ============================================================ --}}
-    {{-- ========== MODE AWAM (default, bahasa bisnis) ============== --}}
-    {{-- ============================================================ --}}
-
-    {{-- Layout baru mode awam: ringkasan di kiri, daftar rekomendasi di kanan --}}
+    {{-- Layout ringkasan di kiri, daftar rekomendasi di kanan --}}
     <div class="awam-board mode-awam-only">
       <aside class="insight-panel">
         <div class="panel-kicker">Ringkasan Keputusan</div>
@@ -1067,7 +1063,7 @@ body {
     </div>
 
     {{-- ============================================================ --}}
-    {{-- ========== MODE DETAIL (perhitungan MOORA lengkap) ========== --}}
+    {{-- ========== DETAIL PERHITUNGAN MOORA ======================== --}}
     {{-- ============================================================ --}}
     <div class="card mode-detail-only">
       <div class="card-hd">
@@ -1171,7 +1167,7 @@ body {
       </div>
     </div>
 
-    {{-- BOBOT SNAPSHOT (hanya muncul di mode DETAIL karena ini info teknis) --}}
+    {{-- BOBOT SNAPSHOT --}}
     <div class="card mode-detail-only">
       <div class="card-hd">
         <div>
@@ -1202,7 +1198,7 @@ body {
 
 <script>
 // ============================================================
-// MODE TOGGLE — switch antara Mode Rekomendasi (awam) & Detail
+// Navigasi hasil ke detail
 // ============================================================
 function switchMode(mode) {
   document.body.setAttribute('data-mode', mode);
@@ -1212,8 +1208,7 @@ function switchMode(mode) {
   try { localStorage.setItem('spk_hasil_mode', mode); } catch(e) {}
 }
 
-// Restore mode dari localStorage saat halaman dibuka.
-// Default tetap "awam" (sudah di-set via attribute data-mode di <body>).
+//restore saat halaman dibuka
 (function restoreMode() {
   var mode = 'awam';
   try { mode = localStorage.getItem('spk_hasil_mode') || 'awam'; } catch(e) {}
