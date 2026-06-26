@@ -46,6 +46,7 @@ class ProdukController extends Controller
             'kategoris', 'produkBelumBerkategori'
         ));
     }
+    #mengambil data produk manual
     #membuat method store() untuk menyimpan data produk baru yang diinput melalui form di halaman data produk.
     #method ini akan menerima request dari form, melakukan validasi input, menyimpan data produk baru ke database, dan mengarahkan kembali ke halaman data produk.
     #memanggil method validate() milik $request untuk melakukan validasi input.
@@ -130,16 +131,16 @@ class ProdukController extends Controller
         $file     = $request->file('file_excel');
         $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName()); #membersihkan nama file dari karakter yang tidak aman untuk nama file.
 
-    
+        #buat folder baru jika belum ada
         if (!file_exists(storage_path('app/temp'))) {
             mkdir(storage_path('app/temp'), 0755, true);
         }
-
+        #pindahkan file ke folder yang dibuat (temp).
         $file->move(storage_path('app/temp'), $filename);
         $path = storage_path('app/temp/' . $filename);
 
         #menggunakan library SimpleXLSX untuk membaca isi file Excel. 
-        #jika gagal membaca, hapus file sementara dan kembalikan ke halaman sebelumnya dengan pesan error.
+        #jika gagal membaca, hapus file sementara dan kembalikan ke halaman sebelumnya dengan pesan error.  
         if (!$xlsx = SimpleXLSX::parse($path)) {
             @unlink($path);
             return back()->with('error', 'Gagal membaca file Excel: ' . SimpleXLSX::parseError());
@@ -175,7 +176,9 @@ class ProdukController extends Controller
         $kolomTidakAda  = [];
 
         foreach ($kriteriaExcel as $kriteria) {
+            #mencocokkan nama kriteria dengan kolom excel. trim = hapus spasi, 
             $kolomExcel = strtoupper(trim($kriteria->nama_kolom_excel));
+            #mencari kolomexcel ada di posisi berapa pada headers.
             $colIdx     = array_search($kolomExcel, $headers);
 
             if ($colIdx !== false) {
@@ -194,20 +197,23 @@ class ProdukController extends Controller
 
         #menghitung total baris data yang valid di file Excel (baris yang memiliki nama produk).
         #untuk preview, hanya menampilkan maksimal 5 baris data agar tidak terlalu panjang di halaman preview.
-        $dataStart   = $headerRowIdx + 1;
+        $dataStart   = $headerRowIdx + 1; #posisi baris header. 
         $previewRows = [];
         $totalData   = 0;
 
+        #perulangan untuk membaca data produk dari baris pertama sampai baris akhir. 
         for ($i = $dataStart; $i < count($rows); $i++) {
+            #mengambil nama produk dari colnama / nama barang. kalo gada dianggap kosong.
             $nama = trim($rows[$i][$colNama] ?? '');
             if (!$nama) continue;
-            $totalData++;
+            $totalData++; #hitung total produk.
 
             if (count($previewRows) < 5) {
                 $rowData = ['nama_produk' => $nama, 'nilai' => []];
                 foreach ($kolomMap as $idKriteria => $colIdx) {
+                    #mengambil kriteria excel dan mengisi nilai sesuai kolom
                     $k = $kriteriaExcel->firstWhere('id_kriteria', $idKriteria);
-                    $rowData['nilai'][$k->nama_kriteria] = $this->parseAngka($rows[$i][$colIdx] ?? '');
+                    $rowData['nilai'][$k->nama_kriteria] = $this->parseAngka($rows[$i][$colIdx] ?? ''); #parseAngka = pastikan nilai berubah jadi angka
                 }
                 $previewRows[] = $rowData;
             }
