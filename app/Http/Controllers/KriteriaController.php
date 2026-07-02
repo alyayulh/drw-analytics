@@ -12,7 +12,7 @@ class KriteriaController extends Controller
 {
     public function index() 
     {
-        $kriterias  = Kriteria::orderBy ('bobot','desc')->get();
+        $kriterias = Kriteria::orderByDesc('bobot')->get();
         $totalBobot = $kriterias->sum('bobot');
         return view('spk.kelola-kriteria', compact('kriterias', 'totalBobot'));
     }
@@ -32,6 +32,13 @@ class KriteriaController extends Controller
             return back()->with('error',
                 'Total bobot kriteria melebihi 100%. Sisa bobot: ' . (100 - Kriteria::sum('bobot')) . '%'
             );
+        }
+
+        #aturan bobot antar kriteria tidak boleh sama
+        if (Kriteria::where('bobot', $request->bobot)->exists()) {
+            return back()->with('error',
+                "Bobot {$request->bobot}% sudah dipakai oleh kriteria lain. Setiap kriteria harus punya bobot yang berbeda."
+            )->withInput();
         }
 
         Kriteria::create([
@@ -67,6 +74,13 @@ class KriteriaController extends Controller
         $totalBobot = Kriteria::where('id_kriteria', '!=', $id)->sum('bobot') + $request->bobot;
         if ($totalBobot > 100) {
             return back()->with('error', 'Total bobot kriteria melebihi 100%.');
+        }
+
+        #Bobot antar kriteria tidak boleh sama, kecuali dengan dirinya sendiri (kriteria yang sedang diedit).
+        if (Kriteria::where('id_kriteria', '!=', $id)->where('bobot', $request->bobot)->exists()) {
+            return back()->with('error',
+                "Bobot {$request->bobot}% sudah dipakai oleh kriteria lain. Setiap kriteria harus punya bobot yang berbeda."
+            )->withInput();
         }
 
         // Simpan sumber_data LAMA sebelum update untuk deteksi perubahan

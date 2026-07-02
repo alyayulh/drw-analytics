@@ -81,6 +81,8 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 input[type="range"] { width: 100%; height: 5px; border-radius: 10px; outline: none; -webkit-appearance: none; cursor: pointer; background: linear-gradient(to right, var(--pink) 0%, var(--pink) var(--pct, 0%), var(--border-strong) var(--pct, 0%), var(--border-strong) 100%); }
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--pink); cursor: pointer; box-shadow: 0 1px 4px rgba(232,0,90,.35); border: 2px solid #fff; }
 input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--pink); cursor: pointer; border: 2px solid #fff; }
+.kriteria-item.bobot-duplikat { background: rgba(232,0,90,.06); border-radius: 8px; outline: 1px dashed var(--red); padding: 8px; margin: -8px -8px 4px -8px; }
+.kriteria-item.bobot-duplikat .bobot-display { color: var(--red) !important; }
 
 .info-box { display: flex; align-items: flex-start; gap: 8px; padding: 9px 12px; border-radius: 8px; font-size: 12px; line-height: 1.5; }
 .info-box svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; margin-top: 2px; }
@@ -719,19 +721,41 @@ function onSliderChange(el) {
   updateTotalUI(total);
 }
 
+// Cek apakah ada bobot yang nilainya sama antar kriteria
+function cariBobotDuplikat() {
+  const nilai = Object.values(bobotState);
+  const hitung = {};
+  nilai.forEach(v => { hitung[v] = (hitung[v] || 0) + 1; });
+  return Object.keys(hitung).some(v => hitung[v] > 1);
+}
+
 function updateTotalUI(total) {
-  const ok = total === 100;
+  const totalOk = total === 100;
+  const adaDuplikat = cariBobotDuplikat();
+  const ok = totalOk && !adaDuplikat;
 
   // Badge total
   const badge = document.getElementById('total-badge');
   badge.textContent = 'Total: ' + total + '%';
-  badge.style.color = ok ? 'var(--green)' : 'var(--red)';
+  badge.style.color = totalOk ? 'var(--green)' : 'var(--red)';
+
+  // Tandai slider yang bobotnya sama (border merah)
+  document.querySelectorAll('.bobot-slider').forEach(el => {
+    const id = el.dataset.id;
+    const nilai = bobotState[id];
+    const jumlahSama = Object.values(bobotState).filter(v => v === nilai).length;
+    el.closest('.kriteria-item')?.classList.toggle('bobot-duplikat', jumlahSama > 1);
+  });
 
   // Info box
   const box  = document.getElementById('bobot-info');
   const icon = document.getElementById('bobot-info-icon');
   const text = document.getElementById('bobot-info-text');
-  if (ok) {
+  if (adaDuplikat) {
+    box.className = 'info-box info-amber';
+    icon.innerHTML = '<path d="M8 2L2 14h12L8 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v3M8 11v.5" stroke-linecap="round"/>';
+    text.innerHTML = 'Ada bobot yang sama antar kriteria. Setiap kriteria harus punya bobot yang berbeda.';
+  } else if (ok) {
     box.className = 'info-box info-green';
     icon.innerHTML = '<path d="M3 8l4 4 6-6" stroke-linecap="round" stroke-linejoin="round"/>';
     text.innerHTML = 'Bobot sudah pas 100%. Siap dihitung.';
@@ -771,6 +795,12 @@ document.getElementById('form-hitung').addEventListener('submit', function() {
 document.querySelectorAll('.bobot-slider').forEach(el => {
   el.style.setProperty('--pct', el.value + '%');
 });
+
+// Jalankan pengecekan duplikat & total sejak halaman dibuka
+(function initCekBobot() {
+  const totalAwal = Object.values(bobotState).reduce((a, b) => a + b, 0);
+  updateTotalUI(totalAwal);
+})();
 </script>
 
 <script>

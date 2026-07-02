@@ -566,13 +566,16 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       <div class="form-group">
         <label class="form-label">Bobot (%)</label>
         <div class="slider-row">
-          <input type="range" min="0" max="100" step="5" value="10" name="bobot" id="slider-tambah" oninput="document.getElementById('val-tambah').textContent=this.value+'%'">
+          <input type="range" min="0" max="100" step="5" value="10" name="bobot" id="slider-tambah" oninput="onBobotInput('tambah')">
           <span class="slider-val" id="val-tambah">10%</span>
+        </div>
+        <div id="warning-tambah" style="display:none;font-size:11px;color:var(--red);margin-top:6px;font-weight:600">
+          Bobot ini sudah dipakai kriteria lain. Pilih nilai yang berbeda.
         </div>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn" onclick="closeModal('modal-tambah')">Batal</button>
-        <button type="submit" class="btn btn-pink">Simpan</button>
+        <button type="submit" class="btn btn-pink" id="btn-simpan-tambah">Simpan</button>
       </div>
     </form>
   </div>
@@ -613,13 +616,16 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
       <div class="form-group">
         <label class="form-label">Bobot (%)</label>
         <div class="slider-row">
-          <input type="range" min="0" max="100" step="5" name="bobot" id="edit-bobot" oninput="document.getElementById('val-edit').textContent=this.value+'%'">
+          <input type="range" min="0" max="100" step="5" name="bobot" id="edit-bobot" oninput="onBobotInput('edit')">
           <span class="slider-val" id="val-edit">0%</span>
+        </div>
+        <div id="warning-edit" style="display:none;font-size:11px;color:var(--red);margin-top:6px;font-weight:600">
+          Bobot ini sudah dipakai kriteria lain. Pilih nilai yang berbeda.
         </div>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn" onclick="closeModal('modal-edit')">Batal</button>
-        <button type="submit" class="btn btn-pink">Simpan</button>
+        <button type="submit" class="btn btn-pink" id="btn-simpan-edit">Simpan</button>
       </div>
     </form>
   </div>
@@ -642,16 +648,49 @@ input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius
 </div>
 
 <script>
-function openModal(id) { document.getElementById(id).classList.add('open'); }
+// Daftar bobot kriteria yang sudah ada saat ini: { id_kriteria: bobot }
+const daftarBobotKriteria = @json($kriterias->pluck('bobot', 'id_kriteria'));
+let idKriteriaSedangEdit = null; // null saat mode tambah
+
+// mengecek apakah bobot yang dipilih sudah ada di kriteria lain, dan menampilkan peringatan jika duplikat
+function onBobotInput(mode) {
+  const inputEl  = document.getElementById(mode === 'tambah' ? 'slider-tambah' : 'edit-bobot');
+  const labelEl  = document.getElementById(mode === 'tambah' ? 'val-tambah' : 'val-edit');
+  const warnEl   = document.getElementById('warning-' + mode);
+  const btnEl    = document.getElementById('btn-simpan-' + mode);
+  const nilai    = parseInt(inputEl.value);
+
+  labelEl.textContent = nilai + '%';
+
+  const excludeId = mode === 'edit' ? idKriteriaSedangEdit : null;
+  const duplikat = Object.entries(daftarBobotKriteria).some(([id, bobot]) => {
+    return String(id) !== String(excludeId) && Number(bobot) === nilai;
+  });
+
+  warnEl.style.display = duplikat ? 'block' : 'none';
+  btnEl.disabled = duplikat;
+  btnEl.style.opacity = duplikat ? '0.5' : '1';
+  btnEl.style.cursor = duplikat ? 'not-allowed' : 'pointer';
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); 
+  if (id === 'modal-tambah') {
+    onBobotInput('tambah');
+  }
+}
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
   if (id === 'modal-tambah') {
     document.querySelector('#modal-tambah form').reset();
     document.getElementById('val-tambah').textContent = '10%';
+    document.getElementById('warning-tambah').style.display = 'none'; //
+    document.getElementById('btn-simpan-tambah').disabled = false;
+    document.getElementById('btn-simpan-tambah').style.opacity = '1';
     toggleKolomExcel('tambah', 'Excel');
   }
 }
 function openEdit(id, nama, tipe, bobot, sumber, kolomExcel) {
+  idKriteriaSedangEdit = id;
   document.getElementById('edit-nama').value = nama;
   const tipeKapital = tipe.charAt(0).toUpperCase() + tipe.slice(1).toLowerCase();
   document.getElementById('edit-tipe').value = tipeKapital;
@@ -660,6 +699,9 @@ function openEdit(id, nama, tipe, bobot, sumber, kolomExcel) {
   document.getElementById('kolom-excel-edit').value = kolomExcel || '';
   document.getElementById('val-edit').textContent = bobot + '%';
   document.getElementById('form-edit').action = '/kelola-kriteria/' + id;
+  document.getElementById('warning-edit').style.display = 'none';
+  document.getElementById('btn-simpan-edit').disabled = false;
+  document.getElementById('btn-simpan-edit').style.opacity = '1';
   toggleKolomExcel('edit', sumber);
   openModal('modal-edit');
 }
