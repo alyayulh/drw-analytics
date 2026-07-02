@@ -12,7 +12,7 @@ class KriteriaController extends Controller
 {
     public function index() 
     {
-        $kriterias  = Kriteria::all();
+        $kriterias  = Kriteria::orderBy ('bobot','desc')->get();
         $totalBobot = $kriterias->sum('bobot');
         return view('spk.kelola-kriteria', compact('kriterias', 'totalBobot'));
     }
