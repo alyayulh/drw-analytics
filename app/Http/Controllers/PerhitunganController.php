@@ -98,6 +98,14 @@ class PerhitunganController extends Controller
             return back()->with('error', "Total bobot kriteria harus 100%. Saat ini: {$totalBobot}%.");
         }
 
+        #Bobot antar kriteria tidak boleh sama satu sama lain.
+        $nilaiBobot = $kriterias->pluck('bobot');
+        if ($nilaiBobot->count() !== $nilaiBobot->unique()->count()) {
+            return back()->with('error',
+                'Bobot antar kriteria tidak boleh sama. Setiap kriteria harus punya bobot yang berbeda.'
+            );
+        }
+
         #validasi semua produk yang dipilih harus lengkap untuk dihitung.
         $adaKriteriaManual = Kriteria::where('sumber_data', 'Manual')->exists();
 

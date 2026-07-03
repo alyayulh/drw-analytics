@@ -885,6 +885,7 @@ body {
 
       <div class="priority-note">
         <strong>Catatan Penting:</strong> Jika ada produk dengan skor sama, sistem akan mengurutkan berdasarkan: (1) Total benefit tertinggi, (2) Total cost terendah, (3) Nama produk (A–Z)
+      </div>
     </div>
 
     {{-- Persiapan data untuk kedua mode --}}
