@@ -28,7 +28,6 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
     {
         $this->sectionRows = [];
         $this->tableHeaderRows = [];
-
         $summary = $this->data['summary'] ?? [];
         $dataset = $this->data['dataset'] ?? [];
         $rules = collect($this->data['rules'] ?? [])->values();
@@ -58,30 +57,6 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
             })
             ->sortByDesc('jumlah')
             ->take(10)
-            ->values();
-
-        $distribusiWaktu = $this->getCollectionFromData(['distribusiWaktu', 'distribusi_waktu'])
-            ->map(function ($item) {
-                $label = $this->firstValue($item, [
-                    'label',
-                    'kategori_waktu',
-                    'waktu',
-                    'nama',
-                ], '-');
-
-                $nilai = $this->toFloat($this->firstValue($item, [
-                    'nilai',
-                    'persentase',
-                    'jumlah',
-                    'total',
-                    'count',
-                ], 0));
-
-                return [
-                    'label' => $label ?: '-',
-                    'nilai' => $nilai,
-                ];
-            })
             ->values();
 
         $totalDataAwal = $this->toInt(
@@ -169,13 +144,13 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
             'filename',
         ], '-');
 
-        $tanggalAnalisis = $this->firstValue($dataset, [
-            'tanggal_analisis',
-            'tanggal_proses',
-            'created_at',
-        ], '-');
-
-        $tanggalAnalisis = $this->formatTanggal($tanggalAnalisis);
+        $tanggalAnalisis = $this->formatTanggalIndonesia(
+            $this->firstValue($dataset, [
+                'tanggal_analisis',
+                'tanggal_proses',
+                'created_at',
+            ], '-')
+        );
 
         $ruleTerbaik = $this->firstValue($summary, [
             'rule_terbaik',
@@ -197,10 +172,11 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
                 ->first() ?? 'Belum ada rule';
         }
 
+        $distribusiWaktu = $this->buildDistribusiWaktuDashboard($totalTransaksi);
+
         $rangeWaktu = [
             'pagi' => '00.00 - 11.59',
-            'siang' => '12.00 - 17.59',
-            'malam' => '18.00 - 23.59',
+            'siang' => '12.00 - 23.59',
         ];
 
         $waktuDominan = $distribusiWaktu
@@ -211,8 +187,11 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
 
         $labelWaktuDominan = data_get($waktuDominan, 'label', '-');
         $nilaiWaktuDominan = (float) data_get($waktuDominan, 'nilai', 0);
+        $jumlahTransaksiWaktuDominan = (int) data_get($waktuDominan, 'jumlah', 0);
 
-        $jumlahTransaksiWaktuDominan = $this->hitungJumlahTransaksiWaktu($nilaiWaktuDominan, $totalTransaksi);
+        if ($jumlahTransaksiWaktuDominan <= 0) {
+            $jumlahTransaksiWaktuDominan = $this->hitungJumlahTransaksiWaktu($nilaiWaktuDominan, $totalTransaksi);
+        }
 
         $topRulesDashboard = $this->getTopRulesDashboard($rules, $totalRules);
         $ruleUtama = $topRulesDashboard->first();
@@ -230,12 +209,12 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
             return count($rows);
         };
 
-        $addSection = function (string $title) use (&$rows, $addRow) {
+        $addSection = function (string $title) use ($addRow) {
             $rowNumber = $addRow([$title]);
             $this->sectionRows[] = $rowNumber;
         };
 
-        $addTableHeader = function (array $row) use (&$rows, $addRow) {
+        $addTableHeader = function (array $row) use ($addRow) {
             $rowNumber = $addRow($row);
             $this->tableHeaderRows[] = $rowNumber;
         };
@@ -284,45 +263,21 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
             foreach ($distribusiWaktu as $waktu) {
                 $label = data_get($waktu, 'label', '-');
                 $nilai = (float) data_get($waktu, 'nilai', 0);
-                $jumlahTransaksi = $this->hitungJumlahTransaksiWaktu($nilai, $totalTransaksi);
-                $persentase = $this->hitungPersentaseWaktu($nilai, $totalTransaksi);
+                $jumlahTransaksi = (int) data_get($waktu, 'jumlah', 0);
+
+                if ($jumlahTransaksi <= 0) {
+                    $jumlahTransaksi = $this->hitungJumlahTransaksiWaktu($nilai, $totalTransaksi);
+                }
 
                 $addRow([
                     $label,
                     $rangeWaktu[strtolower((string) $label)] ?? '-',
-                    number_format($persentase, 2, ',', '.') . '%',
+                    number_format($nilai, 2, ',', '.') . '%',
                     $jumlahTransaksi,
                 ]);
             }
         } else {
             $addRow(['-', '-', '0,00%', 0]);
-        }
-
-        $addRow([]);
-
-        $addSection('POLA PEMBELIAN TERATAS');
-        $addTableHeader([
-            'No',
-            'Kondisi Transaksi',
-            'Pola yang Berkaitan',
-            'Tingkat Kemunculan',
-            'Tingkat Kepercayaan',
-            'Kekuatan Hubungan',
-        ]);
-
-        if ($topRulesDashboard->isNotEmpty()) {
-            foreach ($topRulesDashboard as $index => $rule) {
-                $addRow([
-                    $index + 1,
-                    $this->bersihkanTeksPola(data_get($rule, 'antecedents', '-')),
-                    $this->bersihkanTeksPola(data_get($rule, 'consequents', '-')),
-                    number_format((float) data_get($rule, 'support', 0), 4, ',', '.'),
-                    number_format((float) data_get($rule, 'confidence', 0), 4, ',', '.'),
-                    number_format((float) data_get($rule, 'lift', 0), 4, ',', '.'),
-                ]);
-            }
-        } else {
-            $addRow(['-', 'Belum ada pola', '-', '-', '-', '-']);
         }
 
         $addRow([]);
@@ -354,9 +309,9 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
         $addRow([
             'Waktu Transaksi Optimal',
             $labelWaktuDominan !== '-'
-                ? 'Transaksi terbanyak terjadi pada waktu ' . $labelWaktuDominan .
+                ? 'Transaksi terbanyak terjadi pada shift ' . $labelWaktuDominan .
                     ' pukul ' . ($rangeWaktu[strtolower((string) $labelWaktuDominan)] ?? '-') .
-                    ' dengan ' . $jumlahTransaksiWaktuDominan . ' transaksi.'
+                    ' dengan ' . number_format($jumlahTransaksiWaktuDominan, 0, ',', '.') . ' transaksi.'
                 : 'Belum ada data distribusi waktu transaksi yang dapat ditampilkan.',
         ]);
 
@@ -364,7 +319,7 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
             'Pola Teratas',
             'Dashboard menampilkan ' . $topRulesDashboard->count() .
             ' pola asosiasi teratas berdasarkan tingkat kekuatan hubungan dari total ' .
-            $totalRules . ' pola yang terbentuk.',
+            number_format($totalRules, 0, ',', '.') . ' pola yang terbentuk.',
         ]);
 
         return $rows;
@@ -375,9 +330,9 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
         $highestRow = $sheet->getHighestRow();
         $highestColumn = $sheet->getHighestColumn();
 
-        $sheet->mergeCells('A1:F1');
+        $sheet->mergeCells('A1:G1');
 
-        $sheet->getStyle('A1:F1')->applyFromArray([
+        $sheet->getStyle('A1:G1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 15,
@@ -394,9 +349,9 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
         ]);
 
         foreach ($this->sectionRows as $row) {
-            $sheet->mergeCells("A{$row}:F{$row}");
+            $sheet->mergeCells("A{$row}:G{$row}");
 
-            $sheet->getStyle("A{$row}:F{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
                 'font' => [
                     'bold' => true,
                     'color' => ['rgb' => '06122D'],
@@ -413,7 +368,7 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
         }
 
         foreach ($this->tableHeaderRows as $row) {
-            $sheet->getStyle("A{$row}:F{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
                 'font' => [
                     'bold' => true,
                     'color' => ['rgb' => '06122D'],
@@ -452,10 +407,10 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
         $sheet->getStyle("A1:A{$highestRow}")->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-        $sheet->getStyle("B1:B{$highestRow}")->getAlignment()
+        $sheet->getStyle("B1:D{$highestRow}")->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-        $sheet->getStyle("C1:F{$highestRow}")->getAlignment()
+        $sheet->getStyle("E1:G{$highestRow}")->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $sheet->getRowDimension(1)->setRowHeight(26);
@@ -465,11 +420,12 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
         }
 
         $sheet->getColumnDimension('A')->setWidth(28);
-        $sheet->getColumnDimension('B')->setWidth(55);
-        $sheet->getColumnDimension('C')->setWidth(34);
-        $sheet->getColumnDimension('D')->setWidth(22);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(55);
+        $sheet->getColumnDimension('D')->setWidth(42);
         $sheet->getColumnDimension('E')->setWidth(22);
         $sheet->getColumnDimension('F')->setWidth(22);
+        $sheet->getColumnDimension('G')->setWidth(22);
 
         return [];
     }
@@ -545,6 +501,7 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
 
         if (is_string($value)) {
             $value = trim($value);
+            $value = str_replace('%', '', $value);
 
             if (preg_match('/^\d{1,3}(\.\d{3})+,\d+$/', $value)) {
                 $value = str_replace('.', '', $value);
@@ -561,20 +518,35 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
         return 0;
     }
 
-    private function formatTanggal($value): string
+    private function formatTanggalIndonesia($value): string
     {
         if (!$value || $value === '-') {
             return '-';
         }
 
+        $bulanIndonesia = [
+            'January' => 'Januari',
+            'February' => 'Februari',
+            'March' => 'Maret',
+            'April' => 'April',
+            'May' => 'Mei',
+            'June' => 'Juni',
+            'July' => 'Juli',
+            'August' => 'Agustus',
+            'September' => 'September',
+            'October' => 'Oktober',
+            'November' => 'November',
+            'December' => 'Desember',
+        ];
+
         try {
             if ($value instanceof \Carbon\Carbon) {
-                return $value->translatedFormat('d F Y');
+                return strtr($value->format('d F Y'), $bulanIndonesia);
             }
 
-            return \Carbon\Carbon::parse($value)->translatedFormat('d F Y');
+            return strtr(\Carbon\Carbon::parse($value)->format('d F Y'), $bulanIndonesia);
         } catch (\Throwable $e) {
-            return (string) $value;
+            return strtr((string) $value, $bulanIndonesia);
         }
     }
 
@@ -628,9 +600,6 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
         }
 
         return $rules
-            ->filter(function ($rule) {
-                return !$this->isRuleAnomaly($rule);
-            })
             ->sortByDesc(function ($rule) {
                 return (float) data_get($rule, 'lift', 0);
             })
@@ -638,16 +607,180 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
             ->values();
     }
 
-    private function isRuleAnomaly($rule): bool
+    private function buildDistribusiWaktuDashboard(int $totalTransaksi): Collection
     {
-        $statusAnomali = strtolower((string) data_get($rule, 'status_anomali', ''));
-        $isAnomaly = data_get($rule, 'is_anomaly', false);
+        $rawDistribusiWaktu = $this->getCollectionFromData(['distribusiWaktu', 'distribusi_waktu']);
 
-        return $statusAnomali === 'anomali'
-            || $isAnomaly === true
-            || $isAnomaly === 1
-            || $isAnomaly === '1'
-            || strtolower((string) $isAnomaly) === 'true';
+        $waktuGroups = [
+            'Pagi' => collect(),
+            'Siang' => collect(),
+        ];
+
+        foreach ($rawDistribusiWaktu as $item) {
+            $label = $this->normalizeWaktuLabel(
+                $this->firstValue($item, [
+                    'label',
+                    'kategori_waktu',
+                    'waktu',
+                    'nama',
+                    'name',
+                ], '')
+            );
+
+            if (!in_array($label, ['Pagi', 'Siang'], true)) {
+                continue;
+            }
+
+            $jumlahRaw = $this->firstValue($item, [
+                'jumlah',
+                'jumlah_transaksi',
+                'count',
+                'total',
+            ], null);
+
+            $nilaiRaw = $this->firstValue($item, [
+                'nilai',
+                'value',
+                'persentase',
+                'percentage',
+            ], 0);
+
+            $waktuGroups[$label]->push([
+                'jumlah' => $jumlahRaw !== null ? $this->toInt($jumlahRaw) : null,
+                'nilai' => $this->toFloat($nilaiRaw),
+            ]);
+        }
+
+        $hasJumlahWaktu = collect($waktuGroups)
+            ->flatten(1)
+            ->contains(function ($item) {
+                return data_get($item, 'jumlah') !== null;
+            });
+
+        if ($hasJumlahWaktu) {
+            $totalJumlahWaktu = collect($waktuGroups)
+                ->flatten(1)
+                ->sum(function ($item) {
+                    return (int) data_get($item, 'jumlah', 0);
+                });
+
+            return collect(['Pagi', 'Siang'])
+                ->map(function ($label) use ($waktuGroups, $totalJumlahWaktu) {
+                    $jumlah = $waktuGroups[$label]->sum(function ($item) {
+                        return (int) data_get($item, 'jumlah', 0);
+                    });
+
+                    $persentase = $totalJumlahWaktu > 0
+                        ? ($jumlah / $totalJumlahWaktu) * 100
+                        : 0;
+
+                    return [
+                        'label' => $label,
+                        'nilai' => round($persentase, 2),
+                        'jumlah' => $jumlah,
+                    ];
+                })
+                ->values();
+        }
+
+        $averageByWaktu = collect(['Pagi', 'Siang'])
+            ->mapWithKeys(function ($label) use ($waktuGroups) {
+                $records = $waktuGroups[$label];
+
+                $average = $records->count() > 0
+                    ? (float) $records->avg('nilai')
+                    : 0;
+
+                return [$label => $average];
+            });
+
+        $totalAverage = (float) $averageByWaktu->sum();
+
+        return collect(['Pagi', 'Siang'])
+            ->map(function ($label) use ($averageByWaktu, $totalAverage, $totalTransaksi) {
+                $rawValue = (float) $averageByWaktu->get($label, 0);
+
+                $persentase = $totalAverage > 0
+                    ? ($rawValue / $totalAverage) * 100
+                    : 0;
+
+                return [
+                    'label' => $label,
+                    'nilai' => round($persentase, 2),
+                    'jumlah' => $totalTransaksi > 0 ? (int) round(($persentase / 100) * $totalTransaksi) : 0,
+                ];
+            })
+            ->values();
+    }
+
+    private function normalizeWaktuLabel($label): ?string
+    {
+        $label = strtolower(trim((string) $label));
+
+        if ($label === '') {
+            return null;
+        }
+
+        if (str_contains($label, 'pagi')) {
+            return 'Pagi';
+        }
+
+        if (
+            str_contains($label, 'siang') ||
+            str_contains($label, 'sore') ||
+            str_contains($label, 'malam') ||
+            str_contains($label, 'night')
+        ) {
+            return 'Siang';
+        }
+
+        return ucfirst($label);
+    }
+
+    private function normalizeKanalFilterValue($value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = strtolower(trim((string) $value));
+
+        if ($value === '') {
+            return null;
+        }
+
+        $value = str_replace(['_', '-', '/', '\\'], ' ', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+        $value = trim($value);
+
+        if (in_array($value, ['offline', 'off line', 'luring', 'store', 'toko', 'langsung'], true)) {
+            return 'offline';
+        }
+
+        if (in_array($value, ['online', 'on line', 'daring', 'website', 'web', 'marketplace', 'e commerce', 'ecommerce'], true)) {
+            return 'online';
+        }
+
+        if (str_contains($value, 'offline')) {
+            return 'offline';
+        }
+
+        if (str_contains($value, 'online')) {
+            return 'online';
+        }
+
+        return null;
+    }
+
+    private function formatKanalFilter($kanalFilter): string
+    {
+        $kanalFilter = $this->normalizeKanalFilterValue($kanalFilter);
+
+        return match ($kanalFilter) {
+            'offline' => 'Offline',
+            'online' => 'Online',
+            default => 'Tidak Diketahui',
+        };
     }
 
     private function hitungJumlahTransaksiWaktu(float $nilai, int $totalTransaksi): int
@@ -661,18 +794,5 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
         }
 
         return (int) round($nilai);
-    }
-
-    private function hitungPersentaseWaktu(float $nilai, int $totalTransaksi): float
-    {
-        if ($nilai <= 100) {
-            return $nilai;
-        }
-
-        if ($totalTransaksi <= 0) {
-            return 0;
-        }
-
-        return ($nilai / $totalTransaksi) * 100;
     }
 }

@@ -18,11 +18,15 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class AsosiasiController extends Controller
 {
-    private const API_TOP_N = 100;
+    private const API_TOP_N = 0;
 
-    public function dashboard()
+    public function dashboard(Request $request)
     {
-        $data = $this->getLatestAnalysisData();
+        $kanalFilter = $this->getSelectedKanalFilter(
+            $request->input('kanal_filter', $request->input('kanal', 'semua'))
+        );
+
+        $data = $this->getLatestAnalysisData($kanalFilter);
 
         return view('asosiasi.dashboard', [
             'summary' => $data['summary'],
@@ -55,9 +59,13 @@ class AsosiasiController extends Controller
         return view('asosiasi.menghitung-prioritas');
     }
 
-    public function dashboardInsight()
+    public function dashboardInsight(Request $request)
     {
-        $data = $this->getLatestAnalysisData();
+        $kanalFilter = $this->getSelectedKanalFilter(
+            $request->input('kanal_filter', $request->input('kanal', 'semua'))
+        );
+
+        $data = $this->getLatestAnalysisData($kanalFilter);
 
         return view('asosiasi.dashboard-insight', [
             'summary' => $data['summary'],
@@ -77,14 +85,18 @@ class AsosiasiController extends Controller
         return view('asosiasi.analisis');
     }
 
-    public function hasil()
+    public function hasil(Request $request)
     {
-        return $this->hasilAnalisis();
+        return $this->hasilAnalisis($request);
     }
 
-    public function hasilAnalisis()
+    public function hasilAnalisis(Request $request)
     {
-        $data = $this->getLatestAnalysisData();
+        $kanalFilter = $this->getSelectedKanalFilter(
+            $request->input('kanal_filter', $request->input('kanal', 'semua'))
+        );
+
+        $data = $this->getLatestAnalysisData($kanalFilter);
 
         return view('asosiasi.hasil', [
             'summary' => $data['summary'],
@@ -113,13 +125,17 @@ class AsosiasiController extends Controller
         return view('asosiasi.riwayat', compact('riwayats', 'summary'));
     }
 
-    public function detailRiwayat($id)
+    public function detailRiwayat(Request $request, $id)
     {
+        $kanalFilter = $this->getSelectedKanalFilter(
+            $request->input('kanal_filter', $request->input('kanal', 'semua'))
+        );
+
         $proses = ProsesAnalisis::with('aturanAsosiasi')
             ->where('id_proses_analisis', $id)
             ->firstOrFail();
 
-        $data = $this->getAnalysisDataFromDatabase($proses);
+        $data = $this->getAnalysisDataFromDatabase($proses, $kanalFilter);
         $riwayat = $this->formatRiwayatItem($proses);
 
         return view('asosiasi.detail-riwayat', [
@@ -214,6 +230,7 @@ class AsosiasiController extends Controller
             'min_support' => 'nullable|numeric|min:0.0001|max:1',
             'min_confidence' => 'nullable|numeric|min:0.0001|max:1',
             'min_lift' => 'nullable|numeric|min:0',
+            'kanal_filter' => 'nullable|in:semua,offline,online',
         ], [
             'file.required' => 'File dataset wajib diunggah.',
             'file.file' => 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.',
@@ -241,9 +258,14 @@ class AsosiasiController extends Controller
             return back()->with('error', 'FPGROWTH_API_URL belum diatur di file .env Laravel.');
         }
 
-        $minSupport = (float) $request->input('min_support', 0.01);
-        $minConfidence = (float) $request->input('min_confidence', 0.4);
+        $minSupport = (float) $request->input('min_support', 0.02);
+        $minConfidence = (float) $request->input('min_confidence', 0.6);
         $minLift = (float) $request->input('min_lift', 1.0);
+        $kanalFilter = strtolower((string) $request->input('kanal_filter', 'semua'));
+
+        if (!in_array($kanalFilter, ['semua', 'offline', 'online'], true)) {
+            $kanalFilter = 'semua';
+        }
 
         $proses = null;
         $stream = null;
@@ -283,6 +305,10 @@ class AsosiasiController extends Controller
                 $createData['distribusi_waktu'] = [];
             }
 
+            if ($this->prosesAnalisisHasColumn('kanal_filter')) {
+                $createData['kanal_filter'] = $kanalFilter;
+            }
+
             $proses = ProsesAnalisis::create($createData);
 
             if (!$filePath || !is_file($filePath)) {
@@ -291,12 +317,13 @@ class AsosiasiController extends Controller
 
             $stream = fopen($filePath, 'r');
 
-            $response = Http::timeout(600)
+            $response = Http::timeout(900)
                 ->attach('file', $stream, $file->getClientOriginalName())
                 ->post($apiUrl, [
                     'min_support' => $minSupport,
                     'min_confidence' => $minConfidence,
                     'min_lift' => $minLift,
+                    'kanal_filter' => $kanalFilter,
                     'include_operator' => 'true',
                     'include_waktu' => 'true',
                     'only_product_rules' => 'false',
@@ -349,19 +376,12 @@ class AsosiasiController extends Controller
                 return back()->with('error', $message);
             }
 
-            $topRules = $apiResult['top_rules']
-                ?? $apiResult['rules']
-                ?? $apiResult['association_rules_data']
-                ?? [];
-
-            if (!is_array($topRules)) {
-                $topRules = [];
-            }
+            $topRules = $this->getRulesFromApiResult($apiResult);
 
             $summaryApi = $apiResult['summary'] ?? [];
             $rulesReturned = count($topRules);
 
-            DB::transaction(function () use ($proses, $summaryApi, $topRules, $rulesReturned, $apiResult) {
+            DB::transaction(function () use ($proses, $summaryApi, $topRules, $rulesReturned, $apiResult, $kanalFilter) {
                 $totalOperator = $this->getSummaryInt($summaryApi, [
                     'operator_unik',
                     'jumlah_operator_unik',
@@ -374,8 +394,8 @@ class AsosiasiController extends Controller
                     'total_data_bersih' => (int) ($summaryApi['setelah_preprocessing'] ?? $summaryApi['total_data_bersih'] ?? 0),
                     'total_transaksi' => (int) ($summaryApi['total_basket'] ?? $summaryApi['total_transaksi'] ?? 0),
                     'total_produk_unik' => (int) ($summaryApi['produk_unik'] ?? $summaryApi['total_produk_unik'] ?? 0),
-                    'total_frequent_itemsets' => (int) ($summaryApi['frequent_itemsets'] ?? $summaryApi['total_frequent_itemsets'] ?? 0),
-                    'total_rules' => (int) ($summaryApi['association_rules'] ?? $summaryApi['total_rules'] ?? $rulesReturned),
+                    'total_frequent_itemsets' => (int) ($summaryApi['pola_sering_muncul'] ?? $summaryApi['frequent_itemsets'] ?? $summaryApi['total_frequent_itemsets'] ?? 0),
+                    'total_rules' => (int) ($summaryApi['pola_hubungan'] ?? $summaryApi['association_rules'] ?? $summaryApi['total_rules'] ?? $rulesReturned),
                     'pesan_error' => null,
                 ];
 
@@ -389,6 +409,10 @@ class AsosiasiController extends Controller
 
                 if ($this->prosesAnalisisHasColumn('distribusi_waktu')) {
                     $updateData['distribusi_waktu'] = $apiResult['distribusi_waktu'] ?? [];
+                }
+
+                if ($this->prosesAnalisisHasColumn('kanal_filter')) {
+                    $updateData['kanal_filter'] = $summaryApi['kanal_filter'] ?? $kanalFilter;
                 }
 
                 $proses->update($updateData);
@@ -416,6 +440,10 @@ class AsosiasiController extends Controller
                         $ruleData['is_anomaly'] = $this->normalizeBoolean($rule['is_anomaly'] ?? false);
                     }
 
+                    if ($this->aturanAsosiasiHasColumn('kanal_filter')) {
+                        $ruleData['kanal_filter'] = $this->getRuleKanalFilter($rule, $kanalFilter, $summaryApi);
+                    }
+
                     AturanAsosiasi::create($ruleData);
                 }
             });
@@ -432,9 +460,11 @@ class AsosiasiController extends Controller
                     'nama_file' => $file->getClientOriginalName(),
                     'path_file' => $path,
                     'periode_data' => '-',
-                    'tanggal_analisis' => Carbon::now()->translatedFormat('d F Y'),
+                    'tanggal_analisis' => $this->formatTanggalIndonesia(now()),
                     'tanggal_filter' => Carbon::now()->format('Y-m-d'),
                     'status' => 'Selesai',
+                    'kanal_filter' => $summaryApi['kanal_filter'] ?? $kanalFilter,
+                    'kanal_filter_label' => $this->formatKanalFilter($summaryApi['kanal_filter'] ?? $kanalFilter),
                     'top_n_request' => self::API_TOP_N,
                     'rules_returned' => $rulesReturned,
                 ],
@@ -442,7 +472,7 @@ class AsosiasiController extends Controller
 
             return redirect()
                 ->route('asosiasi.hasil')
-                ->with('success', 'Analisis dataset berhasil diproses dan disimpan ke riwayat. Rules diterima: ' . $rulesReturned);
+                ->with('success', 'Analisis dataset berhasil diproses dan disimpan ke riwayat. Pola hubungan diterima: ' . $rulesReturned);
         } catch (\Exception $e) {
             if (is_resource($stream)) {
                 fclose($stream);
@@ -457,7 +487,7 @@ class AsosiasiController extends Controller
                 str_contains(strtolower($message), 'connection refused') ||
                 str_contains(strtolower($message), 'failed to connect')
             ) {
-                $message = 'API Python tidak terhubung. Pastikan server FastAPI di port 8001 sudah berjalan.';
+                $message = 'API Python tidak terhubung. Pastikan server FastAPI di port 8000 sudah berjalan.';
             } else {
                 $message = 'Terjadi kesalahan: ' . $message;
             }
@@ -473,26 +503,38 @@ class AsosiasiController extends Controller
         }
     }
 
-    public function downloadLaporan()
+    public function downloadLaporan(Request $request)
     {
-        $data = $this->getLatestAnalysisData();
+        $kanalFilter = $this->getSelectedKanalFilter(
+            $request->input('kanal_filter', $request->input('kanal', 'semua'))
+        );
+
+        $data = $this->getLatestAnalysisData($kanalFilter);
 
         $fileName = 'laporan_dashboard_analisis_' . now()->format('Ymd_His') . '.xlsx';
 
         return Excel::download(new DashboardLaporanExport($data), $fileName);
     }
 
-    public function downloadHasil()
+    public function downloadHasil(Request $request)
     {
-        $data = $this->getLatestAnalysisData();
+        $kanalFilter = $this->getSelectedKanalFilter(
+            $request->input('kanal_filter', $request->input('kanal', 'semua'))
+        );
+
+        $data = $this->getLatestAnalysisData($kanalFilter);
 
         $fileName = 'hasil_analisis_asosiasi_' . now()->format('Ymd_His') . '.xlsx';
 
         return Excel::download(new HasilAnalisisExport($data), $fileName);
     }
 
-    public function downloadHasilRiwayat($id)
+    public function downloadHasilRiwayat(Request $request, $id)
     {
+        $kanalFilter = $this->getSelectedKanalFilter(
+            $request->input('kanal_filter', $request->input('kanal', 'semua'))
+        );
+
         $proses = ProsesAnalisis::with('aturanAsosiasi')
             ->where('id_proses_analisis', $id)
             ->firstOrFail();
@@ -501,7 +543,7 @@ class AsosiasiController extends Controller
             return back()->with('error', 'Hasil analisis tidak dapat diunduh karena proses analisis gagal.');
         }
 
-        $data = $this->getAnalysisDataFromDatabase($proses);
+        $data = $this->getAnalysisDataFromDatabase($proses, $kanalFilter);
 
         $namaFile = pathinfo($proses->nama_file ?? 'hasil_analisis', PATHINFO_FILENAME);
         $namaFile = preg_replace('/[^A-Za-z0-9_\-]/', '_', $namaFile);
@@ -515,9 +557,81 @@ class AsosiasiController extends Controller
         return Excel::download(new HasilAnalisisExport($data), $fileName);
     }
 
+    private function getRulesFromApiResult(array $apiResult)
+    {
+        $candidateKeys = [
+            'top_rules',
+            'rules',
+            'association_rules_data',
+            'association_rules_result',
+            'association_rules',
+        ];
+
+        foreach ($candidateKeys as $key) {
+            if (!array_key_exists($key, $apiResult) || !is_array($apiResult[$key])) {
+                continue;
+            }
+
+            $rules = collect($apiResult[$key])
+                ->filter(function ($rule) {
+                    if (!is_array($rule)) {
+                        return false;
+                    }
+
+                    return array_key_exists('antecedents_display', $rule)
+                        || array_key_exists('antecedents_raw', $rule)
+                        || array_key_exists('antecedents', $rule)
+                        || array_key_exists('rule_asosiasi', $rule)
+                        || array_key_exists('rule', $rule);
+                })
+                ->values()
+                ->all();
+
+            if (!empty($rules)) {
+                return $rules;
+            }
+        }
+
+        return [];
+    }
+
+    private function formatTanggalIndonesia($tanggal)
+    {
+        if (!$tanggal || $tanggal === '-') {
+            return '-';
+        }
+
+        $bulanIndonesia = [
+            'January' => 'Januari',
+            'February' => 'Februari',
+            'March' => 'Maret',
+            'April' => 'April',
+            'May' => 'Mei',
+            'June' => 'Juni',
+            'July' => 'Juli',
+            'August' => 'Agustus',
+            'September' => 'September',
+            'October' => 'Oktober',
+            'November' => 'November',
+            'December' => 'Desember',
+        ];
+
+        try {
+            if ($tanggal instanceof \Carbon\CarbonInterface) {
+                $tanggalFormatted = $tanggal->format('d F Y');
+            } else {
+                $tanggalFormatted = Carbon::parse($tanggal)->format('d F Y');
+            }
+
+            return strtr($tanggalFormatted, $bulanIndonesia);
+        } catch (\Exception $e) {
+            return strtr((string) $tanggal, $bulanIndonesia);
+        }
+    }
+
     private function getDatasetFormatErrorMessage(array $missingGroups = [])
     {
-        $baseMessage = 'Format dataset tidak sesuai. File Excel harus memiliki kolom wajib: nomor transaksi, produk, operator, dan waktu/tanggal transaksi.';
+        $baseMessage = 'Format dataset tidak sesuai. File Excel harus memiliki kolom wajib: nomor transaksi, produk, operator, waktu/tanggal transaksi, dan tipe penjualan.';
 
         if (empty($missingGroups)) {
             return $baseMessage;
@@ -536,7 +650,7 @@ class AsosiasiController extends Controller
             return $baseMessage;
         }
 
-        return 'Format dataset tidak sesuai. Kolom wajib yang belum ditemukan: ' . $missingLabels . '. Pastikan file Excel memiliki kolom wajib: nomor transaksi, produk, operator, dan waktu/tanggal transaksi.';
+        return 'Format dataset tidak sesuai. Kolom wajib yang belum ditemukan: ' . $missingLabels . '. Pastikan file Excel memiliki kolom wajib: nomor transaksi, produk, operator, waktu/tanggal transaksi, dan tipe penjualan.';
     }
 
     private function getReadableDatasetColumnName($groupName)
@@ -546,6 +660,7 @@ class AsosiasiController extends Controller
             'produk' => 'produk',
             'operator' => 'operator',
             'waktu_transaksi' => 'waktu/tanggal transaksi',
+            'tipe_penjualan' => 'tipe penjualan',
         ];
 
         return $labels[$groupName] ?? str_replace('_', ' ', (string) $groupName);
@@ -865,6 +980,19 @@ class AsosiasiController extends Controller
                 'purchase date',
                 'payment date',
             ],
+            'tipe_penjualan' => [
+                'tipe penjualan',
+                'tipe_penjualan',
+                'type penjualan',
+                'jenis penjualan',
+                'sales type',
+                'sale type',
+                'order type',
+                'tipe order',
+                'channel',
+                'kanal',
+                'kanal penjualan',
+            ],
         ];
     }
 
@@ -946,12 +1074,13 @@ class AsosiasiController extends Controller
             str_contains($message, 'dataset tidak valid');
     }
 
-    private function getLatestAnalysisData()
+    private function getLatestAnalysisData($selectedKanalFilter = 'semua')
     {
+        $selectedKanalFilter = $this->getSelectedKanalFilter($selectedKanalFilter);
         $apiResult = session('hasil_analisis_api');
 
         if ($apiResult) {
-            return $this->getAnalysisDataFromSession($apiResult);
+            return $this->getAnalysisDataFromSession($apiResult, $selectedKanalFilter);
         }
 
         $latestProses = ProsesAnalisis::with('aturanAsosiasi')
@@ -960,25 +1089,23 @@ class AsosiasiController extends Controller
             ->first();
 
         if ($latestProses) {
-            return $this->getAnalysisDataFromDatabase($latestProses);
+            return $this->getAnalysisDataFromDatabase($latestProses, $selectedKanalFilter);
         }
 
-        return $this->getEmptyAnalysisData();
+        return $this->getEmptyAnalysisData($selectedKanalFilter);
     }
 
-    private function getAnalysisDataFromSession(array $apiResult)
+    private function getAnalysisDataFromSession(array $apiResult, $selectedKanalFilter = 'semua')
     {
+        $selectedKanalFilter = $this->getSelectedKanalFilter($selectedKanalFilter);
         $summaryApi = $apiResult['summary'] ?? [];
         $datasetInfo = session('dataset_info_api', []);
 
-        $topRules = $apiResult['top_rules']
-            ?? $apiResult['rules']
-            ?? $apiResult['association_rules_data']
-            ?? [];
+        $topRules = $this->getRulesFromApiResult($apiResult);
 
-        if (!is_array($topRules)) {
-            $topRules = [];
-        }
+        $prosesKanalFilter = $this->getSelectedKanalFilter(
+            $summaryApi['kanal_filter'] ?? ($datasetInfo['kanal_filter'] ?? 'semua')
+        );
 
         $summary = [
             'total_data_awal' => $summaryApi['total_data_awal'] ?? 0,
@@ -986,26 +1113,45 @@ class AsosiasiController extends Controller
             'total_basket' => $summaryApi['total_basket'] ?? $summaryApi['total_transaksi'] ?? 0,
             'produk_unik' => $summaryApi['produk_unik'] ?? $summaryApi['total_produk_unik'] ?? 0,
             'total_operator' => $summaryApi['operator_unik'] ?? ($summaryApi['jumlah_operator_unik'] ?? ($summaryApi['total_operator'] ?? 0)),
-            'frequent_itemsets' => $summaryApi['frequent_itemsets'] ?? $summaryApi['total_frequent_itemsets'] ?? 0,
-            'association_rules' => $summaryApi['association_rules'] ?? $summaryApi['total_rules'] ?? count($topRules),
+            'frequent_itemsets' => $summaryApi['pola_sering_muncul'] ?? $summaryApi['frequent_itemsets'] ?? $summaryApi['total_frequent_itemsets'] ?? 0,
+            'pola_sering_muncul' => $summaryApi['pola_sering_muncul'] ?? $summaryApi['frequent_itemsets'] ?? $summaryApi['total_frequent_itemsets'] ?? 0,
+            'association_rules' => $summaryApi['pola_hubungan'] ?? $summaryApi['association_rules'] ?? $summaryApi['total_rules'] ?? count($topRules),
+            'pola_hubungan' => $summaryApi['pola_hubungan'] ?? $summaryApi['association_rules'] ?? $summaryApi['total_rules'] ?? count($topRules),
+            'association_rules_total' => $summaryApi['pola_hubungan_total'] ?? $summaryApi['association_rules_total'] ?? $summaryApi['association_rules'] ?? $summaryApi['total_rules'] ?? count($topRules),
+            'pola_hubungan_total' => $summaryApi['pola_hubungan_total'] ?? $summaryApi['association_rules_total'] ?? $summaryApi['association_rules'] ?? $summaryApi['total_rules'] ?? count($topRules),
+            'pola_sering_muncul_offline' => $summaryApi['pola_sering_muncul_offline'] ?? 0,
+            'pola_sering_muncul_online' => $summaryApi['pola_sering_muncul_online'] ?? 0,
+            'association_rules_offline' => $summaryApi['association_rules_offline'] ?? ($summaryApi['pola_hubungan_offline'] ?? 0),
+            'association_rules_online' => $summaryApi['association_rules_online'] ?? ($summaryApi['pola_hubungan_online'] ?? 0),
+            'pola_hubungan_offline' => $summaryApi['pola_hubungan_offline'] ?? ($summaryApi['association_rules_offline'] ?? 0),
+            'pola_hubungan_online' => $summaryApi['pola_hubungan_online'] ?? ($summaryApi['association_rules_online'] ?? 0),
             'jumlah_anomali' => $summaryApi['jumlah_anomali'] ?? 0,
             'rule_terbaik' => $summaryApi['rule_terbaik'] ?? $this->getBestRuleTextFromApiRules($topRules),
             'rules_ditampilkan' => count($topRules),
+            'rules_ditampilkan_total' => count($topRules),
             'top_n_request' => $datasetInfo['top_n_request'] ?? self::API_TOP_N,
+            'kanal_filter' => $selectedKanalFilter,
+            'kanal_filter_label' => $this->formatKanalFilter($selectedKanalFilter),
+            'proses_kanal_filter' => $prosesKanalFilter,
+            'proses_kanal_filter_label' => $this->formatKanalFilter($prosesKanalFilter),
         ];
 
         $dataset = [
             'nama_file' => $datasetInfo['nama_file'] ?? 'Dataset Upload',
             'periode_data' => $datasetInfo['periode_data'] ?? '-',
-            'tanggal_analisis' => $datasetInfo['tanggal_analisis'] ?? Carbon::now()->translatedFormat('d F Y'),
+            'tanggal_analisis' => $this->formatTanggalIndonesia($datasetInfo['tanggal_analisis'] ?? now()),
             'jumlah_data_awal' => $summary['total_data_awal'],
             'data_setelah_preprocessing' => $summary['setelah_preprocessing'],
             'transaksi_refund_dihapus' => $summaryApi['jumlah_data_dihapus'] ?? 0,
             'basket_transaksi_terbentuk' => $summary['total_basket'],
             'status' => $datasetInfo['status'] ?? 'Selesai',
+            'kanal_filter' => $summary['kanal_filter'],
+            'kanal_filter_label' => $summary['kanal_filter_label'],
+            'proses_kanal_filter' => $summary['proses_kanal_filter'],
+            'proses_kanal_filter_label' => $summary['proses_kanal_filter_label'],
         ];
 
-        $rules = collect($topRules)->map(function ($rule, $index) {
+        $rules = collect($topRules)->map(function ($rule, $index) use ($prosesKanalFilter, $summaryApi) {
             $support = (float) ($rule['support'] ?? 0);
             $confidence = (float) ($rule['confidence'] ?? 0);
             $lift = (float) ($rule['lift'] ?? 0);
@@ -1028,6 +1174,7 @@ class AsosiasiController extends Controller
                 'consequents_raw' => $consequents,
                 'kategori_rule' => $kategoriRule,
                 'is_anomaly' => $isAnomaly,
+                'kanal_filter' => $this->getRuleKanalFilter($rule, $prosesKanalFilter, $summaryApi),
             ];
 
             return [
@@ -1045,8 +1192,34 @@ class AsosiasiController extends Controller
                 'status_anomali' => $isAnomaly ? 'Anomali' : 'Normal',
                 'interpretasi' => $this->generateInterpretasi($ruleArray, $confidence, $lift),
                 'jenis_rule' => $this->getJenisRule($ruleArray),
+                'kanal_filter' => $ruleArray['kanal_filter'],
+                'kanal_filter_label' => $this->formatKanalFilter($ruleArray['kanal_filter']),
             ];
         });
+
+        $rules = $this->filterMappedRulesByKanal($rules, $selectedKanalFilter);
+        $summary['association_rules'] = $rules->count();
+        $summary['pola_hubungan'] = $rules->count();
+        $summary['rules_ditampilkan'] = $rules->count();
+        $summary['jumlah_anomali'] = $rules->filter(function ($rule) {
+            return $this->normalizeBoolean($rule['is_anomaly'] ?? false);
+        })->count();
+
+        $normalRulesForBestRule = $rules
+            ->reject(function ($rule) {
+                return $this->isRuleAnomaly($rule);
+            })
+            ->values();
+
+        $bestRuleFiltered = $normalRulesForBestRule
+            ->sortByDesc(function ($rule) {
+                return (float) ($rule['lift'] ?? 0);
+            })
+            ->first();
+
+        $summary['rule_terbaik'] = $bestRuleFiltered
+            ? (($bestRuleFiltered['antecedents'] ?? '-') . ' → ' . ($bestRuleFiltered['consequents'] ?? '-'))
+            : 'Belum ada rule normal';
 
         $rules = $this->applyHeatmapColorsToRules($rules);
         $heatmapData = $this->buildHeatmapData($rules);
@@ -1082,8 +1255,10 @@ class AsosiasiController extends Controller
         ];
     }
 
-    private function getAnalysisDataFromDatabase(?ProsesAnalisis $proses = null)
+    private function getAnalysisDataFromDatabase(?ProsesAnalisis $proses = null, $selectedKanalFilter = 'semua')
     {
+        $selectedKanalFilter = $this->getSelectedKanalFilter($selectedKanalFilter);
+
         if (!$proses) {
             $proses = ProsesAnalisis::with('aturanAsosiasi')
                 ->where('status', 'berhasil')
@@ -1092,11 +1267,25 @@ class AsosiasiController extends Controller
         }
 
         if (!$proses) {
-            return $this->getEmptyAnalysisData();
+            return $this->getEmptyAnalysisData($selectedKanalFilter);
         }
 
-        $rulesDb = $proses->aturanAsosiasi ?? collect();
-        $bestRule = $rulesDb->sortByDesc('nilai_lift')->first();
+        $processKanalFilter = $this->prosesAnalisisHasColumn('kanal_filter')
+            ? $this->getSelectedKanalFilter($proses->kanal_filter ?? 'semua')
+            : 'semua';
+
+        $allRulesDb = collect($proses->aturanAsosiasi ?? []);
+        $rulesDb = $this->filterDatabaseRulesByKanal($allRulesDb, $selectedKanalFilter, $processKanalFilter);
+
+        $normalRulesForBestRule = $rulesDb
+            ->reject(function ($rule) {
+                return $this->isRuleAnomaly($rule);
+            })
+            ->values();
+
+        $bestRule = $normalRulesForBestRule
+            ->sortByDesc('nilai_lift')
+            ->first();
 
         $jumlahAnomali = $rulesDb->filter(function ($rule) {
             return $this->normalizeBoolean($rule->is_anomaly ?? false);
@@ -1111,11 +1300,20 @@ class AsosiasiController extends Controller
             'produk_unik' => $proses->total_produk_unik ?? 0,
             'total_operator' => $totalOperator,
             'frequent_itemsets' => $proses->total_frequent_itemsets ?? 0,
-            'association_rules' => $proses->total_rules ?? $rulesDb->count(),
+            'pola_sering_muncul' => $proses->total_frequent_itemsets ?? 0,
+            'association_rules' => $rulesDb->count(),
+            'pola_hubungan' => $rulesDb->count(),
+            'association_rules_total' => $proses->total_rules ?? $allRulesDb->count(),
+            'pola_hubungan_total' => $proses->total_rules ?? $allRulesDb->count(),
             'jumlah_anomali' => $jumlahAnomali,
             'rule_terbaik' => $bestRule ? $bestRule->rule_asosiasi : 'Belum ada rule',
             'rules_ditampilkan' => $rulesDb->count(),
+            'rules_ditampilkan_total' => $allRulesDb->count(),
             'top_n_request' => self::API_TOP_N,
+            'kanal_filter' => $selectedKanalFilter,
+            'kanal_filter_label' => $this->formatKanalFilter($selectedKanalFilter),
+            'proses_kanal_filter' => $processKanalFilter,
+            'proses_kanal_filter_label' => $this->formatKanalFilter($processKanalFilter),
         ];
 
         $tanggal = $proses->tanggal_proses
@@ -1125,20 +1323,25 @@ class AsosiasiController extends Controller
         $dataset = [
             'nama_file' => $proses->nama_file ?? $proses->nama_proses ?? 'Dataset Upload',
             'periode_data' => '-',
-            'tanggal_analisis' => $tanggal->translatedFormat('d F Y'),
+            'tanggal_analisis' => $this->formatTanggalIndonesia($tanggal),
             'jumlah_data_awal' => $proses->total_data_awal ?? 0,
             'data_setelah_preprocessing' => $proses->total_data_bersih ?? 0,
             'transaksi_refund_dihapus' => 0,
             'basket_transaksi_terbentuk' => $proses->total_transaksi ?? 0,
             'status' => $this->formatStatus($proses->status ?? 'berhasil'),
+            'kanal_filter' => $summary['kanal_filter'],
+            'kanal_filter_label' => $summary['kanal_filter_label'],
+            'proses_kanal_filter' => $summary['proses_kanal_filter'],
+            'proses_kanal_filter_label' => $summary['proses_kanal_filter_label'],
         ];
 
-        $rules = $rulesDb->values()->map(function ($rule, $index) {
+        $rules = $rulesDb->values()->map(function ($rule, $index) use ($processKanalFilter) {
             [$antecedents, $consequents] = $this->splitRuleText($rule->rule_asosiasi);
 
             $support = (float) ($rule->nilai_support ?? 0);
             $confidence = (float) ($rule->nilai_confidence ?? 0);
             $lift = (float) ($rule->nilai_lift ?? 0);
+            $ruleKanalFilter = $this->getDatabaseRuleKanalFilter($rule, $processKanalFilter);
 
             $kategoriRule = $rule->kategori_rule ?: $this->getKategoriRule($confidence, $lift);
             $isAnomaly = $this->normalizeBoolean($rule->is_anomaly ?? false);
@@ -1150,6 +1353,7 @@ class AsosiasiController extends Controller
                 'consequents_raw' => $consequents,
                 'kategori_rule' => $kategoriRule,
                 'is_anomaly' => $isAnomaly,
+                'kanal_filter' => $ruleKanalFilter,
             ];
 
             return [
@@ -1167,6 +1371,8 @@ class AsosiasiController extends Controller
                 'status_anomali' => $isAnomaly ? 'Anomali' : 'Normal',
                 'interpretasi' => $this->generateInterpretasi($ruleArray, $confidence, $lift),
                 'jenis_rule' => $this->getJenisRule($ruleArray),
+                'kanal_filter' => $ruleKanalFilter,
+                'kanal_filter_label' => $this->formatKanalFilter($ruleKanalFilter),
             ];
         });
 
@@ -1232,11 +1438,24 @@ class AsosiasiController extends Controller
             : now();
 
         $rules = $proses->aturanAsosiasi ?? collect();
-        $bestRule = $rules->sortByDesc('nilai_lift')->first();
+
+        $normalRulesForBestRule = collect($rules)
+            ->reject(function ($rule) {
+                return $this->isRuleAnomaly($rule);
+            })
+            ->values();
+
+        $bestRule = $normalRulesForBestRule
+            ->sortByDesc('nilai_lift')
+            ->first();
+
+        $kanalFilter = $this->prosesAnalisisHasColumn('kanal_filter')
+            ? ($proses->kanal_filter ?? 'semua')
+            : 'semua';
 
         return [
             'id' => $proses->id_proses_analisis,
-            'tanggal_analisis' => $tanggal->translatedFormat('d F Y'),
+            'tanggal_analisis' => $this->formatTanggalIndonesia($tanggal),
             'tanggal_filter' => $tanggal->format('Y-m-d'),
             'nama_file' => $proses->nama_file ?? $proses->nama_proses ?? '-',
             'periode_data' => '-',
@@ -1246,13 +1465,17 @@ class AsosiasiController extends Controller
             'produk_unik' => $proses->total_produk_unik ?? 0,
             'total_operator' => $this->getTotalOperatorFromProsesOrRules($proses, $rules),
             'frequent_itemsets' => $proses->total_frequent_itemsets ?? 0,
+            'pola_sering_muncul' => $proses->total_frequent_itemsets ?? 0,
             'association_rules' => $proses->total_rules ?? $rules->count(),
+            'pola_hubungan' => $proses->total_rules ?? $rules->count(),
             'rule_terbaik' => $bestRule ? $bestRule->rule_asosiasi : 'Belum ada rule',
             'status' => $this->formatStatus($proses->status ?? '-'),
             'min_support' => $proses->min_support ?? 0,
             'min_confidence' => $proses->min_confidence ?? 0,
             'min_lift' => $proses->min_lift ?? 0,
             'pesan_error' => $proses->pesan_error ?? null,
+            'kanal_filter' => $kanalFilter,
+            'kanal_filter_label' => $this->formatKanalFilter($kanalFilter),
         ];
     }
 
@@ -1323,14 +1546,19 @@ class AsosiasiController extends Controller
     private function getBestRuleTextFromApiRules(array $rules)
     {
         if (empty($rules)) {
-            return 'Belum ada rule';
+            return 'Belum ada rule normal';
         }
 
-        $bestRule = collect($rules)->sortByDesc(function ($rule) {
-            return (float) ($rule['lift'] ?? 0);
-        })->first();
+        $bestRule = collect($rules)
+            ->reject(function ($rule) {
+                return $this->isRuleAnomaly($rule);
+            })
+            ->sortByDesc(function ($rule) {
+                return (float) ($rule['lift'] ?? 0);
+            })
+            ->first();
 
-        return $bestRule ? $this->makeRuleText($bestRule) : 'Belum ada rule';
+        return $bestRule ? $this->makeRuleText($bestRule) : 'Belum ada rule normal';
     }
 
     private function formatStatus($status)
@@ -1368,6 +1596,29 @@ class AsosiasiController extends Controller
 
         if (is_string($value)) {
             return in_array(strtolower($value), ['true', '1', 'yes', 'ya'], true);
+        }
+
+        return false;
+    }
+
+    private function isRuleAnomaly($rule)
+    {
+        if ($rule instanceof \Illuminate\Contracts\Support\Arrayable) {
+            $rule = $rule->toArray();
+        }
+
+        if (is_array($rule)) {
+            $statusAnomali = strtolower(trim((string) ($rule['status_anomali'] ?? '')));
+            $isAnomaly = $rule['is_anomaly'] ?? false;
+
+            return $statusAnomali === 'anomali' || $this->normalizeBoolean($isAnomaly);
+        }
+
+        if (is_object($rule)) {
+            $statusAnomali = strtolower(trim((string) ($rule->status_anomali ?? '')));
+            $isAnomaly = $rule->is_anomaly ?? false;
+
+            return $statusAnomali === 'anomali' || $this->normalizeBoolean($isAnomaly);
         }
 
         return false;
@@ -1437,8 +1688,190 @@ class AsosiasiController extends Controller
             $rule['consequents_display'] ?? ($rule['consequents_raw'] ?? ($rule['consequents'] ?? '-'))
         );
 
-        return 'Jika terdapat ' . $antecedents .
-            ', maka cenderung berkaitan dengan ' . $consequents . '.';
+        $antecedentGroups = $this->groupItemsForFriendlyInterpretation($antecedents);
+        $consequentGroups = $this->groupItemsForFriendlyInterpretation($consequents);
+
+        $antecedentText = $this->buildFriendlyAntecedentText($antecedentGroups, $antecedents);
+        $consequentText = $this->buildFriendlyConsequentText($consequentGroups, $consequents);
+
+        return trim($antecedentText . ' ' . $consequentText);
+    }
+
+    private function buildFriendlyAntecedentText(array $groups, $fallbackText)
+    {
+        $products = $this->formatFriendlyList($groups['produk']);
+        $operators = $this->formatFriendlyList($groups['operator']);
+        $times = $this->formatFriendlyList($groups['waktu']);
+
+        $contexts = [];
+
+        if ($times !== '-') {
+            $contexts[] = 'pada waktu ' . $times;
+        }
+
+        if ($operators !== '-') {
+            $contexts[] = 'pada transaksi yang ditangani Operator ' . $operators;
+        }
+
+        if ($products !== '-') {
+            $mainText = 'pelanggan yang membeli ' . $products;
+
+            if (!empty($contexts)) {
+                return ucfirst(implode(' dan ', $contexts)) . ', ' . $mainText;
+            }
+
+            return ucfirst($mainText);
+        }
+
+        if (!empty($contexts)) {
+            return ucfirst(implode(' dan ', $contexts));
+        }
+
+        return 'Transaksi dengan pola ' . $fallbackText;
+    }
+
+    private function buildFriendlyConsequentText(array $groups, $fallbackText)
+    {
+        $products = $this->formatFriendlyList($groups['produk']);
+        $operators = $this->formatFriendlyList($groups['operator']);
+        $times = $this->formatFriendlyList($groups['waktu']);
+
+        if ($products !== '-' && $times !== '-' && $operators !== '-') {
+            return 'sering memiliki pola pembelian tambahan berupa ' . $products .
+                ', terutama pada transaksi yang terjadi di waktu ' . $times .
+                ' dan ditangani Operator ' . $operators . '.';
+        }
+
+        if ($products !== '-' && $times !== '-') {
+            return 'sering memiliki pola pembelian tambahan berupa ' . $products .
+                ', terutama pada transaksi yang terjadi di waktu ' . $times . '.';
+        }
+
+        if ($products !== '-' && $operators !== '-') {
+            return 'sering memiliki pola pembelian tambahan berupa ' . $products .
+                ' pada transaksi yang ditangani Operator ' . $operators . '.';
+        }
+
+        if ($products !== '-') {
+            return 'sering memiliki pola pembelian tambahan berupa ' . $products . '.';
+        }
+
+        if ($operators !== '-' && $times !== '-') {
+            return 'sering berkaitan dengan transaksi yang ditangani Operator ' . $operators .
+                ' pada waktu ' . $times . '.';
+        }
+
+        if ($operators !== '-') {
+            return 'sering berkaitan dengan transaksi yang ditangani Operator ' . $operators . '.';
+        }
+
+        if ($times !== '-') {
+            return 'sering berkaitan dengan transaksi yang terjadi di waktu ' . $times . '.';
+        }
+
+        return 'sering berkaitan dengan ' . $fallbackText . '.';
+    }
+
+    private function groupItemsForFriendlyInterpretation($text)
+    {
+        $items = $this->splitItemsForFriendlyInterpretation($text);
+
+        $groups = [
+            'produk' => [],
+            'operator' => [],
+            'waktu' => [],
+        ];
+
+        foreach ($items as $item) {
+            if ($this->isOperatorItem($item)) {
+                $groups['operator'][] = $this->cleanOperatorForFriendlyInterpretation($item);
+                continue;
+            }
+
+            if ($this->isWaktuItem($item)) {
+                $groups['waktu'][] = $this->cleanWaktuForFriendlyInterpretation($item);
+                continue;
+            }
+
+            $groups['produk'][] = $this->cleanProductForFriendlyInterpretation($item);
+        }
+
+        $groups['produk'] = array_values(array_unique(array_filter($groups['produk'])));
+        $groups['operator'] = array_values(array_unique(array_filter($groups['operator'])));
+        $groups['waktu'] = array_values(array_unique(array_filter($groups['waktu'])));
+
+        return $groups;
+    }
+
+    private function splitItemsForFriendlyInterpretation($text)
+    {
+        $text = trim((string) $text);
+
+        if ($text === '' || $text === '-') {
+            return [];
+        }
+
+        $items = preg_split('/,|\||→|->/', $text);
+
+        return collect($items)
+            ->map(function ($item) {
+                return trim((string) $item);
+            })
+            ->filter(function ($item) {
+                return $item !== '';
+            })
+            ->values()
+            ->all();
+    }
+
+    private function cleanProductForFriendlyInterpretation($item)
+    {
+        $item = trim((string) $item);
+        $item = preg_replace('/^produk\s*[:_]\s*/i', '', $item);
+        $item = preg_replace('/\s+/', ' ', $item);
+
+        return trim($item);
+    }
+
+    private function cleanOperatorForFriendlyInterpretation($item)
+    {
+        $item = trim((string) $item);
+        $item = preg_replace('/^operator\s*[:_]\s*/i', '', $item);
+        $item = preg_replace('/\s+/', ' ', $item);
+
+        return trim($item);
+    }
+
+    private function cleanWaktuForFriendlyInterpretation($item)
+    {
+        $item = trim((string) $item);
+        $item = preg_replace('/^waktu\s*[:_]\s*/i', '', $item);
+        $item = preg_replace('/\s+/', ' ', $item);
+        $item = strtolower(trim($item));
+
+        return ucfirst($item);
+    }
+
+    private function formatFriendlyList(array $items)
+    {
+        $items = array_values(array_filter(array_map('trim', $items)));
+        $count = count($items);
+
+        if ($count === 0) {
+            return '-';
+        }
+
+        if ($count === 1) {
+            return $items[0];
+        }
+
+        if ($count === 2) {
+            return $items[0] . ' dan ' . $items[1];
+        }
+
+        $lastItem = array_pop($items);
+
+        return implode(', ', $items) . ', dan ' . $lastItem;
     }
 
     private function getJenisRule($rule)
@@ -1762,6 +2195,184 @@ class AsosiasiController extends Controller
         ];
     }
 
+
+    private function getSelectedKanalFilter($kanalFilter = 'semua')
+    {
+        $normalized = $this->normalizeKanalFilterValue($kanalFilter, true);
+
+        return $normalized ?: 'semua';
+    }
+
+    private function normalizeKanalFilterValue($value, $allowSemua = true)
+    {
+        if ($value === null) {
+            return $allowSemua ? 'semua' : null;
+        }
+
+        $value = strtolower(trim((string) $value));
+
+        if ($value === '') {
+            return $allowSemua ? 'semua' : null;
+        }
+
+        $value = str_replace(['_', '-', '/', '\\'], ' ', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+        $value = trim($value);
+
+        if (in_array($value, ['offline', 'off line', 'luring', 'store', 'toko', 'langsung'], true)) {
+            return 'offline';
+        }
+
+        if (in_array($value, ['online', 'on line', 'daring', 'website', 'web', 'marketplace', 'e commerce', 'ecommerce'], true)) {
+            return 'online';
+        }
+
+        if ($allowSemua && in_array($value, ['semua', 'semua kanal', 'all', 'all channel', 'all channels', 'both', 'gabungan'], true)) {
+            return 'semua';
+        }
+
+        if (str_contains($value, 'offline')) {
+            return 'offline';
+        }
+
+        if (str_contains($value, 'online')) {
+            return 'online';
+        }
+
+        if ($allowSemua && (str_contains($value, 'semua') || str_contains($value, 'all'))) {
+            return 'semua';
+        }
+
+        return $allowSemua ? 'semua' : null;
+    }
+
+    private function getRuleKanalFilter(array $rule, $defaultKanalFilter = 'semua', array $summary = [])
+    {
+        $candidateKeys = [
+            'kanal_filter',
+            'kanal',
+            'channel',
+            'tipe_penjualan',
+            'tipe penjualan',
+            'jenis_penjualan',
+            'jenis penjualan',
+            'sales_type',
+            'sale_type',
+            'order_type',
+            'tipe_order',
+        ];
+
+        foreach ($candidateKeys as $key) {
+            if (array_key_exists($key, $rule)) {
+                $normalized = $this->normalizeKanalFilterValue($rule[$key], false);
+
+                if (in_array($normalized, ['offline', 'online'], true)) {
+                    return $normalized;
+                }
+            }
+        }
+
+        if (isset($rule['metadata']) && is_array($rule['metadata'])) {
+            foreach ($candidateKeys as $key) {
+                if (array_key_exists($key, $rule['metadata'])) {
+                    $normalized = $this->normalizeKanalFilterValue($rule['metadata'][$key], false);
+
+                    if (in_array($normalized, ['offline', 'online'], true)) {
+                        return $normalized;
+                    }
+                }
+            }
+        }
+
+        foreach ($candidateKeys as $key) {
+            if (array_key_exists($key, $summary)) {
+                $normalized = $this->normalizeKanalFilterValue($summary[$key], false);
+
+                if (in_array($normalized, ['offline', 'online'], true)) {
+                    return $normalized;
+                }
+            }
+        }
+
+        $defaultNormalized = $this->normalizeKanalFilterValue($defaultKanalFilter, false);
+
+        if (in_array($defaultNormalized, ['offline', 'online'], true)) {
+            return $defaultNormalized;
+        }
+
+        return null;
+    }
+
+    private function getDatabaseRuleKanalFilter($rule, $processKanalFilter = 'semua')
+    {
+        if ($this->aturanAsosiasiHasColumn('kanal_filter') && isset($rule->kanal_filter)) {
+            $normalized = $this->normalizeKanalFilterValue($rule->kanal_filter, false);
+
+            if (in_array($normalized, ['offline', 'online'], true)) {
+                return $normalized;
+            }
+        }
+
+        return $this->getSelectedKanalFilter($processKanalFilter);
+    }
+
+    private function filterMappedRulesByKanal($rules, $selectedKanalFilter = 'semua')
+    {
+        $selectedKanalFilter = $this->getSelectedKanalFilter($selectedKanalFilter);
+
+        $rules = collect($rules);
+
+        if ($selectedKanalFilter === 'semua') {
+            return $rules->values()->map(function ($rule, $index) {
+                $rule['no'] = $index + 1;
+
+                return $rule;
+            });
+        }
+
+        return $rules
+            ->filter(function ($rule) use ($selectedKanalFilter) {
+                $ruleKanalFilter = $this->normalizeKanalFilterValue($rule['kanal_filter'] ?? null, false);
+
+                return $ruleKanalFilter === $selectedKanalFilter;
+            })
+            ->values()
+            ->map(function ($rule, $index) {
+                $rule['no'] = $index + 1;
+
+                return $rule;
+            });
+    }
+
+    private function filterDatabaseRulesByKanal($rules, $selectedKanalFilter = 'semua', $processKanalFilter = 'semua')
+    {
+        $selectedKanalFilter = $this->getSelectedKanalFilter($selectedKanalFilter);
+        $rules = collect($rules);
+
+        if ($selectedKanalFilter === 'semua') {
+            return $rules->values();
+        }
+
+        return $rules
+            ->filter(function ($rule) use ($selectedKanalFilter, $processKanalFilter) {
+                $ruleKanalFilter = $this->getDatabaseRuleKanalFilter($rule, $processKanalFilter);
+
+                return $ruleKanalFilter === $selectedKanalFilter;
+            })
+            ->values();
+    }
+
+    private function formatKanalFilter($kanalFilter)
+    {
+        $kanalFilter = strtolower((string) ($kanalFilter ?? 'semua'));
+
+        return match ($kanalFilter) {
+            'offline' => 'Offline',
+            'online' => 'Online',
+            default => 'Semua Kanal',
+        };
+    }
+
     private function getSummaryInt(array $summary, array $keys, $default = 0)
     {
         foreach ($keys as $key) {
@@ -1818,8 +2429,9 @@ class AsosiasiController extends Controller
         return Schema::hasColumn('aturan_asosiasi', $column);
     }
 
-    private function getEmptyAnalysisData()
+    private function getEmptyAnalysisData($selectedKanalFilter = 'semua')
     {
+        $selectedKanalFilter = $this->getSelectedKanalFilter($selectedKanalFilter);
         $heatmapData = [
             'rows' => collect(),
             'columns' => collect(),
@@ -1838,11 +2450,20 @@ class AsosiasiController extends Controller
                 'produk_unik' => 0,
                 'total_operator' => 0,
                 'frequent_itemsets' => 0,
+                'pola_sering_muncul' => 0,
                 'association_rules' => 0,
+                'pola_hubungan' => 0,
+                'association_rules_total' => 0,
+                'pola_hubungan_total' => 0,
                 'jumlah_anomali' => 0,
                 'rule_terbaik' => 'Belum ada rule',
                 'rules_ditampilkan' => 0,
+                'rules_ditampilkan_total' => 0,
                 'top_n_request' => self::API_TOP_N,
+                'kanal_filter' => $selectedKanalFilter,
+                'kanal_filter_label' => $this->formatKanalFilter($selectedKanalFilter),
+                'proses_kanal_filter' => 'semua',
+                'proses_kanal_filter_label' => 'Semua Kanal',
             ],
             'rules' => collect(),
             'dataset' => [
@@ -1854,6 +2475,10 @@ class AsosiasiController extends Controller
                 'transaksi_refund_dihapus' => 0,
                 'basket_transaksi_terbentuk' => 0,
                 'status' => '-',
+                'kanal_filter' => $selectedKanalFilter,
+                'kanal_filter_label' => $this->formatKanalFilter($selectedKanalFilter),
+                'proses_kanal_filter' => 'semua',
+                'proses_kanal_filter_label' => 'Semua Kanal',
             ],
             'topProduk' => collect(),
             'distribusiWaktu' => collect(),

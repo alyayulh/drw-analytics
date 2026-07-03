@@ -1314,3 +1314,395 @@
         min-width: 1000px !important;
     }
 }
+
+
+/* =========================
+   FIX INFO FILE DETAIL RIWAYAT
+   Card Nama File dibuat lebih panjang ke samping
+========================= */
+
+.detail-riwayat-page.hasil-page .summary-card:nth-of-type(2) .summary-grid {
+    grid-template-columns: minmax(260px, 0.55fr) minmax(620px, 1.45fr) !important;
+    gap: 22px !important;
+    align-items: stretch !important;
+}
+
+.detail-riwayat-page.hasil-page .summary-card:nth-of-type(2) .summary-item {
+    min-height: 170px !important;
+}
+
+.detail-riwayat-page.hasil-page .summary-card:nth-of-type(2) .summary-item:nth-child(1) {
+    min-width: 0 !important;
+}
+
+.detail-riwayat-page.hasil-page .summary-card:nth-of-type(2) .summary-item:nth-child(2) {
+    min-width: 0 !important;
+    padding-left: 38px !important;
+    padding-right: 38px !important;
+}
+
+.detail-riwayat-page.hasil-page .summary-card:nth-of-type(2) .summary-item:nth-child(2) strong {
+    max-width: 980px !important;
+    font-size: 22px !important;
+    line-height: 1.45 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+}
+
+@media (max-width: 1200px) {
+    .detail-riwayat-page.hasil-page .summary-card:nth-of-type(2) .summary-grid {
+        grid-template-columns: minmax(230px, 0.65fr) minmax(460px, 1.35fr) !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .detail-riwayat-page.hasil-page .summary-card:nth-of-type(2) .summary-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .detail-riwayat-page.hasil-page .summary-card:nth-of-type(2) .summary-item:nth-child(2) {
+        padding-left: 22px !important;
+        padding-right: 22px !important;
+    }
+}
+
+/* =========================
+   FIX DETAIL RIWAYAT TABLE = SAMA DENGAN HALAMAN HASIL
+   Tambahan ini memastikan tabel detail punya 10 kolom lengkap:
+   No, Kanal, Kondisi, Pola, Support, Confidence, Lift, Kategori, Status, Interpretasi
+========================= */
+
+.detail-riwayat-page.hasil-page .table-card {
+    overflow: hidden !important;
+}
+
+.detail-riwayat-page.hasil-page .table-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    border-radius: 14px !important;
+    border: 1px solid #eef0f4 !important;
+    background: #ffffff !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table,
+.detail-riwayat-page.hasil-page #rulesTable {
+    width: 100% !important;
+    min-width: 1560px !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+    font-size: 13px !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table col:nth-child(1) { width: 64px !important; }
+.detail-riwayat-page.hasil-page .rules-table col:nth-child(2) { width: 110px !important; }
+.detail-riwayat-page.hasil-page .rules-table col:nth-child(3) { width: 185px !important; }
+.detail-riwayat-page.hasil-page .rules-table col:nth-child(4) { width: 205px !important; }
+.detail-riwayat-page.hasil-page .rules-table col:nth-child(5) { width: 125px !important; }
+.detail-riwayat-page.hasil-page .rules-table col:nth-child(6) { width: 135px !important; }
+.detail-riwayat-page.hasil-page .rules-table col:nth-child(7) { width: 125px !important; }
+.detail-riwayat-page.hasil-page .rules-table col:nth-child(8) { width: 155px !important; }
+.detail-riwayat-page.hasil-page .rules-table col:nth-child(9) { width: 120px !important; }
+.detail-riwayat-page.hasil-page .rules-table col:nth-child(10) { width: 436px !important; }
+
+.detail-riwayat-page.hasil-page .rules-table thead {
+    background: linear-gradient(135deg, #fff7fb 0%, #ffffff 100%) !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table thead th,
+.detail-riwayat-page.hasil-page .rules-table th {
+    text-align: center !important;
+    color: #06122d !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    padding: 22px 10px 24px !important;
+    border-bottom: 1px solid #fbcfe8 !important;
+    white-space: normal !important;
+    background: linear-gradient(135deg, #fff7fb 0%, #ffffff 100%) !important;
+    line-height: 1.35 !important;
+    vertical-align: middle !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    hyphens: none !important;
+    position: relative !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table thead th::after,
+.detail-riwayat-page.hasil-page .rules-table th::after {
+    content: "" !important;
+    position: absolute !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: 9px !important;
+    width: 32px !important;
+    height: 4px !important;
+    border-radius: 999px !important;
+    background: #e8007a !important;
+    transform: translateX(-50%) !important;
+    opacity: 0.9 !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table td {
+    padding: 20px 12px !important;
+    border-bottom: 1px solid #eef0f4 !important;
+    color: #06122d !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    line-height: 1.6 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: anywhere !important;
+    font-size: 13px !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table tbody tr:nth-child(odd) {
+    background: #fbfbfc !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table tbody tr:hover {
+    background: #fdf2f8 !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table th:nth-child(1),
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(1),
+.detail-riwayat-page.hasil-page .rules-table th:nth-child(2),
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(2),
+.detail-riwayat-page.hasil-page .rules-table th:nth-child(5),
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(5),
+.detail-riwayat-page.hasil-page .rules-table th:nth-child(6),
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(6),
+.detail-riwayat-page.hasil-page .rules-table th:nth-child(7),
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(7),
+.detail-riwayat-page.hasil-page .rules-table th:nth-child(8),
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(8),
+.detail-riwayat-page.hasil-page .rules-table th:nth-child(9),
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(9) {
+    text-align: center !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(5),
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(6),
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(7) {
+    white-space: nowrap !important;
+    font-variant-numeric: tabular-nums !important;
+    overflow-wrap: normal !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table thead th:nth-child(3),
+.detail-riwayat-page.hasil-page .rules-table thead th:nth-child(4),
+.detail-riwayat-page.hasil-page .rules-table thead th:nth-child(10) {
+    text-align: center !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table tbody td:nth-child(3),
+.detail-riwayat-page.hasil-page .rules-table tbody td:nth-child(4),
+.detail-riwayat-page.hasil-page .rules-table tbody td:nth-child(10) {
+    text-align: left !important;
+    line-height: 1.7 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+}
+
+.detail-riwayat-page.hasil-page .interpretasi-cell {
+    text-align: left !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.7 !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(8) .status-badge,
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(8) .rule-category {
+    width: auto !important;
+    max-width: 135px !important;
+    min-height: 34px !important;
+    padding: 6px 10px !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(9) .status-badge {
+    width: auto !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    white-space: nowrap !important;
+    padding: 6px 11px !important;
+}
+
+/* =========================
+   BADGE KANAL KHUSUS
+   Warna kanal dibuat seragam ungu muda,
+   supaya tidak mengikuti warna kategori pattern
+========================= */
+
+.kanal-badge,
+.kanal-badge.kanal-offline,
+.kanal-badge.kanal-online,
+.kanal-badge.kanal-unknown,
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(2) .status-badge,
+.detail-riwayat-page.hasil-page .rules-table td:nth-child(2) .kanal-badge,
+.hasil-page .rules-table td:nth-child(2) .status-badge,
+.hasil-page .rules-table td:nth-child(2) .kanal-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 6px 13px !important;
+    border-radius: 999px !important;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    background: #f3e8ff !important;
+    color: #7e22ce !important;
+    border: 1px solid #d8b4fe !important;
+}
+
+/* Pastikan badge kategori pola tetap memakai warna pattern masing-masing */
+.detail-riwayat-page.hasil-page .rules-table td:not(:nth-child(2)) .status-strong,
+.hasil-page .rules-table td:not(:nth-child(2)) .status-strong {
+    background: #fce7f3 !important;
+    color: #be185d !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table td:not(:nth-child(2)) .status-moderate,
+.hasil-page .rules-table td:not(:nth-child(2)) .status-moderate {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+}
+
+.detail-riwayat-page.hasil-page .rules-table td:not(:nth-child(2)) .status-weak,
+.hasil-page .rules-table td:not(:nth-child(2)) .status-weak {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+}
+
+.detail-riwayat-page.hasil-page .row-anomaly {
+    background: #fff7ed !important;
+}
+
+.detail-riwayat-page.hasil-page .row-anomaly td {
+    border-bottom-color: #fed7aa !important;
+}
+
+@media (max-width: 768px) {
+    .detail-riwayat-page.hasil-page .table-card,
+    .detail-riwayat-page.hasil-page .table-wrapper {
+        overflow-x: auto !important;
+    }
+
+    .detail-riwayat-page.hasil-page .rules-table,
+    .detail-riwayat-page.hasil-page #rulesTable {
+        min-width: 1560px !important;
+    }
+}
+
+/* =========================
+   FIX HEATMAP DETAIL RIWAYAT
+   Tidak pakai zoom/scale supaya C1-C8/C10 tidak kepotong.
+   Ukuran kolom diatur dari inline variable pada Blade.
+========================= */
+
+.detail-riwayat-page.hasil-page .heatmap-wrapper,
+.hasil-page .heatmap-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    padding-bottom: 0 !important;
+}
+
+.detail-riwayat-page.hasil-page .association-heatmap,
+.hasil-page .association-heatmap {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    gap: 7px !important;
+    align-items: stretch !important;
+    box-sizing: border-box !important;
+}
+
+.detail-riwayat-page.hasil-page .heatmap-corner,
+.hasil-page .heatmap-corner {
+    min-height: 38px !important;
+    padding: 7px 8px !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    line-height: 1.2 !important;
+}
+
+.detail-riwayat-page.hasil-page .heatmap-axis,
+.hasil-page .heatmap-axis {
+    min-height: 38px !important;
+    padding: 7px 6px !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    line-height: 1.2 !important;
+}
+
+.detail-riwayat-page.hasil-page .heatmap-cell,
+.hasil-page .heatmap-cell {
+    min-height: 38px !important;
+    width: 100% !important;
+    border-radius: 8px !important;
+}
+
+.detail-riwayat-page.hasil-page .heatmap-cell.has-value:hover,
+.hasil-page .heatmap-cell.has-value:hover {
+    transform: scale(1.03) !important;
+}
+
+.detail-riwayat-page.hasil-page .heatmap-legend-text,
+.hasil-page .heatmap-legend-text {
+    margin-top: 14px !important;
+    max-height: 260px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+.detail-riwayat-page.hasil-page .heatmap-legend-columns,
+.hasil-page .heatmap-legend-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+}
+
+@media (max-width: 1200px) {
+    .detail-riwayat-page.hasil-page .association-heatmap,
+    .hasil-page .association-heatmap {
+        gap: 6px !important;
+    }
+
+    .detail-riwayat-page.hasil-page .heatmap-corner,
+    .detail-riwayat-page.hasil-page .heatmap-axis,
+    .detail-riwayat-page.hasil-page .heatmap-cell,
+    .hasil-page .heatmap-corner,
+    .hasil-page .heatmap-axis,
+    .hasil-page .heatmap-cell {
+        min-height: 36px !important;
+        font-size: 10px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .detail-riwayat-page.hasil-page .heatmap-wrapper,
+    .hasil-page .heatmap-wrapper {
+        overflow-x: auto !important;
+        padding-bottom: 8px !important;
+    }
+
+    .detail-riwayat-page.hasil-page .association-heatmap,
+    .hasil-page .association-heatmap {
+        min-width: 720px !important;
+    }
+
+    .detail-riwayat-page.hasil-page .heatmap-legend-columns,
+    .hasil-page .heatmap-legend-columns {
+        grid-template-columns: 1fr !important;
+    }
+}

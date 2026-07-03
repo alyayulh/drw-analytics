@@ -17,6 +17,74 @@
 
     $isManajer = in_array($userRole, ['manajer', 'manager']);
 
+    $toFloat = function ($value) {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        $value = str_replace('%', '', (string) $value);
+        $value = str_replace(',', '.', $value);
+        $value = preg_replace('/[^0-9.\-]/', '', $value);
+
+        return is_numeric($value) ? (float) $value : 0.0;
+    };
+
+    $normalizeWaktuLabel = function ($label) {
+        $label = strtolower(trim((string) $label));
+
+        if ($label === '') {
+            return null;
+        }
+
+        if (str_contains($label, 'pagi')) {
+            return 'Pagi';
+        }
+
+        if (
+            str_contains($label, 'siang') ||
+            str_contains($label, 'sore') ||
+            str_contains($label, 'malam') ||
+            str_contains($label, 'night')
+        ) {
+            return 'Siang';
+        }
+
+        return ucfirst($label);
+    };
+
+    $shiftRange = [
+        'Pagi' => '08.00 - 12.59',
+        'Siang' => '13.00 - 22.00',
+    ];
+
+    $normalizeRuleKanal = function ($value) {
+        $value = strtolower(trim((string) $value));
+
+        if ($value === 'offline' || str_contains($value, 'offline')) {
+            return 'offline';
+        }
+
+        if ($value === 'online' || str_contains($value, 'online')) {
+            return 'online';
+        }
+
+        return 'unknown';
+    };
+
+    $formatKanalLabel = function ($value) {
+        $value = strtolower(trim((string) $value));
+
+        return match ($value) {
+            'offline' => 'Offline',
+            'online' => 'Online',
+            default => 'Tidak Diketahui',
+        };
+    };
+
     $topProdukChart = collect($topProduk ?? [])
         ->map(function ($item) {
             return [
@@ -28,17 +96,158 @@
         ->take(10)
         ->values();
 
-    $distribusiWaktuChart = collect($distribusiWaktu ?? [])->values();
+    $rawDistribusiWaktu = collect($distribusiWaktu ?? []);
 
-    $allRules = collect($rules ?? [])->values();
+    $waktuGroups = [
+        'Pagi' => collect(),
+        'Siang' => collect(),
+    ];
+
+    foreach ($rawDistribusiWaktu as $item) {
+        $label = $normalizeWaktuLabel(
+            data_get($item, 'label')
+            ?? data_get($item, 'waktu')
+            ?? data_get($item, 'nama')
+            ?? data_get($item, 'name')
+            ?? ''
+        );
+
+        if (!in_array($label, ['Pagi', 'Siang'], true)) {
+            continue;
+        }
+
+        $jumlahRaw = data_get($item, 'jumlah')
+            ?? data_get($item, 'jumlah_transaksi')
+            ?? data_get($item, 'count')
+            ?? data_get($item, 'total')
+            ?? null;
+
+        $nilaiRaw = data_get($item, 'nilai')
+            ?? data_get($item, 'value')
+            ?? data_get($item, 'persentase')
+            ?? data_get($item, 'percentage')
+            ?? 0;
+
+        $waktuGroups[$label]->push([
+            'jumlah' => $jumlahRaw !== null ? (int) $jumlahRaw : null,
+            'nilai' => $toFloat($nilaiRaw),
+        ]);
+    }
+
+    $hasJumlahWaktu = collect($waktuGroups)
+        ->flatten(1)
+        ->contains(function ($item) {
+            return data_get($item, 'jumlah') !== null;
+        });
+
+    if ($hasJumlahWaktu) {
+        $totalJumlahWaktu = collect($waktuGroups)
+            ->flatten(1)
+            ->sum(function ($item) {
+                return (int) data_get($item, 'jumlah', 0);
+            });
+
+        $distribusiWaktuChart = collect(['Pagi', 'Siang'])
+            ->map(function ($label) use ($waktuGroups, $totalJumlahWaktu) {
+                $jumlah = $waktuGroups[$label]->sum(function ($item) {
+                    return (int) data_get($item, 'jumlah', 0);
+                });
+
+                $persentase = $totalJumlahWaktu > 0
+                    ? ($jumlah / $totalJumlahWaktu) * 100
+                    : 0;
+
+                return [
+                    'label' => $label,
+                    'nilai' => round($persentase, 2),
+                    'jumlah' => $jumlah,
+                ];
+            })
+            ->values();
+    } else {
+        $averageByWaktu = collect(['Pagi', 'Siang'])
+            ->mapWithKeys(function ($label) use ($waktuGroups) {
+                $records = $waktuGroups[$label];
+
+                $average = $records->count() > 0
+                    ? (float) $records->avg('nilai')
+                    : 0;
+
+                return [$label => $average];
+            });
+
+        $totalAverage = (float) $averageByWaktu->sum();
+
+        $distribusiWaktuChart = collect(['Pagi', 'Siang'])
+            ->map(function ($label) use ($averageByWaktu, $totalAverage, $summary) {
+                $rawValue = (float) $averageByWaktu->get($label, 0);
+
+                $persentase = $totalAverage > 0
+                    ? ($rawValue / $totalAverage) * 100
+                    : 0;
+
+                $totalTransaksi = (int) ($summary['total_basket'] ?? 0);
+
+                return [
+                    'label' => $label,
+                    'nilai' => round($persentase, 2),
+                    'jumlah' => $totalTransaksi > 0 ? (int) round(($persentase / 100) * $totalTransaksi) : 0,
+                ];
+            })
+            ->values();
+    }
+
+    $allRules = collect($rules ?? [])
+        ->map(function ($rule) use ($normalizeRuleKanal, $formatKanalLabel) {
+            if ($rule instanceof \Illuminate\Contracts\Support\Arrayable) {
+                $rule = $rule->toArray();
+            } elseif (is_object($rule)) {
+                $rule = get_object_vars($rule);
+            }
+
+            $rule = is_array($rule) ? $rule : [];
+
+            $kanal = $normalizeRuleKanal(
+                data_get($rule, 'kanal_filter')
+                ?? data_get($rule, 'kanal')
+                ?? data_get($rule, 'channel')
+                ?? data_get($rule, 'tipe_penjualan')
+                ?? ''
+            );
+
+            $rule['kanal_filter'] = $kanal;
+            $rule['kanal_label'] = $formatKanalLabel($kanal);
+
+            return $rule;
+        })
+        ->values();
 
     $totalRulesTerbentuk = (int) ($summary['association_rules'] ?? $allRules->count());
 
-    $jumlahRulesDashboard = $totalRulesTerbentuk > 0
-        ? max(1, (int) ceil($totalRulesTerbentuk * 0.10))
+    $isDashboardRuleAnomaly = function ($rule) {
+        $statusAnomali = strtolower(trim((string) data_get($rule, 'status_anomali', '')));
+        $isAnomaly = data_get($rule, 'is_anomaly', false);
+
+        return $statusAnomali === 'anomali'
+            || $isAnomaly === true
+            || $isAnomaly === 1
+            || $isAnomaly === '1'
+            || strtolower((string) $isAnomaly) === 'true';
+    };
+
+    $normalRulesDashboard = $allRules
+        ->reject(function ($rule) use ($isDashboardRuleAnomaly) {
+            return $isDashboardRuleAnomaly($rule);
+        })
+        ->values();
+
+    $totalRulesNormalDashboard = $normalRulesDashboard->count();
+
+    $jumlahRulesDashboard = $totalRulesNormalDashboard > 0
+        ? max(1, (int) ceil($totalRulesNormalDashboard * 0.10))
         : 0;
 
-    $topRulesDashboard = $allRules
+    $topRulesDashboard = $normalRulesDashboard
         ->sortByDesc(function ($rule) {
             return (float) data_get($rule, 'lift', 0);
         })
@@ -46,6 +255,10 @@
         ->values();
 
     $ruleUtama = $topRulesDashboard->first();
+
+    $ruleTerkuatDashboard = $ruleUtama
+        ? ((data_get($ruleUtama, 'antecedents', '-') ?: '-') . ' → ' . (data_get($ruleUtama, 'consequents', '-') ?: '-'))
+        : 'Belum ada rule normal';
 
     $bersihkanTeksPola = function ($teks) {
         $teks = trim((string) $teks);
@@ -78,18 +291,42 @@
     $labelWaktuDominan = data_get($waktuDominan, 'label', '-');
     $persentaseWaktuDominan = (float) data_get($waktuDominan, 'nilai', 0);
 
-    $jumlahTransaksiWaktuDominan = $totalTransaksi > 0
-        ? (int) round(($persentaseWaktuDominan / 100) * $totalTransaksi)
-        : 0;
+    $jumlahTransaksiWaktuDominan = (int) data_get($waktuDominan, 'jumlah', 0);
 
-    $rangeWaktu = [
-        'pagi' => '00.00 - 11.59',
-        'siang' => '12.00 - 17.59',
-        'malam' => '18.00 - 23.59',
-    ];
+    if ($jumlahTransaksiWaktuDominan <= 0 && $totalTransaksi > 0) {
+        $jumlahTransaksiWaktuDominan = (int) round(($persentaseWaktuDominan / 100) * $totalTransaksi);
+    }
 
-    $rangeWaktuDominan = $rangeWaktu[strtolower($labelWaktuDominan)] ?? null;
+    $rangeWaktuDominan = $shiftRange[$labelWaktuDominan] ?? null;
 @endphp
+
+<style>
+    .association-dashboard .kanal-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 13px;
+        border-radius: 999px;
+        background: #f3e8ff;
+        color: #7e22ce;
+        border: 1px solid #d8b4fe;
+        font-size: 12px;
+        font-weight: 900;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .association-dashboard .association-table th,
+    .association-dashboard .association-table td {
+        vertical-align: middle;
+    }
+
+    .association-dashboard .association-table th:nth-child(1),
+    .association-dashboard .association-table td:nth-child(1) {
+        text-align: center;
+        white-space: nowrap;
+    }
+</style>
 
 <div class="association-dashboard">
 
@@ -135,7 +372,7 @@
             <div class="rule-best-content">
                 <span>Pola Terkuat</span>
                 <strong class="rule-best-text">
-                    {{ $summary['rule_terbaik'] ?? 'Belum ada rule' }}
+                    {{ $ruleTerkuatDashboard }}
                 </strong>
             </div>
 
@@ -204,6 +441,7 @@
             <table class="association-table">
                 <thead>
                     <tr>
+                        <th>Kanal</th>
                         <th>Kondisi Transaksi</th>
                         <th>Pola yang Berkaitan</th>
                         <th>Tingkat Kemunculan</th>
@@ -214,7 +452,18 @@
 
                 <tbody>
                     @forelse ($topRulesDashboard as $rule)
+                        @php
+                            $ruleKanal = $rule['kanal_filter'] ?? 'unknown';
+                            $ruleKanalLabel = $rule['kanal_label'] ?? $formatKanalLabel($ruleKanal);
+                        @endphp
+
                         <tr>
+                            <td>
+                                <span class="kanal-badge">
+                                    {{ $ruleKanalLabel }}
+                                </span>
+                            </td>
+
                             <td>{{ $rule['antecedents'] ?? '-' }}</td>
                             <td>{{ $rule['consequents'] ?? '-' }}</td>
                             <td>{{ number_format((float) ($rule['support'] ?? 0), 4) }}</td>
@@ -227,8 +476,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="empty-table-message">
-                                Belum ada association rules.
+                            <td colspan="6" class="empty-table-message">
+                                Belum ada association rules normal yang dapat ditampilkan.
                             </td>
                         </tr>
                     @endforelse
@@ -260,20 +509,25 @@
                 Produk paling sering dibeli adalah <strong>{{ $topProdukChart->first()['nama'] ?? 'belum tersedia' }}</strong>.
             </li>
 
-            @if ($waktuDominan)
+            @if ($waktuDominan && $persentaseWaktuDominan > 0)
                 <li>
                     <strong>Waktu Transaksi Optimal:</strong>
-                    Transaksi terbanyak terjadi pada waktu <strong>{{ $labelWaktuDominan }}</strong>
+                    Transaksi terbanyak terjadi pada shift <strong>{{ $labelWaktuDominan }}</strong>
                     @if ($rangeWaktuDominan)
                         pukul <strong>{{ $rangeWaktuDominan }}</strong>
                     @endif
                     dengan <strong>{{ number_format($jumlahTransaksiWaktuDominan, 0, ',', '.') }}</strong> transaksi.
                 </li>
+            @else
+                <li>
+                    <strong>Waktu Transaksi Optimal:</strong>
+                    Belum ada distribusi waktu transaksi yang dapat ditampilkan.
+                </li>
             @endif
 
             <li>
                 <strong>Pola Teratas:</strong>
-                Dashboard menampilkan <strong>{{ $topRulesDashboard->count() }}</strong> pola asosiasi teratas berdasarkan tingkat kekuatan hubungan dari total <strong>{{ number_format($totalRulesTerbentuk, 0, ',', '.') }}</strong> pola yang terbentuk.
+                Dashboard menampilkan <strong>{{ $topRulesDashboard->count() }}</strong> pola asosiasi normal teratas berdasarkan tingkat kekuatan hubungan dari total <strong>{{ number_format($totalRulesNormalDashboard, 0, ',', '.') }}</strong> pola normal yang terbentuk.
             </li>
         </ul>
     </div>
@@ -331,15 +585,20 @@ const waktuLabels = @json($distribusiWaktuChart->pluck('label'));
 const waktuValues = @json($distribusiWaktuChart->pluck('nilai'));
 
 const waktuRange = {
-    'pagi': '00.00 - 11.59',
-    'siang': '12.00 - 17.59',
-    'malam': '18.00 - 23.59'
+    'pagi': '08.00 - 12.59',
+    'siang': '13.00 - 22.00'
 };
 
 function getWaktuRange(label) {
     const key = String(label).toLowerCase().trim();
 
     return waktuRange[key] || '';
+}
+
+function formatPercent(value) {
+    const numberValue = Number(value || 0);
+
+    return numberValue.toFixed(2);
 }
 
 const topProdukCanvas = document.getElementById('topProdukChart');
@@ -396,7 +655,7 @@ if (waktuCanvas) {
         data: {
             labels: waktuLabels.map((label, index) => {
                 const range = getWaktuRange(label);
-                const value = waktuValues[index];
+                const value = formatPercent(waktuValues[index]);
 
                 if (range) {
                     return `${label} (${range}) ${value}%`;
@@ -406,7 +665,7 @@ if (waktuCanvas) {
             }),
             datasets: [{
                 data: waktuValues,
-                backgroundColor: ['#e8007a', '#f472b6', '#f9a8d4', '#fbcfe8'],
+                backgroundColor: ['#e8007a', '#f9a8d4'],
                 borderWidth: 0
             }]
         },

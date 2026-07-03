@@ -1,19 +1,84 @@
 @extends('layouts.app')
 
+@section('title', 'Detail Riwayat Analisis - DRW Skincare Analytics')
+
 @section('content')
 
 @php
-    $rulesCollection = collect($rules ?? []);
+    $riwayatId = $riwayat['id'] ?? request()->route('id');
+
+    $normalizeSelectedKanal = function ($value) {
+        $value = strtolower(trim((string) $value));
+
+        return in_array($value, ['semua', 'offline', 'online'], true)
+            ? $value
+            : 'semua';
+    };
+
+    $normalizeRuleKanal = function ($value) {
+        $value = strtolower(trim((string) $value));
+
+        if ($value === 'offline' || str_contains($value, 'offline')) {
+            return 'offline';
+        }
+
+        if ($value === 'online' || str_contains($value, 'online')) {
+            return 'online';
+        }
+
+        return 'unknown';
+    };
+
+    $formatKanalLabel = function ($value) {
+        $value = strtolower(trim((string) $value));
+
+        return match ($value) {
+            'offline' => 'Offline',
+            'online' => 'Online',
+            'unknown' => 'Tidak Diketahui',
+            default => 'Semua Kanal',
+        };
+    };
+
+    $selectedKanal = $normalizeSelectedKanal(request('kanal', request('kanal_filter', 'semua')));
+    $selectedKanalLabel = $formatKanalLabel($selectedKanal);
+
     $summaryData = $summary ?? [];
     $datasetData = $dataset ?? [];
 
-    $ruleTerbaik = $summaryData['rule_terbaik']
-        ?? ($riwayat['rule_terbaik'] ?? null);
+    $allRulesCollection = collect($rules ?? [])
+        ->map(function ($rule) use ($normalizeRuleKanal, $formatKanalLabel) {
+            if ($rule instanceof \Illuminate\Contracts\Support\Arrayable) {
+                $rule = $rule->toArray();
+            } elseif (is_object($rule)) {
+                $rule = get_object_vars($rule);
+            }
 
-    if (empty($ruleTerbaik) && $rulesCollection->isNotEmpty()) {
-        $bestRule = $rulesCollection->sortByDesc('lift')->first();
-        $ruleTerbaik = ($bestRule['antecedents'] ?? '-') . ' → ' . ($bestRule['consequents'] ?? '-');
-    }
+            $rule = is_array($rule) ? $rule : [];
+
+            $ruleKanal = $normalizeRuleKanal(
+                $rule['kanal_filter']
+                    ?? $rule['kanal']
+                    ?? $rule['channel']
+                    ?? $rule['tipe_penjualan']
+                    ?? null
+            );
+
+            $rule['kanal_filter'] = $ruleKanal;
+            $rule['kanal_filter_label'] = $formatKanalLabel($ruleKanal);
+
+            return $rule;
+        })
+        ->values();
+
+    $totalRulesAll = $allRulesCollection->count();
+    $totalRulesOffline = $allRulesCollection->where('kanal_filter', 'offline')->count();
+    $totalRulesOnline = $allRulesCollection->where('kanal_filter', 'online')->count();
+    $totalRulesUnknown = $allRulesCollection->where('kanal_filter', 'unknown')->count();
+
+    $rulesCollection = $selectedKanal === 'semua'
+        ? $allRulesCollection
+        : $allRulesCollection->where('kanal_filter', $selectedKanal)->values();
 
     $isRuleAnomaly = function ($rule) {
         $statusAnomali = strtolower((string) ($rule['status_anomali'] ?? ''));
@@ -26,193 +91,430 @@
             || strtolower((string) $isAnomaly) === 'true';
     };
 
-    $jumlahAnomali = $summaryData['jumlah_anomali']
-        ?? $rulesCollection->filter(function ($rule) use ($isRuleAnomaly) {
+    $jumlahAnomali = $rulesCollection
+        ->filter(function ($rule) use ($isRuleAnomaly) {
             return $isRuleAnomaly($rule);
-        })->count();
+        })
+        ->count();
 
-    $normalizeJenisRule = function ($jenisRule) {
-        $jenisRule = strtolower((string) $jenisRule);
+    /*
+    |--------------------------------------------------------------------------
+    | Pola Terbaik
+    |--------------------------------------------------------------------------
+    | Pola terbaik diambil dari rule NORMAL dengan nilai lift tertinggi.
+    | Rule anomali tidak dipakai sebagai pola terbaik meskipun nilai lift-nya
+    | paling tinggi, supaya card Pola Terbaik konsisten dengan tabel normal.
+    */
+    $normalRulesCollection = $rulesCollection
+        ->reject(function ($rule) use ($isRuleAnomaly) {
+            return $isRuleAnomaly($rule);
+        })
+        ->values();
 
-        $allowed = [
-            'produk_operator',
-            'produk_produk',
-            'operator_waktu',
-            'produk_waktu',
-            'produk_operator_waktu',
-        ];
+    $bestRule = $normalRulesCollection
+        ->sortByDesc(function ($rule) {
+            return (float) ($rule['lift'] ?? 0);
+        })
+        ->first();
 
-        if (in_array($jenisRule, $allowed, true)) {
-            return $jenisRule;
+    $bestRuleText = $bestRule
+        ? (($bestRule['antecedents'] ?? '-') . ' → ' . ($bestRule['consequents'] ?? '-'))
+        : 'Belum ada rule normal';
+
+    $chartRules = $normalRulesCollection
+        ->sortByDesc(function ($rule) {
+            return (float) ($rule['lift'] ?? 0);
+        })
+        ->take(5)
+        ->values()
+        ->map(function ($rule, $index) {
+            return [
+                'label' => 'Rule ' . ($index + 1),
+                'rule' => ($rule['antecedents'] ?? '-') . ' → ' . ($rule['consequents'] ?? '-'),
+                'lift' => round((float) ($rule['lift'] ?? 0), 4),
+                'confidence' => round((float) ($rule['confidence'] ?? 0), 4),
+            ];
+        });
+
+    $normalRulesForComposition = $normalRulesCollection;
+
+    $strongPatternCount = $normalRulesForComposition->filter(function ($rule) {
+        $kategori = strtolower((string) ($rule['kategori_rule'] ?? ($rule['status'] ?? '')));
+        return str_contains($kategori, 'strong');
+    })->count();
+
+    $moderatePatternCount = $normalRulesForComposition->filter(function ($rule) {
+        $kategori = strtolower((string) ($rule['kategori_rule'] ?? ($rule['status'] ?? '')));
+        return str_contains($kategori, 'moderate');
+    })->count();
+
+    $weakPatternCount = $normalRulesForComposition->filter(function ($rule) {
+        $kategori = strtolower((string) ($rule['kategori_rule'] ?? ($rule['status'] ?? '')));
+        return str_contains($kategori, 'weak');
+    })->count();
+
+    $anomalyPatternCount = $rulesCollection->filter(function ($rule) use ($isRuleAnomaly) {
+        return $isRuleAnomaly($rule);
+    })->count();
+
+    $ruleComposition = collect([
+        [
+            'label' => 'Strong Pattern',
+            'value' => $strongPatternCount,
+        ],
+        [
+            'label' => 'Moderate Pattern',
+            'value' => $moderatePatternCount,
+        ],
+        [
+            'label' => 'Weak Pattern',
+            'value' => $weakPatternCount,
+        ],
+        [
+            'label' => 'Anomali',
+            'value' => $anomalyPatternCount,
+        ],
+    ])->values();
+
+    $getHeatmapStyle = function ($lift, $minLift, $maxLift) {
+        $lift = (float) $lift;
+        $minLift = (float) $minLift;
+        $maxLift = (float) $maxLift;
+
+        if ($lift <= 0 || $maxLift <= 0) {
+            return [
+                'bg_color' => '#f9fafb',
+                'border_color' => '#e5e7eb',
+                'text_color' => '#111827',
+                'opacity' => 0,
+            ];
         }
 
-        return 'produk_operator_waktu';
+        if ($maxLift == $minLift) {
+            $normalized = 1;
+        } else {
+            $normalized = ($lift - $minLift) / ($maxLift - $minLift);
+        }
+
+        $normalized = max(0, min(1, $normalized));
+        $contrast = pow($normalized, 1.65);
+
+        $opacity = round(0.08 + ($contrast * 0.92), 2);
+        $borderOpacity = round(min(1, $opacity + 0.22), 2);
+
+        return [
+            'bg_color' => 'rgba(185, 28, 28, ' . $opacity . ')',
+            'border_color' => 'rgba(185, 28, 28, ' . $borderOpacity . ')',
+            'text_color' => $opacity >= 0.50 ? '#ffffff' : '#7f1d1d',
+            'opacity' => $opacity,
+        ];
     };
+
+    $heatmapRules = $rulesCollection
+        ->sortByDesc(function ($rule) {
+            return (float) ($rule['lift'] ?? 0);
+        })
+        ->take(10)
+        ->values()
+        ->map(function ($rule) use ($isRuleAnomaly) {
+            return [
+                'antecedents' => $rule['antecedents'] ?? '-',
+                'consequents' => $rule['consequents'] ?? '-',
+                'lift' => round((float) ($rule['lift'] ?? 0), 4),
+                'support' => round((float) ($rule['support'] ?? 0), 4),
+                'confidence' => round((float) ($rule['confidence'] ?? 0), 4),
+                'is_anomaly' => $isRuleAnomaly($rule),
+            ];
+        });
+
+    $heatmapAntecedents = $heatmapRules->pluck('antecedents')->unique()->values();
+    $heatmapConsequents = $heatmapRules->pluck('consequents')->unique()->values();
+
+    $heatmapMinLift = (float) ($heatmapRules->min('lift') ?? 0);
+    $heatmapMaxLift = (float) ($heatmapRules->max('lift') ?? 0);
+
+    $heatmapColumns = $heatmapConsequents
+        ->map(function ($consequent, $index) {
+            return [
+                'key' => $consequent,
+                'code' => 'C' . ($index + 1),
+                'label' => 'C' . ($index + 1),
+                'name' => $consequent,
+            ];
+        })
+        ->values();
+
+    $heatmapRows = $heatmapAntecedents
+        ->map(function ($antecedent, $rowIndex) use ($heatmapColumns, $heatmapRules, $heatmapMinLift, $heatmapMaxLift, $getHeatmapStyle) {
+            $cells = $heatmapColumns
+                ->map(function ($column) use ($antecedent, $heatmapRules, $heatmapMinLift, $heatmapMaxLift, $getHeatmapStyle) {
+                    $matchedRule = $heatmapRules->first(function ($item) use ($antecedent, $column) {
+                        return ($item['antecedents'] ?? '') === $antecedent
+                            && ($item['consequents'] ?? '') === ($column['key'] ?? '');
+                    });
+
+                    if (!$matchedRule) {
+                        return [
+                            'exists' => false,
+                            'lift' => null,
+                            'support' => null,
+                            'confidence' => null,
+                            'bg_color' => '#f9fafb',
+                            'border_color' => '#e5e7eb',
+                            'text_color' => '#111827',
+                            'opacity' => 0,
+                            'rule' => null,
+                        ];
+                    }
+
+                    $lift = (float) ($matchedRule['lift'] ?? 0);
+                    $style = $getHeatmapStyle($lift, $heatmapMinLift, $heatmapMaxLift);
+
+                    return [
+                        'exists' => true,
+                        'lift' => $lift,
+                        'support' => (float) ($matchedRule['support'] ?? 0),
+                        'confidence' => (float) ($matchedRule['confidence'] ?? 0),
+                        'bg_color' => $style['bg_color'],
+                        'border_color' => $style['border_color'],
+                        'text_color' => $style['text_color'],
+                        'opacity' => $style['opacity'],
+                        'rule' => $matchedRule,
+                    ];
+                })
+                ->values();
+
+            return [
+                'key' => $antecedent,
+                'code' => 'A' . ($rowIndex + 1),
+                'label' => 'A' . ($rowIndex + 1),
+                'name' => $antecedent,
+                'cells' => $cells,
+            ];
+        })
+        ->values();
+
+    $hasHeatmapData = $heatmapRows->count() > 0 && $heatmapColumns->count() > 0;
+    $polaSeringMunculCount = (int) (
+        $summaryData['pola_sering_muncul']
+            ?? $summaryData['frequent_itemsets']
+            ?? $summaryData['total_frequent_itemsets']
+            ?? $riwayat['frequent_itemsets']
+            ?? 0
+    );
+
+    $polaHubunganCount = $rulesCollection->count();
 @endphp
 
-<div class="detail-riwayat-page hasil-page">
+<div class="hasil-page detail-riwayat-page">
 
     <a href="{{ route('asosiasi.riwayat') }}" class="back-link">
         ← Kembali ke Riwayat
     </a>
 
-    <div class="page-header">
-        <h1>Detail Riwayat Analisis #{{ $riwayat['id'] ?? '-' }}</h1>
-        <p>Detail hasil analisis pola hubungan dari data transaksi yang telah disimpan</p>
+    <div class="analysis-header">
+        <h1>Detail Riwayat Analisis #{{ $riwayatId ?? '-' }}</h1>
+        <p>
+            Detail hasil analisis pola hubungan dari data transaksi yang telah disimpan.
+        </p>
     </div>
 
-    <div class="detail-card">
-        <h3>Informasi File dan Analisis</h3>
+    <div class="hasil-card summary-card">
+        <h2>Informasi File dan Analisis</h2>
 
-        <div class="info-grid">
-            <div class="info-box">
-                <p>Tanggal Analisis</p>
-                <h4>{{ $riwayat['tanggal_analisis'] ?? ($datasetData['tanggal_analisis'] ?? '-') }}</h4>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span>Tanggal Analisis</span>
+                <strong>{{ $riwayat['tanggal_analisis'] ?? ($datasetData['tanggal_analisis'] ?? '-') }}</strong>
             </div>
 
-            <div class="info-box">
-                <p>Nama File</p>
-                <h4>{{ $riwayat['nama_file'] ?? ($datasetData['nama_file'] ?? '-') }}</h4>
+            <div class="summary-item">
+                <span>Nama File</span>
+                <strong>{{ $riwayat['nama_file'] ?? ($datasetData['nama_file'] ?? '-') }}</strong>
             </div>
         </div>
     </div>
 
     <div class="hasil-card summary-card">
-        <h3>Ringkasan Hasil Analisis</h3>
+        <h2>Ringkasan Hasil Analisis</h2>
 
         <div class="summary-grid">
-            <div class="summary-box">
-                <p>Total Data Awal</p>
-                <h4>
-                    {{ number_format($summaryData['total_data_awal'] ?? ($riwayat['total_data_awal'] ?? 0), 0, ',', '.') }}
-                </h4>
+            <div class="summary-item">
+                <span>Total Data Awal</span>
+                <strong>{{ number_format($summaryData['total_data_awal'] ?? ($riwayat['total_data_awal'] ?? 0)) }}</strong>
             </div>
 
-            <div class="summary-box">
-                <p>Data Setelah Dibersihkan</p>
-                <h4>
-                    {{ number_format($summaryData['setelah_preprocessing'] ?? ($riwayat['setelah_preprocessing'] ?? 0), 0, ',', '.') }}
-                </h4>
+            <div class="summary-item">
+                <span>Setelah Dibersihkan</span>
+                <strong>{{ number_format($summaryData['setelah_preprocessing'] ?? ($riwayat['setelah_preprocessing'] ?? 0)) }}</strong>
             </div>
 
-            <div class="summary-box">
-                <p>Total Transaksi Akhir</p>
-                <h4>
-                    {{ number_format($summaryData['total_basket'] ?? ($riwayat['total_basket'] ?? 0), 0, ',', '.') }}
-                </h4>
+            <div class="summary-item">
+                <span>Total Transaksi Akhir</span>
+                <strong>{{ number_format($summaryData['total_basket'] ?? ($riwayat['total_basket'] ?? 0)) }}</strong>
             </div>
 
-            <div class="summary-box">
-                <p>Produk Unik</p>
-                <h4>
-                    {{ number_format($summaryData['produk_unik'] ?? ($riwayat['produk_unik'] ?? 0), 0, ',', '.') }}
-                </h4>
+            <div class="summary-item">
+                <span>Produk Unik</span>
+                <strong>{{ number_format($summaryData['produk_unik'] ?? ($riwayat['produk_unik'] ?? 0)) }}</strong>
             </div>
 
-            <div class="summary-box">
-                <p>Total Operator</p>
-                <h4>
-                    {{ number_format($summaryData['total_operator'] ?? ($riwayat['total_operator'] ?? 0), 0, ',', '.') }}
-                </h4>
+            <div class="summary-item">
+                <span>Total Operator</span>
+                <strong>{{ number_format($summaryData['total_operator'] ?? ($riwayat['total_operator'] ?? 0)) }}</strong>
             </div>
 
-            <div class="summary-box">
-                <p>Pola Sering Muncul</p>
-                <h4>
-                    {{ number_format($summaryData['frequent_itemsets'] ?? ($riwayat['frequent_itemsets'] ?? 0), 0, ',', '.') }}
-                </h4>
+            <div class="summary-item">
+                <span>Pola Sering Muncul</span>
+                <strong>{{ number_format($polaSeringMunculCount) }}</strong>
             </div>
 
-            <div class="summary-box">
-                <p>Pola Hubungan</p>
-                <h4>
-                    {{ number_format($summaryData['association_rules'] ?? ($riwayat['association_rules'] ?? $rulesCollection->count()), 0, ',', '.') }}
-                </h4>
+            <div class="summary-item">
+                <span>Pola Hubungan</span>
+                <strong>{{ number_format($polaHubunganCount) }}</strong>
             </div>
 
-            <div class="summary-box">
-                <p>Jumlah Anomali</p>
-                <h4>
-                    {{ number_format($jumlahAnomali, 0, ',', '.') }}
-                </h4>
+            <div class="summary-item">
+                <span>Jumlah Anomali</span>
+                <strong>{{ number_format($jumlahAnomali) }}</strong>
             </div>
 
-            <div class="summary-box highlight">
-                <p>Pola Terbaik</p>
-                <h4>{{ $ruleTerbaik ?? 'Belum ada rule' }}</h4>
+            <div class="summary-item">
+                <span>Kanal Ditampilkan</span>
+                <strong>{{ $selectedKanalLabel }}</strong>
+            </div>
+
+            <div class="summary-item">
+                <span>Pola Hubungan Offline</span>
+                <strong>{{ number_format($totalRulesOffline) }}</strong>
+            </div>
+
+            <div class="summary-item">
+                <span>Pola Hubungan Online</span>
+                <strong>{{ number_format($totalRulesOnline) }}</strong>
+            </div>
+
+            @if($totalRulesUnknown > 0)
+                <div class="summary-item">
+                    <span>Pola Hubungan Tidak Diketahui</span>
+                    <strong>{{ number_format($totalRulesUnknown) }}</strong>
+                </div>
+            @endif
+
+            <div class="summary-item best-rule">
+                <span>Pola Terbaik</span>
+                <strong>{{ $bestRuleText }}</strong>
             </div>
         </div>
     </div>
 
+    <div class="hasil-card filter-card">
+        <h2>Filter Kanal Hasil Analisis</h2>
+
+        <form method="GET" action="{{ route('asosiasi.riwayat.detail', $riwayatId) }}">
+            <div class="filter-tabs kanal-filter-tabs">
+                <button
+                    type="submit"
+                    name="kanal"
+                    value="semua"
+                    class="filter-tab {{ $selectedKanal === 'semua' ? 'active' : '' }}"
+                >
+                    Semua
+                </button>
+
+                <button
+                    type="submit"
+                    name="kanal"
+                    value="offline"
+                    class="filter-tab {{ $selectedKanal === 'offline' ? 'active' : '' }}"
+                >
+                    Offline
+                </button>
+
+                <button
+                    type="submit"
+                    name="kanal"
+                    value="online"
+                    class="filter-tab {{ $selectedKanal === 'online' ? 'active' : '' }}"
+                >
+                    Online
+                </button>
+            </div>
+        </form>
+
+        <p class="parameter-info">
+            Filter kanal untuk melihat pola hubungan berdasarkan tipe penjualan offline atau online.
+        </p>
+    </div>
+
     <div class="hasil-card anomaly-card">
-        <div>
-            <h3>Mode Deteksi Anomali</h3>
-            <p>Aktifkan mode deteksi anomali untuk melihat rule yang terdeteksi sebagai anomali berdasarkan model.</p>
+        <div class="anomaly-content">
+            <h2>Mode Deteksi Anomali</h2>
+            <p>
+                Aktifkan mode deteksi anomali untuk melihat pola hubungan yang terdeteksi sebagai anomali berdasarkan model.
+            </p>
         </div>
 
         <label class="switch">
-            <input type="checkbox" id="toggleAnomali">
+            <input type="checkbox" id="toggleAnomaly">
             <span class="slider"></span>
         </label>
     </div>
 
     <div class="hasil-card filter-card">
-        <h3>Filter dan Pencarian Hasil</h3>
+        <h2>Filter Pola dan Pencarian Hasil</h2>
 
-        <div class="filter-buttons">
-            <button type="button" class="filter-btn active" data-filter="semua">
-                Semua
+        <div class="filter-tabs">
+            <button type="button" class="filter-tab active" data-filter="all">
+                Semua Pola
             </button>
 
-            <button type="button" class="filter-btn" data-filter="produk_operator">
+            <button type="button" class="filter-tab" data-filter="produk_operator_waktu">
+                Produk × Operator × Waktu
+            </button>
+
+            <button type="button" class="filter-tab" data-filter="produk_operator">
                 Produk × Operator
             </button>
 
-            <button type="button" class="filter-btn" data-filter="produk_produk">
+            <button type="button" class="filter-tab" data-filter="produk_produk">
                 Produk × Produk
             </button>
 
-            <button type="button" class="filter-btn" data-filter="operator_waktu">
+            <button type="button" class="filter-tab" data-filter="operator_waktu">
                 Operator × Waktu
             </button>
 
-            <button type="button" class="filter-btn" data-filter="produk_waktu">
+            <button type="button" class="filter-tab" data-filter="produk_waktu">
                 Produk × Waktu
-            </button>
-
-            <button type="button" class="filter-btn" data-filter="produk_operator_waktu">
-                Produk × Operator × Waktu
             </button>
         </div>
 
-        <input
-            type="text"
-            id="searchInput"
-            class="search-input"
-            placeholder="Cari item, rule, kategori, atau status anomali..."
-        >
+        <input type="text" id="searchRules" class="search-input" placeholder="Cari produk, operator, waktu, kanal, kategori, atau status anomali...">
     </div>
 
     <div class="hasil-card table-card">
-        <h3>Tabel Hasil Analisis Pola Transaksi</h3>
+        <h2>Tabel Pola Hubungan Hasil Analisis</h2>
 
         <div class="table-wrapper">
-            <table class="detail-rules-table">
+            <table class="rules-table" id="rulesTable" style="width: 100%; table-layout: fixed;">
                 <colgroup>
-                    <col class="col-no">
-                    <col class="col-kondisi">
-                    <col class="col-pola">
-                    <col class="col-support">
-                    <col class="col-confidence">
-                    <col class="col-lift">
-                    <col class="col-kategori">
-                    <col class="col-status">
-                    <col class="col-interpretasi">
+                    <col style="width: 4%;">
+                    <col style="width: 10%;">
+                    <col style="width: 13%;">
+                    <col style="width: 7%;">
+                    <col style="width: 8%;">
+                    <col style="width: 8%;">
+                    <col style="width: 8%;">
+                    <col style="width: 10%;">
+                    <col style="width: 7%;">
+                    <col style="width: 25%;">
                 </colgroup>
 
                 <thead>
                     <tr>
                         <th>No</th>
+                        <th>Kanal</th>
                         <th>Kondisi<br>Transaksi</th>
                         <th>Pola yang<br>Berkaitan</th>
                         <th>Tingkat<br>Kemunculan</th>
@@ -224,18 +526,14 @@
                     </tr>
                 </thead>
 
-                <tbody id="rulesTableBody">
+                <tbody>
                     @forelse ($rulesCollection as $rule)
                         @php
-                            $antecedents = $rule['antecedents'] ?? '-';
-                            $consequents = $rule['consequents'] ?? '-';
-
-                            $support = $rule['support'] ?? 0;
-                            $confidence = $rule['confidence'] ?? 0;
-                            $lift = $rule['lift'] ?? 0;
-
                             $kategoriRule = $rule['kategori_rule'] ?? ($rule['status'] ?? 'Weak Pattern');
-                            $kategoriLower = strtolower((string) $kategoriRule);
+                            $isAnomaly = $isRuleAnomaly($rule);
+                            $jenisRule = $rule['jenis_rule'] ?? '';
+
+                            $kategoriLower = strtolower($kategoriRule);
 
                             if (str_contains($kategoriLower, 'strong')) {
                                 $kategoriClass = 'status-strong';
@@ -245,77 +543,70 @@
                                 $kategoriClass = 'status-weak';
                             }
 
-                            $jenisRule = $normalizeJenisRule($rule['jenis_rule'] ?? 'produk_operator_waktu');
+                            $ruleKanal = $rule['kanal_filter'] ?? 'unknown';
+                            $ruleKanalLabel = $rule['kanal_filter_label'] ?? $formatKanalLabel($ruleKanal);
 
-                            $isAnomaly = $isRuleAnomaly($rule);
-                            $statusAnomali = $isAnomaly ? 'Anomali' : 'Normal';
-
-                            $interpretasi = $rule['interpretasi'] ?? (
-                                'Jika terdapat ' . $antecedents .
-                                ', maka cenderung berkaitan dengan ' . $consequents . '.'
-                            );
-
-                            $searchText = strtolower(
-                                $antecedents . ' ' .
-                                $consequents . ' ' .
-                                $kategoriRule . ' ' .
-                                $statusAnomali . ' ' .
-                                $interpretasi
-                            );
+                            $kanalBadgeClass = match ($ruleKanal) {
+                                'offline' => 'kanal-offline',
+                                'online' => 'kanal-online',
+                                default => 'kanal-unknown',
+                            };
                         @endphp
 
                         <tr
-                            class="rule-row {{ $isAnomaly ? 'row-anomaly' : 'row-normal' }}"
-                            data-jenis="{{ $jenisRule }}"
-                            data-anomali="{{ $isAnomaly ? 'anomali' : 'normal' }}"
-                            data-search="{{ e($searchText) }}"
+                            class="{{ $isAnomaly ? 'row-anomaly' : 'row-normal' }}"
+                            data-jenis-rule="{{ $jenisRule }}"
+                            data-anomaly="{{ $isAnomaly ? 'true' : 'false' }}"
+                            data-kanal="{{ $ruleKanal }}"
                         >
                             <td class="row-number">{{ $loop->iteration }}</td>
 
-                            <td>{{ $antecedents }}</td>
-
-                            <td>{{ $consequents }}</td>
-
                             <td>
-                                {{ is_numeric($support) ? number_format((float) $support, 4) : $support }}
+                                <span class="kanal-badge {{ $kanalBadgeClass }}">
+                                    {{ $ruleKanalLabel }}
+                                </span>
                             </td>
 
-                            <td>
-                                {{ is_numeric($confidence) ? number_format((float) $confidence, 4) : $confidence }}
-                            </td>
+                            <td>{{ $rule['antecedents'] ?? '-' }}</td>
+                            <td>{{ $rule['consequents'] ?? '-' }}</td>
+                            <td>{{ number_format((float) ($rule['support'] ?? 0), 4) }}</td>
+                            <td>{{ number_format((float) ($rule['confidence'] ?? 0), 4) }}</td>
+                            <td>{{ number_format((float) ($rule['lift'] ?? 0), 4) }}</td>
 
                             <td>
-                                {{ is_numeric($lift) ? number_format((float) $lift, 4) : $lift }}
-                            </td>
-
-                            <td>
-                                <span class="rule-category {{ $kategoriClass }}">
+                                <span class="status-badge {{ $kategoriClass }}">
                                     {{ $kategoriRule }}
                                 </span>
                             </td>
 
                             <td>
-                                <span class="anomali-badge {{ $isAnomaly ? 'anomali' : 'normal' }}">
-                                    {{ $statusAnomali }}
-                                </span>
+                                @if ($isAnomaly)
+                                    <span class="status-badge status-anomaly">
+                                        Anomali
+                                    </span>
+                                @else
+                                    <span class="status-badge status-normal">
+                                        Normal
+                                    </span>
+                                @endif
                             </td>
 
                             <td class="interpretasi-cell">
-                                {{ $interpretasi }}
+                                {{ $rule['interpretasi'] ?? '-' }}
                             </td>
                         </tr>
                     @empty
-                        <tr id="emptyRulesRow">
-                            <td colspan="9" style="text-align: center; padding: 32px;">
-                                Data pola hubungan tidak ditemukan.
+                        <tr>
+                            <td colspan="10" style="text-align: center;">
+                                Belum ada pola hubungan yang tersedia untuk kanal ini.
                             </td>
                         </tr>
                     @endforelse
 
-                    @if ($rulesCollection->isNotEmpty())
-                        <tr id="noResultRow" style="display: none;">
-                            <td colspan="9" style="text-align: center; padding: 32px;">
-                                Data pola hubungan tidak ditemukan.
+                    @if($rulesCollection->count() > 0)
+                        <tr id="noResultsRow" style="display: none;">
+                            <td colspan="10" style="text-align: center;">
+                                Tidak ada pola hubungan yang sesuai dengan filter atau pencarian.
                             </td>
                         </tr>
                     @endif
@@ -323,170 +614,523 @@
             </table>
         </div>
 
-        @if ($rulesCollection->isNotEmpty())
-            <div class="riwayat-pagination" id="detailRulesPagination">
-                <button type="button" id="prevRulesPage" class="riwayat-pagination-btn">
-                    ‹ Sebelumnya
-                </button>
+        <div class="table-pagination">
+            <button type="button" id="prevPage" class="pagination-btn">
+                ‹ Sebelumnya
+            </button>
 
-                <span id="rulesPageInfo" class="riwayat-pagination-info">
-                    1-10 dari {{ $rulesCollection->count() }}
-                </span>
+            <span id="pageInfo" class="pagination-info">
+                1-10 dari {{ $polaHubunganCount }}
+            </span>
 
-                <button type="button" id="nextRulesPage" class="riwayat-pagination-btn">
-                    Berikutnya ›
-                </button>
+            <button type="button" id="nextPage" class="pagination-btn">
+                Berikutnya ›
+            </button>
+        </div>
+    </div>
+
+    <div class="chart-grid">
+        <div class="hasil-card chart-card chart-card-left">
+            <h2>Grafik 5 Pola Hubungan Teratas</h2>
+
+            @if ($chartRules->count() > 0)
+                <div class="bar-chart-wrapper">
+                    <canvas id="liftChart"></canvas>
+                </div>
+            @else
+                <div class="heatmap-placeholder">
+                    <p>Tidak ada pola hubungan normal yang dapat ditampilkan pada chart untuk kanal ini.</p>
+                </div>
+            @endif
+
+            <div class="composition-section">
+                <div class="composition-header">
+                    <h3>Komposisi Kategori Pola</h3>
+                    <p>Menampilkan perbandingan jumlah pola hubungan berdasarkan kategori hasil analisis.</p>
+                </div>
+
+                <div class="composition-content">
+                    <div class="composition-chart-box">
+                        <canvas id="compositionChart"></canvas>
+                    </div>
+
+                    <div class="composition-legend">
+                        @foreach ($ruleComposition as $item)
+                            <div class="composition-legend-item">
+                                <span class="composition-dot composition-dot-{{ $loop->iteration }}"></span>
+                                <span class="composition-label">{{ $item['label'] }}</span>
+                                <strong>{{ number_format($item['value']) }}</strong>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
             </div>
-        @endif
+        </div>
+
+        <div class="hasil-card chart-card">
+            <h2>Peta Kekuatan Pola Hubungan</h2>
+
+            @if ($hasHeatmapData)
+                <p class="heatmap-note">
+                    Peta ini menampilkan kekuatan asosiasi berdasarkan nilai lift pada kanal
+                    <strong>{{ $selectedKanalLabel }}</strong>.
+                    Semakin pekat warna merah pada cell, semakin tinggi nilai lift pola hubungan tersebut.
+                </p>
+
+                @php
+                    $heatmapColumnCount = max($heatmapColumns->count(), 1);
+
+                    if ($heatmapColumnCount >= 10) {
+                        $heatmapLabelWidth = 104;
+                        $heatmapCellMinWidth = 40;
+                    } elseif ($heatmapColumnCount >= 8) {
+                        $heatmapLabelWidth = 112;
+                        $heatmapCellMinWidth = 44;
+                    } elseif ($heatmapColumnCount >= 6) {
+                        $heatmapLabelWidth = 124;
+                        $heatmapCellMinWidth = 50;
+                    } else {
+                        $heatmapLabelWidth = 150;
+                        $heatmapCellMinWidth = 62;
+                    }
+                @endphp
+
+                <div class="heatmap-wrapper">
+                    <div
+                        class="association-heatmap"
+                        style="
+                            --heatmap-label-width: {{ $heatmapLabelWidth }}px;
+                            --heatmap-cell-min-width: {{ $heatmapCellMinWidth }}px;
+                            grid-template-columns: minmax(var(--heatmap-label-width), 1.25fr) repeat({{ $heatmapColumnCount }}, minmax(var(--heatmap-cell-min-width), 1fr));
+                        "
+                    >
+                        <div class="heatmap-corner">A ↓ / C →</div>
+
+                        @foreach ($heatmapColumns as $column)
+                            @php
+                                $columnCode = $column['code'] ?? $column['label'] ?? ('C' . $loop->iteration);
+                                $columnName = $column['name'] ?? $column['key'] ?? '-';
+                            @endphp
+
+                            <div class="heatmap-axis heatmap-axis-x" title="{{ $columnName }}">
+                                {{ $columnCode }}
+                            </div>
+                        @endforeach
+
+                        @foreach ($heatmapRows as $row)
+                            @php
+                                $rowCode = $row['code'] ?? $row['label'] ?? ('A' . $loop->iteration);
+                                $rowName = $row['name'] ?? $row['key'] ?? '-';
+                                $rowCells = collect($row['cells'] ?? []);
+                            @endphp
+
+                            <div class="heatmap-axis heatmap-axis-y" title="{{ $rowName }}">
+                                {{ $rowCode }}
+                            </div>
+
+                            @foreach ($rowCells as $cell)
+                                @php
+                                    $cellExists = (bool) ($cell['exists'] ?? false);
+                                    $cellLift = $cell['lift'] ?? null;
+                                    $cellConfidence = $cell['confidence'] ?? null;
+                                    $cellSupport = $cell['support'] ?? null;
+
+                                    $cellBg = $cell['bg_color'] ?? '#f9fafb';
+                                    $cellBorder = $cell['border_color'] ?? '#e5e7eb';
+                                    $cellText = $cell['text_color'] ?? '#111827';
+
+                                    $cellTitleParts = [];
+
+                                    if ($cellLift !== null) {
+                                        $cellTitleParts[] = 'Lift: ' . number_format((float) $cellLift, 4);
+                                    }
+
+                                    if ($cellConfidence !== null) {
+                                        $cellTitleParts[] = 'Confidence: ' . number_format((float) $cellConfidence, 4);
+                                    }
+
+                                    if ($cellSupport !== null) {
+                                        $cellTitleParts[] = 'Support: ' . number_format((float) $cellSupport, 4);
+                                    }
+
+                                    $cellTitle = implode(' | ', $cellTitleParts);
+                                @endphp
+
+                                @if ($cellExists)
+                                    <div
+                                        class="heatmap-cell has-value"
+                                        style="
+                                            background: {{ $cellBg }} !important;
+                                            border-color: {{ $cellBorder }} !important;
+                                            color: {{ $cellText }} !important;
+                                        "
+                                        title="{{ $cellTitle }}"
+                                    ></div>
+                                @else
+                                    <div
+                                        class="heatmap-cell empty"
+                                        style="
+                                            background: #f9fafb !important;
+                                            border-color: #e5e7eb !important;
+                                        "
+                                    ></div>
+                                @endif
+                            @endforeach
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="heatmap-legend-text">
+                    <div class="heatmap-legend-columns">
+                        <div class="heatmap-legend-column">
+                            <h4>A: Kondisi Transaksi</h4>
+
+                            @foreach ($heatmapRows as $row)
+                                <div class="heatmap-legend-row">
+                                    <span class="heatmap-legend-code">
+                                        {{ $row['code'] ?? $row['label'] ?? ('A' . $loop->iteration) }}
+                                    </span>
+
+                                    <span class="heatmap-legend-equal">=</span>
+
+                                    <span class="heatmap-legend-name">
+                                        {{ $row['name'] ?? $row['key'] ?? '-' }}
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="heatmap-legend-column">
+                            <h4>C: Pola yang Berkaitan</h4>
+
+                            @foreach ($heatmapColumns as $column)
+                                <div class="heatmap-legend-row">
+                                    <span class="heatmap-legend-code">
+                                        {{ $column['code'] ?? $column['label'] ?? ('C' . $loop->iteration) }}
+                                    </span>
+
+                                    <span class="heatmap-legend-equal">=</span>
+
+                                    <span class="heatmap-legend-name">
+                                        {{ $column['name'] ?? $column['key'] ?? '-' }}
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div class="heatmap-placeholder">
+                    <p>Belum ada data pola hubungan untuk ditampilkan pada heatmap untuk kanal ini.</p>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <div class="hasil-action-row">
+        <a href="{{ route('asosiasi.riwayat.download', ['id' => $riwayatId, 'kanal' => $selectedKanal]) }}" class="btn-primary-action btn-with-icon">
+            <span class="action-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 3v11m0 0 4-4m-4 4-4-4"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round" />
+                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round" />
+                </svg>
+            </span>
+            <span>Unduh Hasil</span>
+        </a>
+
+        <a href="{{ route('asosiasi.riwayat') }}" class="btn-secondary-action btn-with-icon">
+            <span class="action-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 8v5l3 2"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round" />
+                    <path d="M3.05 11a9 9 0 1 1 2.64 6.36"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round" />
+                    <path d="M3 17v-6h6"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linejoin="round" />
+                </svg>
+            </span>
+            <span>Kembali ke Riwayat Analisis</span>
+        </a>
+
+        <a href="{{ route('asosiasi.dashboard') }}" class="btn-secondary-action btn-with-icon">
+            <span class="action-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 13h6V4H4v9Z"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linejoin="round" />
+                    <path d="M14 20h6V4h-6v16Z"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linejoin="round" />
+                    <path d="M4 20h6v-3H4v3Z"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linejoin="round" />
+                </svg>
+            </span>
+            <span>Lihat Dashboard</span>
+        </a>
     </div>
 
 </div>
 
+@endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const filterButtons = document.querySelectorAll('.filter-btn');
-        const searchInput = document.getElementById('searchInput');
-        const toggleAnomali = document.getElementById('toggleAnomali');
-        const rows = Array.from(document.querySelectorAll('.rule-row'));
-        const noResultRow = document.getElementById('noResultRow');
+document.addEventListener('DOMContentLoaded', function () {
+    const chartRules = @json($chartRules);
+    const ruleComposition = @json($ruleComposition);
 
-        const prevPageBtn = document.getElementById('prevRulesPage');
-        const nextPageBtn = document.getElementById('nextRulesPage');
-        const pageInfo = document.getElementById('rulesPageInfo');
+    const ctx = document.getElementById('liftChart');
 
-        let activeFilter = 'semua';
-        let currentPage = 1;
-        const rowsPerPage = 10;
-        let filteredRows = [];
+    if (ctx && chartRules.length > 0) {
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartRules.map(item => item.label),
+                datasets: [{
+                    label: 'Lift',
+                    data: chartRules.map(item => item.lift),
+                    backgroundColor: '#e8007a',
+                    borderRadius: 6,
+                    barThickness: 44
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function (context) {
+                                const index = context[0].dataIndex;
+                                return chartRules[index].label;
+                            },
+                            label: function (context) {
+                                const index = context.dataIndex;
+                                const item = chartRules[index];
 
-        function normalizeText(value) {
-            return (value || '').toString().toLowerCase().trim();
-        }
-
-        function getFilteredRows() {
-            const keyword = normalizeText(searchInput ? searchInput.value : '');
-            const anomalyOnly = toggleAnomali ? toggleAnomali.checked : false;
-
-            return rows.filter(function (row) {
-                const rowJenis = row.dataset.jenis || '';
-                const rowAnomali = row.dataset.anomali || 'normal';
-                const rowSearch = row.dataset.search || '';
-
-                const matchFilter = activeFilter === 'semua' || rowJenis === activeFilter;
-                const matchSearch = keyword === '' || rowSearch.includes(keyword);
-                const matchAnomali = !anomalyOnly || rowAnomali === 'anomali';
-
-                return matchFilter && matchSearch && matchAnomali;
-            });
-        }
-
-        function hideAllRows() {
-            rows.forEach(function (row) {
-                row.style.display = 'none';
-            });
-        }
-
-        function renderPage() {
-            hideAllRows();
-
-            const totalRows = filteredRows.length;
-            const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
-
-            if (currentPage > totalPages) {
-                currentPage = totalPages;
-            }
-
-            const startIndex = (currentPage - 1) * rowsPerPage;
-            const endIndex = startIndex + rowsPerPage;
-            const rowsToShow = filteredRows.slice(startIndex, endIndex);
-
-            rowsToShow.forEach(function (row, index) {
-                row.style.display = '';
-
-                const numberCell = row.querySelector('.row-number');
-
-                if (numberCell) {
-                    numberCell.textContent = startIndex + index + 1;
-                }
-            });
-
-            if (noResultRow) {
-                noResultRow.style.display = totalRows === 0 ? '' : 'none';
-            }
-
-            if (pageInfo) {
-                if (totalRows === 0) {
-                    pageInfo.textContent = 'Tidak ada data';
-                } else {
-                    pageInfo.textContent = `${startIndex + 1}-${Math.min(endIndex, totalRows)} dari ${totalRows}`;
+                                return [
+                                    'Lift: ' + item.lift,
+                                    'Confidence: ' + item.confidence,
+                                    'Pola: ' + item.rule
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
                 }
             }
+        });
+    }
 
-            if (prevPageBtn) {
-                prevPageBtn.disabled = currentPage <= 1 || totalRows === 0;
-            }
+    const compositionCtx = document.getElementById('compositionChart');
 
-            if (nextPageBtn) {
-                nextPageBtn.disabled = currentPage >= totalPages || totalRows === 0;
-            }
-        }
+    if (compositionCtx && ruleComposition.length > 0) {
+        const compositionTotal = ruleComposition.reduce((total, item) => {
+            return total + Number(item.value || 0);
+        }, 0);
 
-        function applyFilter(resetPage = true) {
-            if (resetPage) {
-                currentPage = 1;
-            }
+        if (compositionTotal > 0) {
+            new Chart(compositionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ruleComposition.map(item => item.label),
+                    datasets: [{
+                        data: ruleComposition.map(item => item.value),
+                        backgroundColor: [
+                            '#be185d',
+                            '#f59e0b',
+                            '#0284c7',
+                            '#dc2626'
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const value = Number(context.raw || 0);
+                                    const percentage = compositionTotal > 0
+                                        ? ((value / compositionTotal) * 100).toFixed(1)
+                                        : 0;
 
-            filteredRows = getFilteredRows();
-            renderPage();
-        }
-
-        filterButtons.forEach(function (button) {
-            button.addEventListener('click', function () {
-                filterButtons.forEach(function (btn) {
-                    btn.classList.remove('active');
-                });
-
-                button.classList.add('active');
-                activeFilter = button.dataset.filter || 'semua';
-
-                applyFilter(true);
+                                    return context.label + ': ' + value + ' pola hubungan (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
             });
+        }
+    }
+
+    const searchInput = document.getElementById('searchRules');
+    const rows = Array.from(document.querySelectorAll('#rulesTable tbody tr[data-jenis-rule]'));
+    const filterTabs = document.querySelectorAll('.filter-tab[data-filter]');
+    const toggleAnomaly = document.getElementById('toggleAnomaly');
+    const noResultsRow = document.getElementById('noResultsRow');
+
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+
+    let activeFilter = 'all';
+    let currentPage = 1;
+    const rowsPerPage = 10;
+    let filteredRows = rows;
+
+    function getFilteredRows() {
+        const keyword = searchInput ? searchInput.value.toLowerCase() : '';
+        const anomalyOnly = toggleAnomaly ? toggleAnomaly.checked : false;
+
+        return rows.filter(row => {
+            const rowText = row.innerText.toLowerCase();
+            const rowJenis = row.dataset.jenisRule || '';
+            const rowAnomaly = row.dataset.anomaly === 'true';
+
+            const matchSearch = rowText.includes(keyword);
+            const matchFilter = activeFilter === 'all' || rowJenis === activeFilter;
+            const matchAnomaly = !anomalyOnly || rowAnomaly;
+
+            return matchSearch && matchFilter && matchAnomaly;
+        });
+    }
+
+    function updateVisibleRowNumbers(rowsToShow, startIndex) {
+        rowsToShow.forEach((row, index) => {
+            const numberCell = row.querySelector('.row-number');
+
+            if (numberCell) {
+                numberCell.textContent = startIndex + index + 1;
+            }
+        });
+    }
+
+    function renderTablePage() {
+        rows.forEach(row => {
+            row.style.display = 'none';
         });
 
-        if (searchInput) {
-            searchInput.addEventListener('input', function () {
-                applyFilter(true);
-            });
+        const totalRows = filteredRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
         }
 
-        if (toggleAnomali) {
-            toggleAnomali.addEventListener('change', function () {
-                applyFilter(true);
-            });
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+
+        const rowsToShow = filteredRows.slice(startIndex, endIndex);
+
+        rowsToShow.forEach(row => {
+            row.style.display = '';
+        });
+
+        updateVisibleRowNumbers(rowsToShow, startIndex);
+
+        if (noResultsRow) {
+            noResultsRow.style.display = totalRows === 0 ? '' : 'none';
+        }
+
+        if (pageInfo) {
+            if (totalRows === 0) {
+                pageInfo.textContent = 'Tidak ada data';
+            } else {
+                pageInfo.textContent = `${startIndex + 1}-${Math.min(endIndex, totalRows)} dari ${totalRows}`;
+            }
         }
 
         if (prevPageBtn) {
-            prevPageBtn.addEventListener('click', function () {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderPage();
-                }
-            });
+            prevPageBtn.disabled = currentPage <= 1 || totalRows === 0;
         }
 
         if (nextPageBtn) {
-            nextPageBtn.addEventListener('click', function () {
-                const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
-
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderPage();
-                }
-            });
+            nextPageBtn.disabled = currentPage >= totalPages || totalRows === 0;
         }
+    }
 
-        applyFilter(true);
+    function applyFilters() {
+        currentPage = 1;
+        filteredRows = getFilteredRows();
+        renderTablePage();
+    }
+
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', function () {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTablePage();
+            }
+        });
+    }
+
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', function () {
+            const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTablePage();
+            }
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+    }
+
+    if (toggleAnomaly) {
+        toggleAnomaly.addEventListener('change', applyFilters);
+    }
+
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            filterTabs.forEach(item => item.classList.remove('active'));
+            this.classList.add('active');
+
+            activeFilter = this.dataset.filter || 'all';
+            applyFilters();
+        });
     });
-</script>
 
-@endsection
+    applyFilters();
+});
+</script>
+@endpush

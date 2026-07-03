@@ -5,7 +5,75 @@
 @section('content')
 
 @php
-    $rulesCollection = collect($rules ?? []);
+    $normalizeSelectedKanal = function ($value) {
+        $value = strtolower(trim((string) $value));
+
+        return in_array($value, ['semua', 'offline', 'online'], true)
+            ? $value
+            : 'semua';
+    };
+
+    $normalizeRuleKanal = function ($value) {
+        $value = strtolower(trim((string) $value));
+
+        if ($value === 'offline' || str_contains($value, 'offline')) {
+            return 'offline';
+        }
+
+        if ($value === 'online' || str_contains($value, 'online')) {
+            return 'online';
+        }
+
+        return 'unknown';
+    };
+
+    $formatKanalLabel = function ($value) {
+        $value = strtolower(trim((string) $value));
+
+        return match ($value) {
+            'offline' => 'Offline',
+            'online' => 'Online',
+            'unknown' => 'Tidak Diketahui',
+            default => 'Semua Kanal',
+        };
+    };
+
+    $selectedKanal = $normalizeSelectedKanal(request('kanal', request('kanal_filter', 'semua')));
+    $selectedKanalLabel = $formatKanalLabel($selectedKanal);
+
+    $allRulesCollection = collect($rules ?? [])
+        ->map(function ($rule) use ($normalizeRuleKanal, $formatKanalLabel) {
+            if ($rule instanceof \Illuminate\Contracts\Support\Arrayable) {
+                $rule = $rule->toArray();
+            } elseif (is_object($rule)) {
+                $rule = get_object_vars($rule);
+            }
+
+            $rule = is_array($rule) ? $rule : [];
+
+            $ruleKanal = $normalizeRuleKanal(
+                $rule['kanal_filter']
+                    ?? $rule['kanal']
+                    ?? $rule['channel']
+                    ?? $rule['tipe_penjualan']
+                    ?? null
+            );
+
+            $rule['kanal_filter'] = $ruleKanal;
+            $rule['kanal_filter_label'] = $formatKanalLabel($ruleKanal);
+
+            return $rule;
+        })
+        ->values();
+
+    $totalRulesAll = $allRulesCollection->count();
+    $totalRulesOffline = $allRulesCollection->where('kanal_filter', 'offline')->count();
+    $totalRulesOnline = $allRulesCollection->where('kanal_filter', 'online')->count();
+    $totalRulesUnknown = $allRulesCollection->where('kanal_filter', 'unknown')->count();
+
+    $rulesCollection = $selectedKanal === 'semua'
+        ? $allRulesCollection
+        : $allRulesCollection->where('kanal_filter', $selectedKanal)->values();
 
     $isRuleAnomaly = function ($rule) {
         $statusAnomali = strtolower((string) ($rule['status_anomali'] ?? ''));
@@ -18,10 +86,37 @@
             || strtolower((string) $isAnomaly) === 'true';
     };
 
-    $chartRules = $rulesCollection
+    $jumlahAnomali = $rulesCollection
         ->filter(function ($rule) use ($isRuleAnomaly) {
-            return !$isRuleAnomaly($rule);
+            return $isRuleAnomaly($rule);
         })
+        ->count();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pola terbaik hanya dari rule normal
+    |--------------------------------------------------------------------------
+    | Rule anomali tidak dipakai untuk card Pola Terbaik, chart pola teratas,
+    | dan dasar pembacaan pola normal. Jadi walaupun lift anomali lebih tinggi,
+    | yang tampil sebagai Pola Terbaik tetap rule normal dengan lift tertinggi.
+    */
+    $normalRulesCollection = $rulesCollection
+        ->reject(function ($rule) use ($isRuleAnomaly) {
+            return $isRuleAnomaly($rule);
+        })
+        ->values();
+
+    $bestRule = $normalRulesCollection
+        ->sortByDesc(function ($rule) {
+            return (float) ($rule['lift'] ?? 0);
+        })
+        ->first();
+
+    $bestRuleText = $bestRule
+        ? (($bestRule['antecedents'] ?? '-') . ' → ' . ($bestRule['consequents'] ?? '-'))
+        : 'Belum ada rule normal';
+
+    $chartRules = $normalRulesCollection
         ->sortByDesc(function ($rule) {
             return (float) ($rule['lift'] ?? 0);
         })
@@ -36,14 +131,7 @@
             ];
         });
 
-    $jumlahAnomali = $summary['jumlah_anomali']
-        ?? $rulesCollection->filter(function ($rule) use ($isRuleAnomaly) {
-            return $isRuleAnomaly($rule);
-        })->count();
-
-    $normalRulesForComposition = $rulesCollection->filter(function ($rule) use ($isRuleAnomaly) {
-        return !$isRuleAnomaly($rule);
-    });
+    $normalRulesForComposition = $normalRulesCollection;
 
     $strongPatternCount = $normalRulesForComposition->filter(function ($rule) {
         $kategori = strtolower((string) ($rule['kategori_rule'] ?? ($rule['status'] ?? '')));
@@ -117,121 +205,99 @@
         ];
     };
 
-    $heatmapSource = $heatmapData ?? ($heatmap ?? null);
+    $heatmapRules = $rulesCollection
+        ->sortByDesc(function ($rule) {
+            return (float) ($rule['lift'] ?? 0);
+        })
+        ->take(10)
+        ->values()
+        ->map(function ($rule) use ($isRuleAnomaly) {
+            return [
+                'antecedents' => $rule['antecedents'] ?? '-',
+                'consequents' => $rule['consequents'] ?? '-',
+                'lift' => round((float) ($rule['lift'] ?? 0), 4),
+                'support' => round((float) ($rule['support'] ?? 0), 4),
+                'confidence' => round((float) ($rule['confidence'] ?? 0), 4),
+                'is_anomaly' => $isRuleAnomaly($rule),
+            ];
+        });
 
-    $heatmapRows = collect();
-    $heatmapColumns = collect();
-    $heatmapLegend = collect();
-    $heatmapMinLift = 0;
-    $heatmapMaxLift = 0;
+    $heatmapAntecedents = $heatmapRules->pluck('antecedents')->unique()->values();
+    $heatmapConsequents = $heatmapRules->pluck('consequents')->unique()->values();
 
-    if (is_array($heatmapSource) || $heatmapSource instanceof \Illuminate\Support\Collection) {
-        $heatmapSourceCollection = collect($heatmapSource);
+    $heatmapMinLift = (float) ($heatmapRules->min('lift') ?? 0);
+    $heatmapMaxLift = (float) ($heatmapRules->max('lift') ?? 0);
 
-        $heatmapRows = collect($heatmapSourceCollection->get('rows', []));
-        $heatmapColumns = collect($heatmapSourceCollection->get('columns', []));
-        $heatmapLegend = collect($heatmapSourceCollection->get('legend', []));
-        $heatmapMinLift = (float) ($heatmapSourceCollection->get('min_lift', 0) ?? 0);
-        $heatmapMaxLift = (float) ($heatmapSourceCollection->get('max_lift', 0) ?? 0);
-    }
+    $heatmapColumns = $heatmapConsequents
+        ->map(function ($consequent, $index) {
+            return [
+                'key' => $consequent,
+                'code' => 'C' . ($index + 1),
+                'label' => 'C' . ($index + 1),
+                'name' => $consequent,
+            ];
+        })
+        ->values();
 
-    if ($heatmapRows->isEmpty() || $heatmapColumns->isEmpty()) {
-        $heatmapRules = $rulesCollection
-            ->sortByDesc(function ($rule) {
-                return (float) ($rule['lift'] ?? 0);
-            })
-            ->take(10)
-            ->values()
-            ->map(function ($rule) use ($isRuleAnomaly) {
-                return [
-                    'antecedents' => $rule['antecedents'] ?? '-',
-                    'consequents' => $rule['consequents'] ?? '-',
-                    'lift' => round((float) ($rule['lift'] ?? 0), 4),
-                    'confidence' => round((float) ($rule['confidence'] ?? 0), 4),
-                    'is_anomaly' => $isRuleAnomaly($rule),
-                ];
-            });
+    $heatmapRows = $heatmapAntecedents
+        ->map(function ($antecedent, $rowIndex) use ($heatmapColumns, $heatmapRules, $heatmapMinLift, $heatmapMaxLift, $getHeatmapStyle) {
+            $cells = $heatmapColumns
+                ->map(function ($column) use ($antecedent, $heatmapRules, $heatmapMinLift, $heatmapMaxLift, $getHeatmapStyle) {
+                    $matchedRule = $heatmapRules->first(function ($item) use ($antecedent, $column) {
+                        return ($item['antecedents'] ?? '') === $antecedent
+                            && ($item['consequents'] ?? '') === ($column['key'] ?? '');
+                    });
 
-        $heatmapAntecedents = $heatmapRules->pluck('antecedents')->unique()->values();
-        $heatmapConsequents = $heatmapRules->pluck('consequents')->unique()->values();
-
-        $heatmapMinLift = (float) ($heatmapRules->min('lift') ?? 0);
-        $heatmapMaxLift = (float) ($heatmapRules->max('lift') ?? 0);
-
-        $heatmapColumns = $heatmapConsequents
-            ->map(function ($consequent, $index) {
-                return [
-                    'key' => $consequent,
-                    'code' => 'C' . ($index + 1),
-                    'label' => 'C' . ($index + 1),
-                    'name' => $consequent,
-                ];
-            })
-            ->values();
-
-        $heatmapRows = $heatmapAntecedents
-            ->map(function ($antecedent, $rowIndex) use ($heatmapColumns, $heatmapRules, $heatmapMinLift, $heatmapMaxLift, $getHeatmapStyle) {
-                $cells = $heatmapColumns
-                    ->map(function ($column) use ($antecedent, $heatmapRules, $heatmapMinLift, $heatmapMaxLift, $getHeatmapStyle) {
-                        $matchedRule = $heatmapRules->first(function ($item) use ($antecedent, $column) {
-                            return ($item['antecedents'] ?? '') === $antecedent
-                                && ($item['consequents'] ?? '') === ($column['key'] ?? '');
-                        });
-
-                        if (!$matchedRule) {
-                            return [
-                                'exists' => false,
-                                'lift' => null,
-                                'support' => null,
-                                'confidence' => null,
-                                'bg_color' => '#f9fafb',
-                                'border_color' => '#e5e7eb',
-                                'text_color' => '#111827',
-                                'opacity' => 0,
-                                'rule' => null,
-                            ];
-                        }
-
-                        $lift = (float) ($matchedRule['lift'] ?? 0);
-                        $style = $getHeatmapStyle($lift, $heatmapMinLift, $heatmapMaxLift);
-
+                    if (!$matchedRule) {
                         return [
-                            'exists' => true,
-                            'lift' => $lift,
+                            'exists' => false,
+                            'lift' => null,
                             'support' => null,
-                            'confidence' => (float) ($matchedRule['confidence'] ?? 0),
-                            'bg_color' => $style['bg_color'],
-                            'border_color' => $style['border_color'],
-                            'text_color' => $style['text_color'],
-                            'opacity' => $style['opacity'],
-                            'rule' => $matchedRule,
+                            'confidence' => null,
+                            'bg_color' => '#f9fafb',
+                            'border_color' => '#e5e7eb',
+                            'text_color' => '#111827',
+                            'opacity' => 0,
+                            'rule' => null,
                         ];
-                    })
-                    ->values();
+                    }
 
-                return [
-                    'key' => $antecedent,
-                    'code' => 'A' . ($rowIndex + 1),
-                    'label' => 'A' . ($rowIndex + 1),
-                    'name' => $antecedent,
-                    'cells' => $cells,
-                ];
-            })
-            ->values();
+                    $lift = (float) ($matchedRule['lift'] ?? 0);
+                    $style = $getHeatmapStyle($lift, $heatmapMinLift, $heatmapMaxLift);
 
-        $heatmapLegend = $heatmapRows
-            ->map(function ($row) {
-                return ($row['code'] ?? '-') . ' = ' . ($row['name'] ?? '-');
-            })
-            ->merge(
-                $heatmapColumns->map(function ($column) {
-                    return ($column['code'] ?? '-') . ' = ' . ($column['name'] ?? '-');
+                    return [
+                        'exists' => true,
+                        'lift' => $lift,
+                        'support' => (float) ($matchedRule['support'] ?? 0),
+                        'confidence' => (float) ($matchedRule['confidence'] ?? 0),
+                        'bg_color' => $style['bg_color'],
+                        'border_color' => $style['border_color'],
+                        'text_color' => $style['text_color'],
+                        'opacity' => $style['opacity'],
+                        'rule' => $matchedRule,
+                    ];
                 })
-            )
-            ->values();
-    }
+                ->values();
+
+            return [
+                'key' => $antecedent,
+                'code' => 'A' . ($rowIndex + 1),
+                'label' => 'A' . ($rowIndex + 1),
+                'name' => $antecedent,
+                'cells' => $cells,
+            ];
+        })
+        ->values();
 
     $hasHeatmapData = $heatmapRows->count() > 0 && $heatmapColumns->count() > 0;
+    $polaSeringMunculCount = (int) (
+        $summary['pola_sering_muncul']
+            ?? $summary['frequent_itemsets']
+            ?? $summary['total_frequent_itemsets']
+            ?? 0
+    );
+
+    $polaHubunganCount = $rulesCollection->count();
 @endphp
 
 <div class="hasil-page">
@@ -267,12 +333,12 @@
 
             <div class="summary-item">
                 <span>Pola Sering Muncul</span>
-                <strong>{{ number_format($summary['frequent_itemsets'] ?? 0) }}</strong>
+                <strong>{{ number_format($polaSeringMunculCount) }}</strong>
             </div>
 
             <div class="summary-item">
                 <span>Pola Hubungan</span>
-                <strong>{{ number_format($summary['association_rules'] ?? 0) }}</strong>
+                <strong>{{ number_format($polaHubunganCount) }}</strong>
             </div>
 
             <div class="summary-item">
@@ -280,18 +346,79 @@
                 <strong>{{ number_format($jumlahAnomali) }}</strong>
             </div>
 
+            <div class="summary-item">
+                <span>Kanal Ditampilkan</span>
+                <strong>{{ $selectedKanalLabel }}</strong>
+            </div>
+
+            <div class="summary-item">
+                <span>Pola Hubungan Offline</span>
+                <strong>{{ number_format($totalRulesOffline) }}</strong>
+            </div>
+
+            <div class="summary-item">
+                <span>Pola Hubungan Online</span>
+                <strong>{{ number_format($totalRulesOnline) }}</strong>
+            </div>
+
+            @if($totalRulesUnknown > 0)
+                <div class="summary-item">
+                    <span>Pola Hubungan Tidak Diketahui</span>
+                    <strong>{{ number_format($totalRulesUnknown) }}</strong>
+                </div>
+            @endif
+
             <div class="summary-item best-rule">
                 <span>Pola Terbaik</span>
-                <strong>{{ $summary['rule_terbaik'] ?? 'Belum ada rule' }}</strong>
+                <strong>{{ $bestRuleText }}</strong>
             </div>
         </div>
+    </div>
+
+    <div class="hasil-card filter-card">
+        <h2>Filter Kanal Hasil Analisis</h2>
+
+        <form method="GET" action="{{ route('asosiasi.hasil') }}">
+            <div class="filter-tabs kanal-filter-tabs">
+                <button
+                    type="submit"
+                    name="kanal"
+                    value="semua"
+                    class="filter-tab {{ $selectedKanal === 'semua' ? 'active' : '' }}"
+                >
+                    Semua
+                </button>
+
+                <button
+                    type="submit"
+                    name="kanal"
+                    value="offline"
+                    class="filter-tab {{ $selectedKanal === 'offline' ? 'active' : '' }}"
+                >
+                    Offline
+                </button>
+
+                <button
+                    type="submit"
+                    name="kanal"
+                    value="online"
+                    class="filter-tab {{ $selectedKanal === 'online' ? 'active' : '' }}"
+                >
+                    Online
+                </button>
+            </div>
+        </form>
+
+        <p class="parameter-info">
+            Filter kanal untuk melihat pola hubungan berdasarkan tipe penjualan offline atau online.
+        </p>
     </div>
 
     <div class="hasil-card anomaly-card">
         <div class="anomaly-content">
             <h2>Mode Deteksi Anomali</h2>
             <p>
-                Aktifkan mode deteksi anomali untuk melihat rule yang terdeteksi sebagai anomali berdasarkan model.
+                Aktifkan mode deteksi anomali untuk melihat pola hubungan yang terdeteksi sebagai anomali berdasarkan model.
             </p>
         </div>
 
@@ -302,40 +429,42 @@
     </div>
 
     <div class="hasil-card filter-card">
-        <h2>Filter dan Pencarian Hasil</h2>
+        <h2>Filter Pola dan Pencarian Hasil</h2>
 
         <div class="filter-tabs">
-            <button type="button" class="filter-tab active" data-filter="all">Semua</button>
+            <button type="button" class="filter-tab active" data-filter="all">Semua Pola</button>
+            <button type="button" class="filter-tab" data-filter="produk_operator_waktu">Produk × Operator × Waktu</button>
             <button type="button" class="filter-tab" data-filter="produk_operator">Produk × Operator</button>
             <button type="button" class="filter-tab" data-filter="produk_produk">Produk × Produk</button>
             <button type="button" class="filter-tab" data-filter="operator_waktu">Operator × Waktu</button>
             <button type="button" class="filter-tab" data-filter="produk_waktu">Produk × Waktu</button>
-            <button type="button" class="filter-tab" data-filter="produk_operator_waktu">Produk × Operator × Waktu</button>
         </div>
 
-        <input type="text" id="searchRules" class="search-input" placeholder="Cari item, rule, kategori, atau status anomali...">
+        <input type="text" id="searchRules" class="search-input" placeholder="Cari produk, operator, waktu, kanal, kategori, atau status anomali...">
     </div>
 
     <div class="hasil-card table-card">
-        <h2>Tabel Hasil Analisis Pola Transaksi</h2>
+        <h2>Tabel Pola Hubungan Hasil Analisis</h2>
 
         <div class="table-wrapper">
             <table class="rules-table" id="rulesTable" style="width: 100%; table-layout: fixed;">
                 <colgroup>
-                    <col style="width: 4%;">
-                    <col style="width: 11%;">
-                    <col style="width: 13%;">
-                    <col style="width: 7%;">
-                    <col style="width: 8%;">
-                    <col style="width: 8%;">
-                    <col style="width: 10%;">
-                    <col style="width: 7%;">
-                    <col style="width: 32%;">
+                    <col style="width: 64px;">
+                    <col style="width: 110px;">
+                    <col style="width: 185px;">
+                    <col style="width: 205px;">
+                    <col style="width: 125px;">
+                    <col style="width: 135px;">
+                    <col style="width: 125px;">
+                    <col style="width: 155px;">
+                    <col style="width: 120px;">
+                    <col style="width: 436px;">
                 </colgroup>
 
                 <thead>
                     <tr>
                         <th>No</th>
+                        <th>Kanal</th>
                         <th>Kondisi<br>Transaksi</th>
                         <th>Pola yang<br>Berkaitan</th>
                         <th>Tingkat<br>Kemunculan</th>
@@ -363,14 +492,31 @@
                             } else {
                                 $kategoriClass = 'status-weak';
                             }
+
+                            $ruleKanal = $rule['kanal_filter'] ?? 'unknown';
+                            $ruleKanalLabel = $rule['kanal_filter_label'] ?? $formatKanalLabel($ruleKanal);
+
+                            $kanalBadgeClass = match ($ruleKanal) {
+                                'offline' => 'kanal-offline',
+                                'online' => 'kanal-online',
+                                default => 'kanal-unknown',
+                            };
                         @endphp
 
                         <tr
                             class="{{ $isAnomaly ? 'row-anomaly' : 'row-normal' }}"
                             data-jenis-rule="{{ $jenisRule }}"
                             data-anomaly="{{ $isAnomaly ? 'true' : 'false' }}"
+                            data-kanal="{{ $ruleKanal }}"
                         >
-                            <td>{{ $loop->iteration }}</td>
+                            <td class="row-number">{{ $loop->iteration }}</td>
+
+                            <td>
+                                <span class="status-badge kanal-badge {{ $kanalBadgeClass }}">
+                                    {{ $ruleKanalLabel }}
+                                </span>
+                            </td>
+
                             <td>{{ $rule['antecedents'] ?? '-' }}</td>
                             <td>{{ $rule['consequents'] ?? '-' }}</td>
                             <td>{{ number_format((float) ($rule['support'] ?? 0), 4) }}</td>
@@ -401,11 +547,19 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" style="text-align: center;">
-                                Belum ada association rules yang tersedia.
+                            <td colspan="10" style="text-align: center;">
+                                Belum ada pola hubungan yang tersedia untuk kanal ini.
                             </td>
                         </tr>
                     @endforelse
+
+                    @if($rulesCollection->count() > 0)
+                        <tr id="noResultsRow" style="display: none;">
+                            <td colspan="10" style="text-align: center;">
+                                Tidak ada pola hubungan yang sesuai dengan filter atau pencarian.
+                            </td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -416,7 +570,7 @@
             </button>
 
             <span id="pageInfo" class="pagination-info">
-                1-10 dari {{ $rulesCollection->count() }}
+                1-10 dari {{ $polaHubunganCount }}
             </span>
 
             <button type="button" id="nextPage" class="pagination-btn">
@@ -435,14 +589,14 @@
                 </div>
             @else
                 <div class="heatmap-placeholder">
-                    <p>Tidak ada rule non-anomali yang dapat ditampilkan pada chart.</p>
+                    <p>Tidak ada pola hubungan normal yang dapat ditampilkan pada chart untuk kanal ini.</p>
                 </div>
             @endif
 
             <div class="composition-section">
                 <div class="composition-header">
                     <h3>Komposisi Kategori Pola</h3>
-                    <p>Menampilkan perbandingan jumlah rule berdasarkan kategori hasil analisis.</p>
+                    <p>Menampilkan perbandingan jumlah pola hubungan berdasarkan kategori hasil analisis.</p>
                 </div>
 
                 <div class="composition-content">
@@ -468,8 +622,9 @@
 
             @if ($hasHeatmapData)
                 <p class="heatmap-note">
-                    Peta ini menampilkan kekuatan asosiasi berdasarkan nilai lift.
-                    Semakin pekat warna merah pada cell, semakin tinggi nilai lift rule tersebut.
+                    Peta ini menampilkan kekuatan asosiasi berdasarkan nilai lift pada kanal
+                    <strong>{{ $selectedKanalLabel }}</strong>.
+                    Semakin pekat warna merah pada cell, semakin tinggi nilai lift pola hubungan tersebut.
                 </p>
 
                 <div class="heatmap-wrapper">
@@ -508,21 +663,9 @@
                                     $cellConfidence = $cell['confidence'] ?? null;
                                     $cellSupport = $cell['support'] ?? null;
 
-                                    $cellBg = $cell['bg_color'] ?? $cell['heatmap_bg_color'] ?? null;
-                                    $cellBorder = $cell['border_color'] ?? $cell['heatmap_border_color'] ?? null;
-                                    $cellText = $cell['text_color'] ?? $cell['heatmap_text_color'] ?? null;
-
-                                    if ($cellExists && (!$cellBg || !$cellBorder || !$cellText)) {
-                                        $style = $getHeatmapStyle((float) ($cellLift ?? 0), $heatmapMinLift, $heatmapMaxLift);
-
-                                        $cellBg = $cellBg ?: $style['bg_color'];
-                                        $cellBorder = $cellBorder ?: $style['border_color'];
-                                        $cellText = $cellText ?: $style['text_color'];
-                                    }
-
-                                    $cellBg = $cellBg ?: '#f9fafb';
-                                    $cellBorder = $cellBorder ?: '#e5e7eb';
-                                    $cellText = $cellText ?: '#111827';
+                                    $cellBg = $cell['bg_color'] ?? '#f9fafb';
+                                    $cellBorder = $cell['border_color'] ?? '#e5e7eb';
+                                    $cellText = $cell['text_color'] ?? '#111827';
 
                                     $cellTitleParts = [];
 
@@ -606,14 +749,14 @@
                 </div>
             @else
                 <div class="heatmap-placeholder">
-                    <p>Belum ada data rule untuk ditampilkan pada heatmap.</p>
+                    <p>Belum ada data pola hubungan untuk ditampilkan pada heatmap untuk kanal ini.</p>
                 </div>
             @endif
         </div>
     </div>
 
     <div class="hasil-action-row">
-        <a href="{{ route('asosiasi.hasil.download') }}" class="btn-primary-action btn-with-icon">
+        <a href="{{ route('asosiasi.hasil.download', ['kanal' => $selectedKanal]) }}" class="btn-primary-action btn-with-icon">
             <span class="action-icon">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M12 3v11m0 0 4-4m-4 4-4-4"
@@ -719,7 +862,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 return [
                                     'Lift: ' + item.lift,
                                     'Confidence: ' + item.confidence,
-                                    'Rule: ' + item.rule
+                                    'Pola: ' + item.rule
                                 ];
                             }
                         }
@@ -775,7 +918,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         ? ((value / compositionTotal) * 100).toFixed(1)
                                         : 0;
 
-                                    return context.label + ': ' + value + ' rule (' + percentage + '%)';
+                                    return context.label + ': ' + value + ' pola hubungan (' + percentage + '%)';
                                 }
                             }
                         }
@@ -787,8 +930,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const searchInput = document.getElementById('searchRules');
     const rows = Array.from(document.querySelectorAll('#rulesTable tbody tr[data-jenis-rule]'));
-    const filterTabs = document.querySelectorAll('.filter-tab');
+    const filterTabs = document.querySelectorAll('.filter-tab[data-filter]');
     const toggleAnomaly = document.getElementById('toggleAnomaly');
+    const noResultsRow = document.getElementById('noResultsRow');
 
     const prevPageBtn = document.getElementById('prevPage');
     const nextPageBtn = document.getElementById('nextPage');
@@ -816,6 +960,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function updateVisibleRowNumbers(rowsToShow, startIndex) {
+        rowsToShow.forEach((row, index) => {
+            const numberCell = row.querySelector('.row-number');
+
+            if (numberCell) {
+                numberCell.textContent = startIndex + index + 1;
+            }
+        });
+    }
+
     function renderTablePage() {
         rows.forEach(row => {
             row.style.display = 'none';
@@ -837,6 +991,12 @@ document.addEventListener('DOMContentLoaded', function () {
             row.style.display = '';
         });
 
+        updateVisibleRowNumbers(rowsToShow, startIndex);
+
+        if (noResultsRow) {
+            noResultsRow.style.display = totalRows === 0 ? '' : 'none';
+        }
+
         if (pageInfo) {
             if (totalRows === 0) {
                 pageInfo.textContent = 'Tidak ada data';
@@ -846,11 +1006,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (prevPageBtn) {
-            prevPageBtn.disabled = currentPage <= 1;
+            prevPageBtn.disabled = currentPage <= 1 || totalRows === 0;
         }
 
         if (nextPageBtn) {
-            nextPageBtn.disabled = currentPage >= totalPages;
+            nextPageBtn.disabled = currentPage >= totalPages || totalRows === 0;
         }
     }
 

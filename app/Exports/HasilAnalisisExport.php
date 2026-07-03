@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
@@ -26,7 +27,6 @@ class HasilAnalisisExport implements WithMultipleSheets
         return [
             new RingkasanHasilSheet($this->data),
             new AssociationRulesSheet($this->data),
-            new HeatmapSheet($this->data),
         ];
     }
 }
@@ -49,56 +49,94 @@ class RingkasanHasilSheet implements FromArray, WithTitle, ShouldAutoSize, WithS
     {
         $summary = $this->data['summary'] ?? [];
         $dataset = $this->data['dataset'] ?? [];
-        $rules = collect($this->data['rules'] ?? []);
+        $rules = collect($this->data['rules'] ?? [])->values();
 
-        $anomalyRules = $rules->filter(function ($rule) {
-            return $this->isAnomalyRule($rule);
-        });
+        $normalRules = $rules
+            ->reject(function ($rule) {
+                return $this->isAnomalyRule($rule);
+            })
+            ->values();
 
-        $normalRules = $rules->filter(function ($rule) {
-            return !$this->isAnomalyRule($rule);
-        });
+        $anomalyRules = $rules
+            ->filter(function ($rule) {
+                return $this->isAnomalyRule($rule);
+            })
+            ->values();
+
+        $bestNormalRule = $normalRules
+            ->sortByDesc(function ($rule) {
+                return (float) $this->getRuleValue($rule, 'lift', 0);
+            })
+            ->first();
+
+        $bestNormalRuleText = $bestNormalRule
+            ? ($this->getRuleValue($bestNormalRule, 'antecedents', '-') . ' → ' . $this->getRuleValue($bestNormalRule, 'consequents', '-'))
+            : ($summary['rule_terbaik'] ?? 'Belum ada pola normal');
 
         $strong = $normalRules->filter(function ($rule) {
-            $kategori = strtolower((string) ($rule['kategori_rule'] ?? ($rule['status'] ?? '')));
+            $kategori = strtolower((string) ($this->getRuleValue($rule, 'kategori_rule', $this->getRuleValue($rule, 'status', ''))));
+
             return str_contains($kategori, 'strong');
         })->count();
 
         $moderate = $normalRules->filter(function ($rule) {
-            $kategori = strtolower((string) ($rule['kategori_rule'] ?? ($rule['status'] ?? '')));
+            $kategori = strtolower((string) ($this->getRuleValue($rule, 'kategori_rule', $this->getRuleValue($rule, 'status', ''))));
+
             return str_contains($kategori, 'moderate');
         })->count();
 
         $weak = $normalRules->filter(function ($rule) {
-            $kategori = strtolower((string) ($rule['kategori_rule'] ?? ($rule['status'] ?? '')));
+            $kategori = strtolower((string) ($this->getRuleValue($rule, 'kategori_rule', $this->getRuleValue($rule, 'status', ''))));
+
             return str_contains($kategori, 'weak');
         })->count();
 
-        $anomali = $anomalyRules->count();
+        $offlineRules = $rules->filter(function ($rule) {
+            return $this->formatKanalLabel(
+                $this->getRuleValue($rule, 'kanal_filter_label', $this->getRuleValue($rule, 'kanal_filter', null))
+            ) === 'Offline';
+        })->count();
+
+        $onlineRules = $rules->filter(function ($rule) {
+            return $this->formatKanalLabel(
+                $this->getRuleValue($rule, 'kanal_filter_label', $this->getRuleValue($rule, 'kanal_filter', null))
+            ) === 'Online';
+        })->count();
 
         return [
             ['LAPORAN HASIL ANALISIS ASOSIASI'],
+            [],
 
             ['Informasi Dataset'],
             ['Nama File', $dataset['nama_file'] ?? '-'],
-            ['Tanggal Analisis', $dataset['tanggal_analisis'] ?? '-'],
+            ['Tanggal Analisis', $this->formatTanggalIndonesia($dataset['tanggal_analisis'] ?? '-')],
             ['Status', $dataset['status'] ?? '-'],
+            ['Kanal Ditampilkan', $summary['kanal_filter_label'] ?? ($dataset['kanal_filter_label'] ?? 'Semua Kanal')],
+            [],
 
-            ['Ringkasan Hasil Analisis'],
-            ['Total Data Awal', $summary['total_data_awal'] ?? 0],
-            ['Setelah Dibersihkan', $summary['setelah_preprocessing'] ?? 0],
-            ['Total Transaksi Akhir', $summary['total_basket'] ?? 0],
-            ['Produk Unik', $summary['produk_unik'] ?? 0],
-            ['Jumlah Operator', $summary['total_operator'] ?? 0],
-            ['Pola yang Sering Muncul', $summary['frequent_itemsets'] ?? 0],
-            ['Pola Hubungan Ditemukan', $summary['association_rules'] ?? 0],
-            ['Jumlah Anomali', $summary['jumlah_anomali'] ?? $anomali],
-            ['Pola Terkuat', $summary['rule_terbaik'] ?? 'Belum ada pola'],
+            ['Ringkasan Dataset'],
+            ['Total Data Awal', (int) ($summary['total_data_awal'] ?? 0)],
+            ['Data Setelah Dibersihkan', (int) ($summary['setelah_preprocessing'] ?? 0)],
+            ['Total Transaksi Akhir', (int) ($summary['total_basket'] ?? 0)],
+            ['Produk Unik', (int) ($summary['produk_unik'] ?? 0)],
+            ['Jumlah Operator', (int) ($summary['total_operator'] ?? 0)],
+            [],
 
-            ['Komposisi Kategori Pola'],
-            ['Pola Kuat', $strong],
-            ['Pola Sedang', $moderate],
-            ['Pola Lemah', $weak],
+            ['Ringkasan Pola'],
+            ['Pola Sering Muncul (Frequent Itemsets)', (int) ($summary['frequent_itemsets'] ?? 0)],
+            ['Pola Hubungan (Association Rules)', $rules->count()],
+            ['Total Pola Hubungan Dataset', (int) ($summary['association_rules_total'] ?? $summary['total_rules'] ?? $rules->count())],
+            ['Pola Hubungan Offline', $offlineRules],
+            ['Pola Hubungan Online', $onlineRules],
+            ['Jumlah Pola Normal', $normalRules->count()],
+            ['Jumlah Anomali', $anomalyRules->count()],
+            ['Pola Hubungan Terbaik Normal', $bestNormalRuleText],
+            [],
+
+            ['Komposisi Kategori Pola Normal'],
+            ['Strong Pattern', $strong],
+            ['Moderate Pattern', $moderate],
+            ['Weak Pattern', $weak],
         ];
     }
 
@@ -107,24 +145,23 @@ class RingkasanHasilSheet implements FromArray, WithTitle, ShouldAutoSize, WithS
         $highestRow = $sheet->getHighestRow();
 
         $sheet->mergeCells('A1:B1');
-        $sheet->mergeCells('A2:B2');
-        $sheet->mergeCells('A6:B6');
-        $sheet->mergeCells('A16:B16');
+        $sheet->getColumnDimension('A')->setWidth(40);
+        $sheet->getColumnDimension('B')->setWidth(105);
+        $sheet->getRowDimension(1)->setRowHeight(30);
 
-        $sheet->getColumnDimension('A')->setWidth(30);
-        $sheet->getColumnDimension('B')->setWidth(95);
-
-        $sheet->getRowDimension(1)->setRowHeight(26);
-        $sheet->getRowDimension(15)->setRowHeight(44);
-
-        $sheet->getStyle('A1:B' . $highestRow)->getAlignment()->setWrapText(true);
-        $sheet->getStyle('A1:B' . $highestRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A1:B' . $highestRow)
+            ->getAlignment()
+            ->setWrapText(true)
+            ->setVertical(Alignment::VERTICAL_CENTER);
 
         $sheet->getStyle('A1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 16,
                 'color' => ['rgb' => '111827'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
             ],
         ]);
 
@@ -135,16 +172,29 @@ class RingkasanHasilSheet implements FromArray, WithTitle, ShouldAutoSize, WithS
             ],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '991B1B'],
+                'startColor' => ['rgb' => 'E8007A'],
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_LEFT,
             ],
         ];
 
-        $sheet->getStyle('A2:B2')->applyFromArray($sectionStyle);
-        $sheet->getStyle('A6:B6')->applyFromArray($sectionStyle);
-        $sheet->getStyle('A16:B16')->applyFromArray($sectionStyle);
+        $sectionRows = [];
+
+        for ($row = 1; $row <= $highestRow; $row++) {
+            $label = trim((string) $sheet->getCell('A' . $row)->getValue());
+
+            if (in_array($label, [
+                'Informasi Dataset',
+                'Ringkasan Dataset',
+                'Ringkasan Pola',
+                'Komposisi Kategori Pola Normal',
+            ], true)) {
+                $sectionRows[] = $row;
+                $sheet->mergeCells('A' . $row . ':B' . $row);
+                $sheet->getStyle('A' . $row . ':B' . $row)->applyFromArray($sectionStyle);
+            }
+        }
 
         $borderStyle = [
             'borders' => [
@@ -155,37 +205,124 @@ class RingkasanHasilSheet implements FromArray, WithTitle, ShouldAutoSize, WithS
             ],
         ];
 
-        $sheet->getStyle('A2:B' . $highestRow)->applyFromArray($borderStyle);
+        $sheet->getStyle('A3:B' . $highestRow)->applyFromArray($borderStyle);
 
-        $sheet->getStyle('A3:A5')->getFont()->setBold(true);
-        $sheet->getStyle('A7:A15')->getFont()->setBold(true);
-        $sheet->getStyle('A17:A19')->getFont()->setBold(true);
+        $bestRuleRow = null;
 
-        $sheet->getStyle('B7:B14')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->getStyle('B17:B19')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        for ($row = 2; $row <= $highestRow; $row++) {
+            $label = trim((string) $sheet->getCell('A' . $row)->getValue());
 
-        $sheet->getStyle('A15:B15')->applyFromArray([
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'FEF2F2'],
-            ],
-        ]);
+            if ($label === 'Pola Hubungan Terbaik Normal') {
+                $bestRuleRow = $row;
+            }
 
-        $sheet->getStyle('B15')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+            if (in_array($row, $sectionRows, true)) {
+                $sheet->getRowDimension($row)->setRowHeight(20);
+                continue;
+            }
+
+            $sheet->getStyle('A' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('B' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getRowDimension($row)->setRowHeight(19);
+        }
+
+        if ($bestRuleRow !== null) {
+            $sheet->getStyle('B' . $bestRuleRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+            $sheet->getRowDimension($bestRuleRow)->setRowHeight(42);
+        }
 
         return [];
     }
 
     private function isAnomalyRule($rule): bool
     {
-        $statusAnomali = strtolower((string) ($rule['status_anomali'] ?? ''));
-        $isAnomaly = $rule['is_anomaly'] ?? false;
+        $statusAnomali = strtolower(trim((string) $this->getRuleValue($rule, 'status_anomali', '')));
+        $isAnomaly = $this->getRuleValue($rule, 'is_anomaly', false);
 
-        return $statusAnomali === 'anomali'
-            || $isAnomaly === true
-            || $isAnomaly === 1
-            || $isAnomaly === '1'
-            || strtolower((string) $isAnomaly) === 'true';
+        return $statusAnomali === 'anomali' || $this->normalizeBoolean($isAnomaly);
+    }
+
+    private function normalizeBoolean($value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value === 1;
+        }
+
+        if (is_string($value)) {
+            return in_array(strtolower(trim($value)), ['true', '1', 'yes', 'ya', 'anomali'], true);
+        }
+
+        return false;
+    }
+
+    private function getRuleValue($rule, string $key, $default = null)
+    {
+        if (is_array($rule)) {
+            return array_key_exists($key, $rule) ? $rule[$key] : $default;
+        }
+
+        if (is_object($rule)) {
+            return $rule->{$key} ?? $default;
+        }
+
+        return $default;
+    }
+
+    private function formatKanalLabel($value): string
+    {
+        $value = strtolower(trim((string) ($value ?? '')));
+
+        if ($value === 'offline' || str_contains($value, 'offline')) {
+            return 'Offline';
+        }
+
+        if ($value === 'online' || str_contains($value, 'online')) {
+            return 'Online';
+        }
+
+        if ($value === 'semua' || str_contains($value, 'semua')) {
+            return 'Semua Kanal';
+        }
+
+        return 'Tidak Diketahui';
+    }
+
+    private function formatTanggalIndonesia($tanggal): string
+    {
+        if (!$tanggal || $tanggal === '-') {
+            return '-';
+        }
+
+        $bulanIndonesia = [
+            'January' => 'Januari',
+            'February' => 'Februari',
+            'March' => 'Maret',
+            'April' => 'April',
+            'May' => 'Mei',
+            'June' => 'Juni',
+            'July' => 'Juli',
+            'August' => 'Agustus',
+            'September' => 'September',
+            'October' => 'Oktober',
+            'November' => 'November',
+            'December' => 'Desember',
+        ];
+
+        try {
+            if ($tanggal instanceof \Carbon\CarbonInterface) {
+                $tanggalFormatted = $tanggal->format('d F Y');
+            } else {
+                $tanggalFormatted = Carbon::parse($tanggal)->format('d F Y');
+            }
+
+            return strtr($tanggalFormatted, $bulanIndonesia);
+        } catch (\Exception $e) {
+            return strtr((string) $tanggal, $bulanIndonesia);
+        }
     }
 }
 
@@ -200,24 +337,25 @@ class AssociationRulesSheet implements FromArray, WithTitle, ShouldAutoSize, Wit
 
     public function title(): string
     {
-        return 'Association Rules';
+        return 'Pola Hubungan';
     }
 
     public function array(): array
     {
-        $rules = collect($this->data['rules'] ?? []);
+        $rules = collect($this->data['rules'] ?? [])->values();
 
         $rows = [
             [
                 'No',
+                'Kanal',
                 'Kondisi Transaksi',
                 'Pola yang Berkaitan',
                 'Tingkat Kemunculan',
                 'Tingkat Kepercayaan',
                 'Kekuatan Hubungan',
                 'Kategori Pola',
-                'Status Anomali',
-                'Penjelasan',
+                'Status Pola',
+                'Interpretasi',
             ],
         ];
 
@@ -226,14 +364,17 @@ class AssociationRulesSheet implements FromArray, WithTitle, ShouldAutoSize, Wit
 
             $rows[] = [
                 $index + 1,
-                $rule['antecedents'] ?? '-',
-                $rule['consequents'] ?? '-',
-                (float) ($rule['support'] ?? 0),
-                (float) ($rule['confidence'] ?? 0),
-                (float) ($rule['lift'] ?? 0),
-                $rule['kategori_rule'] ?? ($rule['status'] ?? '-'),
+                $this->formatKanalLabel(
+                    $this->getRuleValue($rule, 'kanal_filter_label', $this->getRuleValue($rule, 'kanal_filter', $this->getRuleValue($rule, 'kanal', null)))
+                ),
+                $this->getRuleValue($rule, 'antecedents', '-'),
+                $this->getRuleValue($rule, 'consequents', '-'),
+                (float) $this->getRuleValue($rule, 'support', 0),
+                (float) $this->getRuleValue($rule, 'confidence', 0),
+                (float) $this->getRuleValue($rule, 'lift', 0),
+                $this->getRuleValue($rule, 'kategori_rule', $this->getRuleValue($rule, 'status', '-')),
                 $isAnomaly ? 'Anomali' : 'Normal',
-                $rule['interpretasi'] ?? '-',
+                $this->getRuleValue($rule, 'interpretasi', '-'),
             ];
         }
 
@@ -245,19 +386,24 @@ class AssociationRulesSheet implements FromArray, WithTitle, ShouldAutoSize, Wit
         $highestRow = $sheet->getHighestRow();
 
         $sheet->freezePane('A2');
+        $sheet->setAutoFilter('A1:J' . $highestRow);
 
-        $sheet->getStyle('A1:I1')->applyFromArray([
+        $sheet->getStyle('A1:J1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
             ],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '991B1B'],
+                'startColor' => ['rgb' => 'E8007A'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
             ],
         ]);
 
-        $sheet->getStyle('A1:I' . $highestRow)->applyFromArray([
+        $sheet->getStyle('A1:J' . $highestRow)->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
@@ -266,218 +412,182 @@ class AssociationRulesSheet implements FromArray, WithTitle, ShouldAutoSize, Wit
             ],
         ]);
 
+        $sheet->getStyle('A1:J' . $highestRow)
+            ->getAlignment()
+            ->setVertical(Alignment::VERTICAL_CENTER);
+
         if ($highestRow >= 2) {
-            $sheet->getStyle('D2:F' . $highestRow)
+            $sheet->getStyle('E2:G' . $highestRow)
                 ->getNumberFormat()
                 ->setFormatCode('0.0000');
 
-            $sheet->getStyle('B2:C' . $highestRow)->getAlignment()->setWrapText(true);
-            $sheet->getStyle('I2:I' . $highestRow)->getAlignment()->setWrapText(true);
+            $sheet->getStyle('C2:D' . $highestRow)->getAlignment()->setWrapText(true);
+            $sheet->getStyle('J2:J' . $highestRow)->getAlignment()->setWrapText(true);
 
-            $sheet->getStyle('A2:A' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('D2:F' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle('A2:B' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E2:G' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle('H2:I' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            for ($row = 2; $row <= $highestRow; $row++) {
+                $kanalCell = 'B' . $row;
+                $kategoriCell = 'H' . $row;
+                $statusCell = 'I' . $row;
+
+                $kategori = strtolower((string) $sheet->getCell($kategoriCell)->getValue());
+                $status = strtolower((string) $sheet->getCell($statusCell)->getValue());
+
+                if ($status === 'anomali') {
+                    $sheet->getStyle('A' . $row . ':J' . $row)->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FFF7ED'],
+                        ],
+                    ]);
+                }
+
+                $sheet->getStyle($kanalCell)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F3E8FF'],
+                    ],
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => '7E22CE'],
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    ],
+                ]);
+
+                if (str_contains($kategori, 'strong')) {
+                    $sheet->getStyle($kategoriCell)->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FCE7F3'],
+                        ],
+                        'font' => [
+                            'bold' => true,
+                            'color' => ['rgb' => 'BE185D'],
+                        ],
+                    ]);
+                } elseif (str_contains($kategori, 'moderate')) {
+                    $sheet->getStyle($kategoriCell)->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FEF3C7'],
+                        ],
+                        'font' => [
+                            'bold' => true,
+                            'color' => ['rgb' => '92400E'],
+                        ],
+                    ]);
+                } else {
+                    $sheet->getStyle($kategoriCell)->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'E0F2FE'],
+                        ],
+                        'font' => [
+                            'bold' => true,
+                            'color' => ['rgb' => '0369A1'],
+                        ],
+                    ]);
+                }
+
+                if ($status === 'anomali') {
+                    $sheet->getStyle($statusCell)->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FEE2E2'],
+                        ],
+                        'font' => [
+                            'bold' => true,
+                            'color' => ['rgb' => 'DC2626'],
+                        ],
+                    ]);
+                } else {
+                    $sheet->getStyle($statusCell)->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'DCFCE7'],
+                        ],
+                        'font' => [
+                            'bold' => true,
+                            'color' => ['rgb' => '15803D'],
+                        ],
+                    ]);
+                }
+            }
         }
 
         $sheet->getColumnDimension('A')->setWidth(8);
-        $sheet->getColumnDimension('B')->setWidth(38);
-        $sheet->getColumnDimension('C')->setWidth(38);
-        $sheet->getColumnDimension('D')->setWidth(20);
-        $sheet->getColumnDimension('E')->setWidth(20);
-        $sheet->getColumnDimension('F')->setWidth(20);
-        $sheet->getColumnDimension('G')->setWidth(20);
-        $sheet->getColumnDimension('H')->setWidth(18);
-        $sheet->getColumnDimension('I')->setWidth(65);
+        $sheet->getColumnDimension('B')->setWidth(18);
+        $sheet->getColumnDimension('C')->setWidth(45);
+        $sheet->getColumnDimension('D')->setWidth(45);
+        $sheet->getColumnDimension('E')->setWidth(22);
+        $sheet->getColumnDimension('F')->setWidth(22);
+        $sheet->getColumnDimension('G')->setWidth(22);
+        $sheet->getColumnDimension('H')->setWidth(22);
+        $sheet->getColumnDimension('I')->setWidth(18);
+        $sheet->getColumnDimension('J')->setWidth(85);
 
         return [];
     }
 
     private function isAnomalyRule($rule): bool
     {
-        $statusAnomali = strtolower((string) ($rule['status_anomali'] ?? ''));
-        $isAnomaly = $rule['is_anomaly'] ?? false;
+        $statusAnomali = strtolower(trim((string) $this->getRuleValue($rule, 'status_anomali', '')));
+        $isAnomaly = $this->getRuleValue($rule, 'is_anomaly', false);
 
-        return $statusAnomali === 'anomali'
-            || $isAnomaly === true
-            || $isAnomaly === 1
-            || $isAnomaly === '1'
-            || strtolower((string) $isAnomaly) === 'true';
-    }
-}
-
-class HeatmapSheet implements FromArray, WithTitle, ShouldAutoSize, WithStyles
-{
-    protected array $data;
-
-    public function __construct(array $data)
-    {
-        $this->data = $data;
+        return $statusAnomali === 'anomali' || $this->normalizeBoolean($isAnomaly);
     }
 
-    public function title(): string
+    private function normalizeBoolean($value): bool
     {
-        return 'Heatmap';
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value === 1;
+        }
+
+        if (is_string($value)) {
+            return in_array(strtolower(trim($value)), ['true', '1', 'yes', 'ya', 'anomali'], true);
+        }
+
+        return false;
     }
 
-    public function array(): array
+    private function getRuleValue($rule, string $key, $default = null)
     {
-        $heatmap = $this->data['heatmapData'] ?? ($this->data['heatmap'] ?? []);
-        $rows = collect($heatmap['rows'] ?? []);
-        $columns = collect($heatmap['columns'] ?? []);
-
-        $sheetRows = [];
-
-        $header = ['A / C'];
-
-        foreach ($columns as $column) {
-            $header[] = $column['code'] ?? $column['label'] ?? '-';
+        if (is_array($rule)) {
+            return array_key_exists($key, $rule) ? $rule[$key] : $default;
         }
 
-        $sheetRows[] = ['HEATMAP ASOSIASI BERDASARKAN NILAI LIFT'];
-        $sheetRows[] = $header;
-
-        foreach ($rows as $row) {
-            $line = [
-                $row['code'] ?? $row['label'] ?? '-',
-            ];
-
-            foreach (collect($row['cells'] ?? []) as $cell) {
-                $line[] = !empty($cell['exists'])
-                    ? (float) ($cell['lift'] ?? 0)
-                    : '';
-            }
-
-            $sheetRows[] = $line;
+        if (is_object($rule)) {
+            return $rule->{$key} ?? $default;
         }
 
-        $sheetRows[] = ['Keterangan'];
-        $sheetRows[] = ['A', 'Kondisi Transaksi'];
-        $sheetRows[] = ['C', 'Pola yang Berkaitan'];
-
-        $sheetRows[] = ['A: Kondisi Transaksi'];
-
-        foreach ($rows as $row) {
-            $sheetRows[] = [
-                $row['code'] ?? $row['label'] ?? '-',
-                $row['name'] ?? $row['key'] ?? '-',
-            ];
-        }
-
-        $sheetRows[] = ['C: Pola yang Berkaitan'];
-
-        foreach ($columns as $column) {
-            $sheetRows[] = [
-                $column['code'] ?? $column['label'] ?? '-',
-                $column['name'] ?? $column['key'] ?? '-',
-            ];
-        }
-
-        return $sheetRows;
+        return $default;
     }
 
-    public function styles(Worksheet $sheet)
+    private function formatKanalLabel($value): string
     {
-        $heatmap = $this->data['heatmapData'] ?? ($this->data['heatmap'] ?? []);
-        $rows = collect($heatmap['rows'] ?? []);
-        $columns = collect($heatmap['columns'] ?? []);
+        $value = strtolower(trim((string) ($value ?? '')));
 
-        $rowCount = $rows->count();
-        $columnCount = $columns->count();
-
-        $highestRow = $sheet->getHighestRow();
-        $highestColumn = $sheet->getHighestColumn();
-
-        $matrixHeaderRow = 2;
-        $matrixEndRow = 2 + $rowCount;
-
-        $legendTitleRow = $matrixEndRow + 1;
-        $aTitleRow = $legendTitleRow + 3;
-        $aEndRow = $aTitleRow + $rowCount;
-
-        $cTitleRow = $aEndRow + 1;
-
-        $sheet->mergeCells('A1:' . $highestColumn . '1');
-
-        $sheet->getStyle('A1')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'size' => 14,
-                'color' => ['rgb' => '111827'],
-            ],
-        ]);
-
-        $sheet->getStyle('A' . $matrixHeaderRow . ':' . $highestColumn . $matrixHeaderRow)->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'color' => ['rgb' => 'FFFFFF'],
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '111827'],
-            ],
-        ]);
-
-        $sheet->getStyle('A' . $matrixHeaderRow . ':' . $highestColumn . $matrixEndRow)->applyFromArray([
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => 'D1D5DB'],
-                ],
-            ],
-        ]);
-
-        if ($rowCount > 0 && $columnCount > 0) {
-            $sheet->getStyle('B3:' . $highestColumn . $matrixEndRow)
-                ->getNumberFormat()
-                ->setFormatCode('0.0000');
-
-            $sheet->getStyle('B3:' . $highestColumn . $matrixEndRow)
-                ->getAlignment()
-                ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        if ($value === 'offline' || str_contains($value, 'offline')) {
+            return 'Offline';
         }
 
-        $sectionRows = [
-            $legendTitleRow,
-            $aTitleRow,
-            $cTitleRow,
-        ];
-
-        foreach ($sectionRows as $rowNumber) {
-            if ($rowNumber <= $highestRow) {
-                $sheet->mergeCells('A' . $rowNumber . ':B' . $rowNumber);
-                $sheet->getStyle('A' . $rowNumber . ':B' . $rowNumber)->applyFromArray([
-                    'font' => [
-                        'bold' => true,
-                        'color' => ['rgb' => 'FFFFFF'],
-                    ],
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => '991B1B'],
-                    ],
-                ]);
-            }
+        if ($value === 'online' || str_contains($value, 'online')) {
+            return 'Online';
         }
 
-        $sheet->getStyle('A' . $legendTitleRow . ':B' . $highestRow)->applyFromArray([
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => 'D1D5DB'],
-                ],
-            ],
-        ]);
-
-        $sheet->getStyle('A1:' . $highestColumn . $highestRow)->getAlignment()->setWrapText(true);
-        $sheet->getStyle('A1:' . $highestColumn . $highestRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-
-        $sheet->getColumnDimension('A')->setWidth(18);
-
-        for ($i = 2; $i <= max(2, $columnCount + 1); $i++) {
-            $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
-            $sheet->getColumnDimension($columnLetter)->setWidth(18);
+        if ($value === 'semua' || str_contains($value, 'semua')) {
+            return 'Semua Kanal';
         }
 
-        $sheet->getColumnDimension('B')->setWidth(55);
-
-        return [];
+        return 'Tidak Diketahui';
     }
 }

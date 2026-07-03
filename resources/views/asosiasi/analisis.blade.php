@@ -15,19 +15,19 @@
 <div id="clientErrorContainer"></div>
 
 @if(session('error'))
-    <div class="analysis-alert analysis-alert-error">
+    <div class="analysis-alert analysis-alert-error" role="alert">
         {{ session('error') }}
     </div>
 @endif
 
 @if(session('success'))
-    <div class="analysis-alert analysis-alert-success">
+    <div class="analysis-alert analysis-alert-success" role="alert">
         {{ session('success') }}
     </div>
 @endif
 
 @if($errors->any())
-    <div class="analysis-alert analysis-alert-error">
+    <div class="analysis-alert analysis-alert-error" role="alert">
         <ul>
             @foreach($errors->all() as $error)
                 <li>{{ $error }}</li>
@@ -39,9 +39,10 @@
 <form id="formAnalisisApi" action="{{ route('asosiasi.proses') }}" method="POST" enctype="multipart/form-data">
     @csrf
 
-    <input type="hidden" name="min_support" value="0.01">
-    <input type="hidden" name="min_confidence" value="0.4">
-    <input type="hidden" name="min_lift" value="1.0">
+    <input type="hidden" name="min_support" value="{{ old('min_support', '0.02') }}">
+    <input type="hidden" name="min_confidence" value="{{ old('min_confidence', '0.6') }}">
+    <input type="hidden" name="min_lift" value="{{ old('min_lift', '1.0') }}">
+    <input type="hidden" name="kanal_filter" value="semua">
 
     <div class="analysis-card">
         <h2>Dataset Upload</h2>
@@ -95,7 +96,7 @@
                         <path d="M5 17h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </span>
-                Dataset minimal harus memiliki kolom nomor transaksi, produk, operator, dan waktu/tanggal transaksi
+                Dataset minimal harus memiliki kolom nomor transaksi, produk, operator, waktu/tanggal transaksi, dan tipe penjualan
             </div>
 
             <div>
@@ -147,12 +148,12 @@
 
             <div class="parameter-item">
                 <span>Minimum Support</span>
-                <strong>0.01</strong>
+                <strong>0.02</strong>
             </div>
 
             <div class="parameter-item">
                 <span>Minimum Confidence</span>
-                <strong>0.4</strong>
+                <strong>0.6</strong>
             </div>
 
             <div class="parameter-item">
@@ -186,32 +187,37 @@
 
         <div class="process-step" data-step="1">
             <span class="process-icon"></span>
-            <p>Membersihkan data refund</p>
+            <p>Membersihkan dan memvalidasi data penjualan</p>
         </div>
 
         <div class="process-step" data-step="2">
             <span class="process-icon"></span>
-            <p>Mengubah waktu transaksi menjadi kategori</p>
+            <p>Mengubah waktu transaksi menjadi kategori shift</p>
         </div>
 
         <div class="process-step" data-step="3">
             <span class="process-icon"></span>
-            <p>Membentuk basket transaksi</p>
+            <p>Mengidentifikasi kanal penjualan offline dan online</p>
         </div>
 
         <div class="process-step" data-step="4">
             <span class="process-icon"></span>
-            <p>Menjalankan algoritma FP-Growth</p>
+            <p>Membentuk basket transaksi per kanal</p>
         </div>
 
         <div class="process-step" data-step="5">
             <span class="process-icon"></span>
-            <p>Membentuk association rules</p>
+            <p>Menjalankan algoritma FP-Growth</p>
         </div>
 
         <div class="process-step" data-step="6">
             <span class="process-icon"></span>
-            <p>Menampilkan hasil analisis</p>
+            <p>Membentuk association rules</p>
+        </div>
+
+        <div class="process-step" data-step="7">
+            <span class="process-icon"></span>
+            <p>Menyimpan dan menampilkan hasil analisis</p>
         </div>
     </div>
 </div>
@@ -227,6 +233,8 @@
         const processSteps = document.querySelectorAll('.process-step');
         const clientErrorContainer = document.getElementById('clientErrorContainer');
 
+        const maxFileSize = 20 * 1024 * 1024;
+
         let stepInterval = null;
         let isSubmitting = false;
 
@@ -237,6 +245,7 @@
 
             const alert = document.createElement('div');
             alert.className = 'analysis-alert analysis-alert-error';
+            alert.setAttribute('role', 'alert');
             alert.textContent = message;
 
             clientErrorContainer.appendChild(alert);
@@ -293,18 +302,41 @@
             }, 900);
         }
 
-        function isValidExcelFile(file) {
-            if (!file) {
-                return false;
+        function getFileExtension(file) {
+            if (!file || !file.name) {
+                return '';
             }
 
-            const allowedExtensions = ['xlsx', 'xls'];
             const fileNameParts = file.name.split('.');
-            const extension = fileNameParts.length > 1
-                ? fileNameParts.pop().toLowerCase()
-                : '';
+
+            if (fileNameParts.length <= 1) {
+                return '';
+            }
+
+            return fileNameParts.pop().toLowerCase();
+        }
+
+        function isValidExcelFile(file) {
+            const allowedExtensions = ['xlsx', 'xls'];
+            const extension = getFileExtension(file);
 
             return allowedExtensions.includes(extension);
+        }
+
+        function validateSelectedFile(file) {
+            if (!file) {
+                return 'Silakan pilih file Excel terlebih dahulu sebelum memproses analisis.';
+            }
+
+            if (!isValidExcelFile(file)) {
+                return 'Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.';
+            }
+
+            if (file.size > maxFileSize) {
+                return 'Ukuran file terlalu besar. Maksimal ukuran file adalah 20 MB.';
+            }
+
+            return null;
         }
 
         function setButtonLoading() {
@@ -333,6 +365,17 @@
             `;
         }
 
+        function resetFileInput() {
+            if (fileInput) {
+                fileInput.value = '';
+            }
+
+            if (fileName) {
+                fileName.textContent = 'Belum ada file yang dipilih';
+                fileName.classList.remove('file-selected');
+            }
+        }
+
         if (fileInput) {
             fileInput.addEventListener('change', function () {
                 clearClientError();
@@ -342,21 +385,22 @@
                     : null;
 
                 if (!selectedFile) {
-                    fileName.textContent = 'Belum ada file yang dipilih';
-                    fileName.classList.remove('file-selected');
+                    resetFileInput();
                     return;
                 }
 
-                if (!isValidExcelFile(selectedFile)) {
-                    fileInput.value = '';
-                    fileName.textContent = 'Belum ada file yang dipilih';
-                    fileName.classList.remove('file-selected');
-                    showClientError('Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.');
+                const validationMessage = validateSelectedFile(selectedFile);
+
+                if (validationMessage) {
+                    resetFileInput();
+                    showClientError(validationMessage);
                     return;
                 }
 
-                fileName.textContent = selectedFile.name;
-                fileName.classList.add('file-selected');
+                if (fileName) {
+                    fileName.textContent = selectedFile.name;
+                    fileName.classList.add('file-selected');
+                }
             });
         }
 
@@ -364,23 +408,14 @@
             btnReset.addEventListener('click', function () {
                 if (isSubmitting) return;
 
-                if (fileInput) {
-                    fileInput.value = '';
-                }
-
-                if (fileName) {
-                    fileName.textContent = 'Belum ada file yang dipilih';
-                    fileName.classList.remove('file-selected');
-                }
-
+                resetFileInput();
                 clearClientError();
                 stopProcessAnimation();
+                resetButtonLoading();
 
                 if (loadingAnalisis) {
                     loadingAnalisis.classList.add('hidden');
                 }
-
-                resetButtonLoading();
             });
         }
 
@@ -388,19 +423,20 @@
             formAnalisis.addEventListener('submit', function (event) {
                 clearClientError();
 
+                if (isSubmitting) {
+                    event.preventDefault();
+                    return;
+                }
+
                 const selectedFile = fileInput && fileInput.files && fileInput.files.length > 0
                     ? fileInput.files[0]
                     : null;
 
-                if (!selectedFile) {
-                    event.preventDefault();
-                    showClientError('Silakan pilih file Excel terlebih dahulu sebelum memproses analisis.');
-                    return;
-                }
+                const validationMessage = validateSelectedFile(selectedFile);
 
-                if (!isValidExcelFile(selectedFile)) {
+                if (validationMessage) {
                     event.preventDefault();
-                    showClientError('Format file tidak sesuai. Gunakan file Excel dengan format .xlsx atau .xls.');
+                    showClientError(validationMessage);
                     return;
                 }
 

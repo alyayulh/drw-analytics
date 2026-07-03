@@ -12,10 +12,24 @@ class AturanAsosiasi extends Model
 
     public $timestamps = false;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'id_proses_analisis',
+        'rule_asosiasi',
+        'nilai_support',
+        'nilai_confidence',
+        'nilai_lift',
+        'kategori_rule',
+        'is_anomaly',
+        'kanal_filter',
+    ];
 
     protected $casts = [
+        'id_proses_analisis' => 'integer',
+        'nilai_support' => 'float',
+        'nilai_confidence' => 'float',
+        'nilai_lift' => 'float',
         'is_anomaly' => 'boolean',
+        'kanal_filter' => 'string',
     ];
 
     public function prosesAnalisis()
@@ -25,5 +39,14 @@ class AturanAsosiasi extends Model
             'id_proses_analisis',
             'id_proses_analisis'
         );
+    }
+
+    public function getKanalFilterLabelAttribute()
+    {
+        return match (strtolower((string) $this->kanal_filter)) {
+            'offline' => 'Offline',
+            'online' => 'Online',
+            default => 'Semua Kanal',
+        };
     }
 }

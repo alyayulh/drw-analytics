@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const btnReset = document.getElementById("btnReset");
     const loadingCard = document.getElementById("loadingAnalisis");
     const steps = document.querySelectorAll(".process-step");
+    const kanalInputs = document.querySelectorAll('input[name="kanal_filter"]');
 
     const defaultFileText = "Belum ada file yang dipilih";
 
@@ -21,6 +22,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function resetKanalFilter() {
+        kanalInputs.forEach(function (input) {
+            input.checked = input.value === "semua";
+        });
+    }
+
     if (btnReset) {
         btnReset.addEventListener("click", function (event) {
             event.preventDefault();
@@ -32,6 +39,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (fileName) {
                 fileName.textContent = defaultFileText;
             }
+
+            resetKanalFilter();
 
             steps.forEach(function (step) {
                 step.classList.remove("active", "done");
