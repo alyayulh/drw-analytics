@@ -175,8 +175,8 @@ class DashboardLaporanExport implements FromArray, ShouldAutoSize, WithStyles
         $distribusiWaktu = $this->buildDistribusiWaktuDashboard($totalTransaksi);
 
         $rangeWaktu = [
-            'pagi' => '00.00 - 11.59',
-            'siang' => '12.00 - 23.59',
+            'pagi' => '00.00 - 12.59',
+            'siang' => '13.00 - 22.00',
         ];
 
         $waktuDominan = $distribusiWaktu
