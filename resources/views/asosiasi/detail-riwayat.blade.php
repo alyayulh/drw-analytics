@@ -91,6 +91,19 @@
             || strtolower((string) $isAnomaly) === 'true';
     };
 
+    // Hitung jumlah pola hubungan NORMAL per kanal.
+    // Rule anomali tetap disimpan, tetapi tidak masuk ke tabel default.
+    $normalAllRulesCollection = $allRulesCollection
+        ->reject(function ($rule) use ($isRuleAnomaly) {
+            return $isRuleAnomaly($rule);
+        })
+        ->values();
+
+    $totalRulesAll = $normalAllRulesCollection->count();
+    $totalRulesOffline = $normalAllRulesCollection->where('kanal_filter', 'offline')->count();
+    $totalRulesOnline = $normalAllRulesCollection->where('kanal_filter', 'online')->count();
+    $totalRulesUnknown = $normalAllRulesCollection->where('kanal_filter', 'unknown')->count();
+
     $jumlahAnomali = $rulesCollection
         ->filter(function ($rule) use ($isRuleAnomaly) {
             return $isRuleAnomaly($rule);
@@ -210,7 +223,7 @@
         ];
     };
 
-    $heatmapRules = $rulesCollection
+    $heatmapRules = $normalRulesCollection
         ->sortByDesc(function ($rule) {
             return (float) ($rule['lift'] ?? 0);
         })
@@ -303,7 +316,8 @@
             ?? 0
     );
 
-    $polaHubunganCount = $rulesCollection->count();
+    // Jumlah pola hubungan yang tampil default hanya pola normal.
+    $polaHubunganCount = $normalRulesCollection->count();
 @endphp
 
 <div class="hasil-page detail-riwayat-page">
@@ -1017,7 +1031,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function getFilteredRows() {
         const keyword = searchInput ? searchInput.value.toLowerCase() : '';
-        const anomalyOnly = toggleAnomaly ? toggleAnomaly.checked : false;
+        const showAnomaly = toggleAnomaly ? toggleAnomaly.checked : false;
 
         return rows.filter(row => {
             const rowText = row.innerText.toLowerCase();
@@ -1026,9 +1040,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const matchSearch = rowText.includes(keyword);
             const matchFilter = activeFilter === 'all' || rowJenis === activeFilter;
-            const matchAnomaly = !anomalyOnly || rowAnomaly;
 
-            return matchSearch && matchFilter && matchAnomaly;
+            // Default: tampilkan pola normal saja.
+            // Toggle ON: tampilkan pola anomali saja.
+            const matchAnomalyMode = showAnomaly ? rowAnomaly : !rowAnomaly;
+
+            return matchSearch && matchFilter && matchAnomalyMode;
         });
     }
 

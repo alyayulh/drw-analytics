@@ -66,15 +66,6 @@
         })
         ->values();
 
-    $totalRulesAll = $allRulesCollection->count();
-    $totalRulesOffline = $allRulesCollection->where('kanal_filter', 'offline')->count();
-    $totalRulesOnline = $allRulesCollection->where('kanal_filter', 'online')->count();
-    $totalRulesUnknown = $allRulesCollection->where('kanal_filter', 'unknown')->count();
-
-    $rulesCollection = $selectedKanal === 'semua'
-        ? $allRulesCollection
-        : $allRulesCollection->where('kanal_filter', $selectedKanal)->values();
-
     $isRuleAnomaly = function ($rule) {
         $statusAnomali = strtolower((string) ($rule['status_anomali'] ?? ''));
         $isAnomaly = $rule['is_anomaly'] ?? false;
@@ -86,11 +77,51 @@
             || strtolower((string) $isAnomaly) === 'true';
     };
 
-    $jumlahAnomali = $rulesCollection
+    /*
+    |--------------------------------------------------------------------------
+    | Pemisahan pola normal dan pola anomali
+    |--------------------------------------------------------------------------
+    | Tabel utama secara default hanya menampilkan pola normal. Pola anomali
+    | tetap dikirim ke halaman, tetapi baru ditampilkan ketika toggle anomali
+    | dinyalakan oleh pengguna.
+    */
+    $allNormalRulesCollection = $allRulesCollection
+        ->reject(function ($rule) use ($isRuleAnomaly) {
+            return $isRuleAnomaly($rule);
+        })
+        ->values();
+
+    $allAnomalyRulesCollection = $allRulesCollection
         ->filter(function ($rule) use ($isRuleAnomaly) {
             return $isRuleAnomaly($rule);
         })
-        ->count();
+        ->values();
+
+    $totalRulesAll = $allRulesCollection->count();
+    $totalNormalRulesAll = $allNormalRulesCollection->count();
+    $totalAnomalyRulesAll = $allAnomalyRulesCollection->count();
+
+    $totalRulesOffline = $allNormalRulesCollection->where('kanal_filter', 'offline')->count();
+    $totalRulesOnline = $allNormalRulesCollection->where('kanal_filter', 'online')->count();
+    $totalRulesUnknown = $allNormalRulesCollection->where('kanal_filter', 'unknown')->count();
+
+    $rulesCollection = $selectedKanal === 'semua'
+        ? $allRulesCollection
+        : $allRulesCollection->where('kanal_filter', $selectedKanal)->values();
+
+    $normalRulesCollection = $rulesCollection
+        ->reject(function ($rule) use ($isRuleAnomaly) {
+            return $isRuleAnomaly($rule);
+        })
+        ->values();
+
+    $anomalyRulesCollection = $rulesCollection
+        ->filter(function ($rule) use ($isRuleAnomaly) {
+            return $isRuleAnomaly($rule);
+        })
+        ->values();
+
+    $jumlahAnomali = $anomalyRulesCollection->count();
 
     /*
     |--------------------------------------------------------------------------
@@ -100,12 +131,6 @@
     | dan dasar pembacaan pola normal. Jadi walaupun lift anomali lebih tinggi,
     | yang tampil sebagai Pola Terbaik tetap rule normal dengan lift tertinggi.
     */
-    $normalRulesCollection = $rulesCollection
-        ->reject(function ($rule) use ($isRuleAnomaly) {
-            return $isRuleAnomaly($rule);
-        })
-        ->values();
-
     $bestRule = $normalRulesCollection
         ->sortByDesc(function ($rule) {
             return (float) ($rule['lift'] ?? 0);
@@ -205,7 +230,7 @@
         ];
     };
 
-    $heatmapRules = $rulesCollection
+    $heatmapRules = $normalRulesCollection
         ->sortByDesc(function ($rule) {
             return (float) ($rule['lift'] ?? 0);
         })
@@ -297,7 +322,8 @@
             ?? 0
     );
 
-    $polaHubunganCount = $rulesCollection->count();
+    $polaHubunganCount = $normalRulesCollection->count();
+    $polaHubunganTotalCount = $rulesCollection->count();
 @endphp
 
 <div class="hasil-page">
@@ -440,7 +466,7 @@
             <button type="button" class="filter-tab" data-filter="produk_waktu">Produk × Waktu</button>
         </div>
 
-        <input type="text" id="searchRules" class="search-input" placeholder="Cari produk, operator, waktu, kanal, kategori, atau status anomali...">
+        <input type="text" id="searchRules" class="search-input" placeholder="Cari produk, operator, waktu, kanal, atau kategori pola...">
     </div>
 
     <div class="hasil-card table-card">
@@ -508,6 +534,7 @@
                             data-jenis-rule="{{ $jenisRule }}"
                             data-anomaly="{{ $isAnomaly ? 'true' : 'false' }}"
                             data-kanal="{{ $ruleKanal }}"
+                            style="{{ $isAnomaly ? 'display: none;' : '' }}"
                         >
                             <td class="row-number">{{ $loop->iteration }}</td>
 
@@ -954,7 +981,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const matchSearch = rowText.includes(keyword);
             const matchFilter = activeFilter === 'all' || rowJenis === activeFilter;
-            const matchAnomaly = !anomalyOnly || rowAnomaly;
+            const matchAnomaly = anomalyOnly ? rowAnomaly : !rowAnomaly;
 
             return matchSearch && matchFilter && matchAnomaly;
         });
